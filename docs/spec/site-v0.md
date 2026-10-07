@@ -29,7 +29,7 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 |---|---|
 | `/` | 最新 sketch 12〜24 件のグリッド + `featured` の Works 数点 + 1 段落の自己紹介 |
 | `/lab/` | 全件の索引。**年別セクション**で区切る（`/lab/#2026`）。1 ページに全部出すが、サムネは poster 画像のみ |
-| `/lab/<slug>/` | 1 件の詳細。`presentation()` の導出結果に応じて embed / video / still を出し分ける（`content-model.md`） |
+| `/lab/<slug>/` | 1 件の詳細。poster（必須）、`video` があれば動画、`embedUrl` があれば別タブで開くリンク（`content-model.md`） |
 | `/notes/` | 記事一覧（日付降順） |
 | `/notes/<slug>/` | 記事本文（MDX） |
 | `/about/` | 自己紹介・やっていること・Links / Contact |
@@ -50,7 +50,8 @@ Works の一覧・詳細ページは **P1 に入れない**。代表作が出来
 - [ ] `harness check` が pass（`astro check`、`astro build`、`media keys resolve`、`tech vocabulary`）
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] `/lab/` に sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/lab/` の初期転送 1.5 MB 以内、Lighthouse Performance 90 以上（モバイル）
-- [ ] `/lab/<slug>/` で `embedUrl` のある sketch は poster を表示し、**クリックするまで iframe を生成しない**
+- [ ] `/lab/<slug>/` は **iframe を 1 つも生成しない**（`embedUrl` は別タブで開くリンク。決定 0001）
+- [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` でループ再生され、コントロールは出ない
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` に `width` / `height` が入り、CLS が 0.1 未満
 - [ ] JS を無効にしても sketch 索引と詳細（poster・テキスト・リンク）が読める
@@ -67,6 +68,7 @@ Works の一覧・詳細ページは **P1 に入れない**。代表作が出来
 
 ## 範囲外（P1 でやらないと明記するもの）
 
+- **サイト内 embed（iframe）**。`embedUrl` は別タブで開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
 - Works 一覧 / 詳細ページ、Major Work の専用ページ
 - tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/lab/` の年別で足りる）
 - 動的 OGP 画像生成（`poster` をそのまま `og:image` に使う）

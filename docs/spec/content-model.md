@@ -8,8 +8,8 @@ sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src
 
 ## 目的
 
-- 作品の見せ方（interactive / video / still）を 1 つの collection に共存させる。種類ごとに collection を分けない。見せ方は専用フィールドではなく項目の有無から導出する。
-- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 4 項目だけ（`date` / `title` / `poster` / `tech`）。
+- runtime / video / image を 1 つの collection に共存させる。種類ごとに collection を分けない。見せ方のフィールドは持たず、「あるものを出す」だけにする。
+- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 5 項目（`date` / `title` / `medium` / `poster` / `tech`）で、うち 4 つは script が埋める。
 - 制作方針（毎作品 1 つは自分で直接触るコアを持つ）を schema 上に残し、後から振り返れるようにする。
 
 ## 共通: メディア参照
@@ -31,6 +31,7 @@ const lab = z.object({
   // --- 必須（これだけで公開できる） ---
   date: z.coerce.date(),                 // 制作日。並び順の第一キー
   title: z.string(),
+  medium: z.enum(['runtime', 'video', 'image']), // 媒体の種別。見せ方ではない（導出できないので持つ）
   poster: mediaKey,                      // 一覧サムネ兼 OGP 画像。常に必須
   tech: z.array(z.string()).min(1),      // 'threejs' | 'glsl' | 'webgpu' | 'wgsl' | 'houdini' | 'blender' | 'unreal' | ...
 
@@ -49,23 +50,38 @@ const lab = z.object({
 });
 ```
 
-### 見せ方は frontmatter に持たず導出する
+### 表示は「あるものを出す」だけ。見せ方のフィールドは持たない
 
-ページの主役スロットに何を描くかは、項目の有無から決まる。`src/lib/collections.ts` に 1 つ関数を置く。
+v0 の詳細ページはこれで足りる。分岐と呼ぶほどのものがないので、導出関数も enum も要らない。
 
-```ts
-// interactive: poster + 「実行」ボタン → クリックで iframe（決定 0001）
-// video:       <video autoplay muted loop playsinline>（コントロールは出さない）
-// still:       <img> 1 枚
-function presentation(d) {
-  if (d.embedUrl) return 'interactive';
-  if (d.video)    return 'video';
-  return 'still';
-}
+```
+poster を出す（必須）
+video があれば <video autoplay muted loop playsinline> に差し替える（コントロールは出さない）
+embedUrl があれば「別タブで開く」リンクを出す
+repo / x / note があればリンクを出す
 ```
 
-モバイルで動かない sketch は `embedUrl` を付けず `video` だけ入れる。それで「live は無い、動画で見てもらう」が成立する。
-両方あるときは live を主役にする。「両方あるが動画を主にしたい」が実際に出てきたら、その時だけ optional な `prefer` を足す（先回りしない）。
+**v0 ではサイト内に iframe を埋めない。** `embedUrl` は別タブで開くリンクにする（決定 0001）。
+これでクリックロード機構も、GPU を食う作品が一覧に影響する問題も、モバイルの出し分けも v0 から消える。
+将来サイト内で完結させるときは、URL が変わらないのでリンクを iframe に差し替えるだけで移行できる。
+
+### `medium` は見せ方ではなく媒体の種別
+
+| 値 | 範囲 |
+|---|---|
+| `runtime` | ブラウザで実行されるもの（Three.js / WebGPU / p5） |
+| `video` | 映像が本体のもの（Houdini / UE / Blender / 録画） |
+| `image` | 静止画（レンダリング / フォトグラメトリ / 生成画像） |
+
+**導出できないので frontmatter に持つ。** 例: WebGL で作ったが live は公開せず録画だけ出した sketch は、
+`embedUrl` が無いので項目の有無からは `video` に見えるが、実体は `runtime`。これは「作ったものの性質」で、
+「公開した形」からは分からない。
+
+さらに**後から遡って埋められない**。500 件溜まってから種別を入れたくなったら 500 ファイルを開くことになる。
+1 日 1 件書くときに 1 語書くのは 2 秒。`lab:add` script が推測して埋める（`--video` だけなら `video`、
+`lab` repo に `index.html` があれば `runtime`）ので、手で直すのは例外のときだけ。
+
+3 つで始めて、必要になったら足す（enum を広げるのは後方互換）。表示には使わず、分類と集計にだけ使う。
 
 ### 設計の意図（変えるときに読む）
 
@@ -73,9 +89,10 @@ function presentation(d) {
 - **`tech` は enum にしない。** enum にすると新しい技術を触るたびに schema 編集が必要になり、sketch の摩擦になる。代わりに表記ゆれを検査で潰す（`three.js` / `ThreeJS` → `threejs`）。許可語彙は `src/data/tech.ts` の 1 ファイルに置き、`harness check` が frontmatter と突き合わせる。**未知の語は検査が落ちる**ので、語彙を足す commit が意識的になる。
 - **`core` を持たせる理由。** 「毎作品、最低 1 つは自分で直接触る技術的コア」という制作ルールを frontmatter に残す。v0 では optional だが、`harness check` で**未記入率を警告として出す**（落とさない）。2 年後に「どこを自分で訓練したか」が集計可能になる。
 - **`no`（連番）は frontmatter に持たない。** slug（`001-flow-field`）の先頭から導出する。二重管理にしない。並び順は `date` desc → slug desc。
-- **frontmatter に持つのは「導出できない情報」だけ。導出できるものは関数にする。** この原則で消えたフィールドが 3 つある: `no`（slug の先頭から導出）、見せ方の `kind`（`embedUrl` / `video` の有無から導出）、モバイル可否のフラグ（`embedUrl` の有無で表現できる）。毎日 frontmatter を書くので 1 フィールド減るのが制作速度に直接効くうえ、**二重に持ったものは必ずいつかズレる**という保守の問題も消える。
+- **frontmatter に何を持つかは 2 段で判断する。** (1) 導出できるもの → **持たない**（後からいつでも計算できる。`no` は slug の先頭から、表示は項目の有無から）。(2) 導出できず、後から遡って埋めるのが高いもの → **最初から持つ**（`medium` がこれ。500 件溜まってからでは埋められない）。(3) 導出できず、今も後も要らないもの → 持たない。
+  二重に持ったものは必ずいつかズレるので (1) は徹底する。一方 (2) を「先回りしない」と言って省くと、取り返しがつかなくなる。
 - **本文（Markdown 本体）は原則空。** sketch に本文を書き始めると 1 件あたりのコストが上がり、英語対応時の翻訳量も跳ねる。深掘りは Notes に書いて `note` で繋ぐ。
-- **「技術の性格」を見せ方の軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは見せ方ではなく中身の性格で、別の軸のものを 1 つの enum に混ぜていた。これは `note` が紐付いているかで判定できる（= technical study）。
+- **「技術の性格」を軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは媒体でも見せ方でもなく中身の性格だった。これは `note` が紐付いているかで判定できる（= technical study）。軸は 3 つに分ける: `medium`（媒体）/ `tech`（技術）/ `themes`（感覚）。
 
 ## works
 
@@ -143,7 +160,8 @@ Notes / Works の執筆のために P1 で入れるもの（いずれも設定�
 ## 受け入れ条件
 
 - [ ] `astro check` が通る（`astro sync` の生成型を含む）
-- [ ] `presentation()` が `embedUrl` / `video` の有無から interactive / video / still を正しく返す（単体テスト）
+- [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` で再生され、無いものは `poster` 画像が出る
+- [ ] `embedUrl` がある sketch は別タブで開くリンクが出る（v0 では iframe を生成しない）
 - [ ] frontmatter の全 mediaKey が `media/manifest.json` に存在することを検査する（`harness check` の `media keys resolve`、ネットワークに触らない）
 - [ ] `tech` の全要素が `src/data/tech.ts` の語彙にあることを検査する（`harness check` の `tech vocabulary`）
 - [ ] `draft: true` は本番ビルドに出ない / `pnpm dev` では見える

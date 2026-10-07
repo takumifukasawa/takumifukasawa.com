@@ -15,7 +15,7 @@ takumifukasawa.com  (このリポジトリ / Astro static / Cloudflare Pages)
   ├─ src/content/{lab,works,notes}   metadata の正本（Markdown / MDX）
   ├─ media/manifest.json               R2 に置いたメディアの索引（生成物だがコミットする）
   └─ 外部参照
-       ├─ lab.takumifukasawa.com       lab repo の deploy。iframe で埋める
+       ├─ lab.takumifukasawa.com       lab repo の deploy。v0 では別タブで開く（将来 iframe）
        └─ media.takumifukasawa.com      R2 bucket。poster / mp4 / webm
 ```
 
@@ -48,7 +48,7 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（ネットワークに触らない） | 未強制（実装前） |
 | `tech` の語は `src/data/tech.ts` の語彙に含まれる | `.harness/checks.sh` の `tech vocabulary` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
-| live embed（`embedUrl` あり）の iframe はクリックまで生成されない | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
+| v0 のサイトは iframe を 1 つも生成しない（`embedUrl` は別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
 | サイトのビルドは lab repo / R2 に到達できなくても成功する | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
 | R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
 

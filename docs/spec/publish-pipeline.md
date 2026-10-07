@@ -40,7 +40,7 @@ X への投稿は手でやる（動画は X に直接アップロードする。
 | 雛形生成 | lab 側の雛形は「canvas と requestAnimationFrame が動く最小」。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<YYYY>/<NNN-slug>/{poster.webp,clip.mp4,clip.webm}`。一度 put した key は上書きしない |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため） |
-| frontmatter | 必須 4 項目（`date` / `title` / `poster` / `tech`）は script が埋める。人間が書くのは `summary` / `themes` / `core` |
+| frontmatter | 必須 5 項目のうち 4 つ（`date` / `medium` / `poster` / `tech`）は script が埋める（`medium` は `--video` だけなら `video`、`lab` repo に `index.html` があれば `runtime` と推測する）。人間が書くのは `title` / `summary` / `themes` / `core` |
 | 失敗したとき | script は冪等。同じ `slug` で再実行したら、既存 key は put をスキップし manifest と md を更新する |
 
 ## core/ への共通化ルール

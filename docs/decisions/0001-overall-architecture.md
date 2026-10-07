@@ -45,10 +45,20 @@ lab repo は**実行コードだけ**を持ち、metadata を持たない（将�
 一方 `lab` の poster は 500 件に向かって増え、ビルド時間が件数に線形で伸びるため repo の外（R2）に出す必要がある。
 動画は長さ・サイズ・Astro が扱えないことから、記事中のものも含めて常に R2。
 
-### interactive の埋め込みはクリックロード
+### live 作品は v0 では別タブで開く。サイト内 embed は後から
 
-`<iframe>` は最初から DOM に置かない。poster 画像 + 再生ボタンを出し、**クリックで初めて iframe を挿入**する。
-`loading="lazy"` や IntersectionObserver による自動ロードは採らない（WebGPU / Three.js の作品が複数同時に走ると、一覧ページで GPU とメモリを食い潰す）。
+v0 ではサイト内に `<iframe>` を置かない。`embedUrl` を**別タブで開くリンク**にする。
+
+薄く始められること以上に、副作用が良い方向に効く。
+
+- クリックロード機構、GPU を食う作品が一覧に影響する問題、モバイルの出し分けが v0 から全部消える
+- `lab.takumifukasawa.com/<NNN-slug>/` が主役になり、**作品の URL が独立して流通する**（X から直リンクが張れる）
+
+将来サイト内で完結させるときは、**URL が変わらないのでリンクを iframe に差し替えるだけ**で移行できる。
+その時点では以下を守る（v0 で捨てた判断ではなく、embed を入れる時に適用する）。
+
+> `<iframe>` は最初から DOM に置かない。poster 画像 + 再生ボタンを出し、**クリックで初めて iframe を挿入**する。
+> `loading="lazy"` や IntersectionObserver による自動ロードは採らない（WebGPU / Three.js の作品が複数同時に走ると、一覧ページで GPU とメモリを食い潰す）。
 
 ### Astro / Cloudflare Pages
 

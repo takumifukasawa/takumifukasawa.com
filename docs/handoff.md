@@ -58,7 +58,8 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - GIF を使うか → 使わない。mp4 + webm で `autoplay muted loop playsinline`（決定 0003）
 - R2 を使わない選択肢 → 使わない方が先に課金される（Git LFS の帯域）か品質が落ちる（`references/cloudflare-limits.md`）
 - モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たず、動かないものは `embedUrl` を付けず `video` だけ入れる（`spec/content-model.md`）
-- `kind` は必要か → `lab` では不要（`embedUrl` / `video` の有無から導出）。`works` にだけ残す。原則「導出できるものは frontmatter に持たない」（`spec/content-model.md`）
+- 種別フラグは必要か → **必要**。`medium: runtime | video | image` を必須で持つ。導出できず、後から 500 件を遡って埋められないため。見せ方の分岐用フィールドは持たない（`spec/content-model.md`）
+- live 作品の見せ方 → v0 は別タブで開くリンク。サイト内 embed は P2（URL が変わらないので移行はリンクの差し替えだけ。決定 0001）
 - GitHub Pages にするか → しない。帯域 100 GB/月のソフト上限でバズ時に止まる側に倒れる／R2 を使う時点で Cloudflare DNS が前提になる（決定 0001 落選案 E）
 
 ## このセッションで触らなかったが確認したもの

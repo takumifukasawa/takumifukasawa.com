@@ -20,7 +20,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 | tier 1 の命名（`lab` / `sketch`） | 草案（合意待ち） | `decisions/0002-naming-lab-sketch.md` |
 | コードの置き場（昇格モデル） | 草案（合意待ち） | `decisions/0003-code-placement.md` |
 | content schema | 草案（合意待ち） | `spec/content-model.md` |
-| サイト v0 の範囲 | 草案（合意待ち） | `spec/site-v0.md` |
+| サイト v0 の範囲（P1 = 3 ページ） | 草案（合意待ち） | `spec/site-v0.md` |
 | 公開フロー | 草案（合意待ち） | `spec/publish-pipeline.md` |
 | Cloudflare の制限・料金の調査 | 完了（2026-10-07 取得） | `references/cloudflare-limits.md` |
 | Astro プロジェクト | 未着手 | — |
@@ -50,6 +50,10 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - フォント・配色・レイアウトの方向性（P1 着手時）
 
 ### 解決済（記録のため残す）
+
+- OGP は Cloudflare で出るか → 出る。OGP は HTML の meta タグなのでホスト無関係。`astro.config` の `site` 設定と `poster` を `og:image` に使うだけ（`spec/site-v0.md`）
+- 重め / 軽めの住み分け → 一緒くた。`experiments` という箱は作らず、`lab` repo + `lab` collection に全部入れる。「重さ」のカテゴリも持たず `note` の有無で導出（決定 0003 の一覧表）
+- v0 をさらに薄くした → `/lab/` 索引・日付密度グリッド・Notes 一式・Lighthouse 計測を外し、**P1 は 3 ページ**に（`spec/site-v0.md`）
 
 - サブドメイン名 → `lab.takumifukasawa.com`（決定 0002）
 - `daily` という命名 → 頻度を構造に埋めないため廃止。`lab` / `sketch` に（決定 0002）

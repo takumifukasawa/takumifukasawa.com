@@ -4,18 +4,56 @@
      実装の細部は縛らない。境界・依存の向き・データの検証点といった不変条件だけを書き、
      可能な限り機械的に強制する（リンタ・構造テスト）。強制手段が無い不変条件は「未強制」と明記する。 -->
 
-## 全体の地図（ドメイン / パッケージの階層）
+状態: 草案（決定 0001 の合意後に確定）
+
+## 全体の地図
+
+このリポジトリは**ハブ**である。作品の実行環境とメディアは外にある（決定 `decisions/0001-overall-architecture.md`）。
+
+```
+takumifukasawa.com  (このリポジトリ / Astro static / Cloudflare Pages)
+  ├─ src/content/{lab,works,notes}   metadata の正本（Markdown / MDX）
+  ├─ media/manifest.json               R2 に置いたメディアの索引（生成物だがコミットする）
+  └─ 外部参照
+       ├─ lab.takumifukasawa.com       lab repo の deploy。iframe で埋める
+       └─ media.takumifukasawa.com      R2 bucket。poster / mp4 / webm
+```
+
+### このリポジトリ内の層
+
+```
+src/content/        frontmatter（データ）           … content.config.ts の schema が境界
+src/data/           語彙の定義（tech / themes）     … 依存なし
+src/lib/            純粋ロジック（media 解決・collection クエリ）
+src/components/     表示
+src/layouts/        ページの外枠
+src/pages/          ルーティング
+scripts/            公開フローの CLI（Astro に依存しない）
+```
 
 ## 依存の向き（許される辺だけを列挙する）
 
-例: `types → config → repository → service → runtime → ui`。横断的関心（認証・テレメトリ・フラグ）は provider インターフェース経由のみ。
+`src/data → src/lib → src/components → src/layouts → src/pages`
+
+- `src/lib` は `src/components` を知らない。
+- `src/components` は `getCollection()` を直接呼ばない。collection の取得は `src/pages`（または `src/lib/collections.ts`）で行い、components には**解決済みのデータを props で渡す**。
+- `scripts/` は `src/` に依存してよいが、`src/` は `scripts/` に依存しない。
+- 外部 URL（R2 / lab）の組み立ては `src/lib/media.ts` と `src/lib/urls.ts` だけが知る。**他の場所にホスト名を書かない。**
 
 ## 不変条件と強制手段
 
 | 不変条件 | 強制手段 | 状態 |
 |---|---|---|
-| 例: 外部入力は境界で必ず検証する | `.harness/checks.sh` の structural test | 強制済 / 未強制 |
+| frontmatter は schema を満たす | `astro check` / `astro build`（`.harness/checks.sh`） | 未強制（実装前） |
+| frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（ネットワークに触らない） | 未強制（実装前） |
+| `tech` の語は `src/data/tech.ts` の語彙に含まれる | `.harness/checks.sh` の `tech vocabulary` | 未強制（実装前） |
+| メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
+| live embed（`embedUrl` あり）の iframe はクリックまで生成されない | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
+| サイトのビルドは lab repo / R2 に到達できなくても成功する | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
+| R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
 
 ## 意図的に許している自由
 
-実装方法・ライブラリ選択など、上の不変条件を守る限り縛らないもの。
+- CSS の書き方（素の CSS / Tailwind / CSS Modules のいずれでもよい）。作品が主役なのでサイト側の見た目は後から変えられるようにしておく。
+- lab 側のライブラリ選択は作品ごとに自由（Three.js / 素の WebGPU / PaleGL など）。共通化は 3 回ルール（`spec/publish-pipeline.md`）のみで縛る。
+- Notes の MDX コンポーネントの作り方。

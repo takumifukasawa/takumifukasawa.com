@@ -9,7 +9,9 @@
 
 | ファイル | 範囲 | 状態 |
 |---|---|---|
-| | | 草案 / 合意済 / 実装済 |
+| [site-v0.md](site-v0.md) | 最初に公開するサイトの範囲とフェーズ | 草案 |
+| [content-model.md](content-model.md) | Content Collections の schema（lab / works / notes） | 草案 |
+| [publish-pipeline.md](publish-pipeline.md) | sketch 1 件を公開するまでの手順と公開 CLI | 草案 |
 
 ## 1 つの spec の書き方
 

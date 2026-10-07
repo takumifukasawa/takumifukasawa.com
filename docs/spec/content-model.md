@@ -8,8 +8,8 @@ sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src
 
 ## 目的
 
-- runtime / video / image を 1 つの collection に共存させる。種類ごとに collection を分けない。見せ方のフィールドは持たず、「あるものを出す」だけにする。
-- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 5 項目（`date` / `title` / `medium` / `poster` / `tech`）で、うち 4 つは script が埋める。
+- 実行できる作品・映像・静止画を 1 つの collection に共存させる。種類ごとに collection を分けず、見せ方のフィールドも持たない（「あるものを出す」だけ）。
+- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 4 項目（`date` / `title` / `poster` / `tags`）で、**人間が書くのは `title` だけ**。残りは script が埋める。
 - 制作方針（毎作品 1 つは自分で直接触るコアを持つ）を schema 上に残し、後から振り返れるようにする。
 
 ## 共通: メディア参照
@@ -28,84 +28,66 @@ const mediaKey = z.string().regex(/^[a-z0-9][a-z0-9/_.-]*$/);
 
 ```ts
 const lab = z.object({
-  // --- 必須（これだけで公開できる） ---
+  // --- 必須 4 項目。うち人間が書くのは title だけ。残りは script が埋める ---
   date: z.coerce.date(),                 // 制作日。並び順の第一キー
   title: z.string(),
-  medium: z.enum(['runtime', 'video', 'image']), // 媒体の種別。見せ方ではない（導出できないので持つ）
-  poster: mediaKey,                      // 一覧サムネ兼 OGP 画像。常に必須
-  tech: z.array(z.string()).min(1),      // 'threejs' | 'glsl' | 'webgpu' | 'wgsl' | 'houdini' | 'blender' | 'unreal' | ...
+  poster: mediaKey,                      // グリッドのサムネ。常に必須
+  tags: z.array(z.string()).min(1),      // 技術と意図を混ぜた 1 本のタグ列。script がソースから推定して埋める
 
-  // --- 任意 ---
-  summary: z.string().max(140).optional(),   // 1〜3 行。X の投稿文とほぼ同じものを入れる
-  themes: z.array(z.string()).default([]),   // 感覚テーマ: 'density' | 'silence' | 'unstable' | 'erosion' | 'order-collapse' | ...
-  core: z.string().optional(),               // この作品で自分が直接書いたコア（1 行）
-  video: mediaKey.optional(),                // mp4。これがあると「動画で見せる」になる
-  videoWebm: mediaKey.optional(),
-  embedUrl: z.string().url().optional(),     // これがあると「live を実行できる」になる
-  repo: z.string().url().optional(),
-  x: z.string().url().optional(),            // 投稿 URL。後から script で埋める
-  note: z.string().optional(),               // 深掘りした Notes の slug
-  featured: z.boolean().default(false),      // トップに出す / Works 昇格候補
-  draft: z.boolean().default(false),
+  // --- 任意 3 項目 ---
+  description: z.string().optional(),    // 空のまま運用してよい。長さ制限は付けない
+  video: mediaKey.optional(),            // mp4。これがあると「動画で見せる」になる
+  embedUrl: z.string().url().optional(), // これがあると「別タブで実物を開ける」になる
 });
 ```
 
-### 表示は「あるものを出す」だけ。見せ方のフィールドは持たない
+### 持たないフィールドと、その代わり
 
-v0 の詳細ページはこれで足りる。分岐と呼ぶほどのものがないので、導出関数も enum も要らない。
+v0 で意図的に落としたもの。判断基準は「**後から足せるか**」で、すべて通る。
+
+| 持たないもの | 代わり |
+|---|---|
+| `medium`（媒体の種別） | **導出する。** クリック先は `embedUrl ?? video ?? poster` のフォールバックで決まる。分類が欲しければ `tags` から分かる（`houdini` なら映像、`threejs` なら runtime） |
+| `videoWebm` | **mp4 だけ。** H.264 は全ブラウザ・全モバイルで再生できる。webm は容量が少し減るだけで、エンコード時間・アップロード・R2 容量が 2 倍になる |
+| `repo` | **導出する。** `github.com/takumifukasawa/lab/tree/main/src/<slug>` は slug から決まる（`index.html` が無い sketch でもディレクトリはある） |
+| `x`（投稿 URL） | 持たない。投稿は `lab:add` の**後**なので script が埋められず、md を再編集する摩擦になる。自分のプロフィールを辿れば分かる |
+| `featured` | 持たない。10 件の時点では全部見えるので無意味。50 件を超えてから足す |
+| `note`（Notes への参照） | 持たない。Notes は P1.5。記事を書いた日に 1 行足す |
+| `draft` | 持たない。公開したくなければ md を作らない。隠したければ消して push（kill switch もそれで足りる） |
+| `no`（連番） | slug（`001-flow-field`）の先頭から導出する |
+| `core`（自分が書いた部分） | 毎回 1 文書く義務にすると続かない。ルールは `AGENTS.md`（AI との分担）に書く |
+
+### 表示は「あるものを出す」だけ
 
 ```
-poster を出す（必須）
-video があれば <video autoplay muted loop playsinline> に差し替える（コントロールは出さない）
-embedUrl があれば「別タブで開く」リンクを出す
-repo / x / note があればリンクを出す
+グリッド（/）  poster を正方形にトリミングして並べる（object-fit: cover）
+               カードに title / date / tags
+クリック先     embedUrl があれば lab.takumifukasawa.com/<slug>/
+               無ければ video の mp4（ブラウザのプレイヤー）
+               無ければ poster の画像
 ```
 
-**v0 ではサイト内に iframe を埋めない。** `embedUrl` は別タブで開くリンクにする（決定 0001）。
-これでクリックロード機構も、GPU を食う作品が一覧に影響する問題も、モバイルの出し分けも v0 から消える。
-将来サイト内で完結させるときは、URL が変わらないのでリンクを iframe に差し替えるだけで移行できる。
+全部「**別タブで原寸を開く**」という同じ挙動なので、JS が要らない（決定 0001）。
 
-### 「重さ」のカテゴリは持たない — `note` の有無で導出する
+### 「重さ」のカテゴリは持たない
 
 重い技術検証と軽いスケッチを分けるフィールド（`depth` のようなもの）は持たない。
+**解説記事（`notes`）を書いたかどうかが「重め」の実質的な指標**で、自己申告の `depth: heavy` より客観的。
+2 年後に「technical study を何件やったか」を数えるのも、`notes` 側の `relatedLab` を数えれば済む。
 
-> **`note` が紐付いているかどうかが「重め」の定義そのもの。**
-
-「解説を書くほどのものだったか」は自己申告の `depth: heavy` より客観的で、後から嘘にならない。
-2 年後に「technical study を何件やったか」を数えるのも、`note` を持つ sketch を数えるだけで済む。
-
-力を入れたものが埋もれる心配は**構造ではなく表示で解く**。`featured: true` でトップに上げ、
-代表作は `works` に出す。箱もカテゴリも増やさない（決定 0003）。
-
-### `medium` は見せ方ではなく媒体の種別
-
-| 値 | 範囲 |
-|---|---|
-| `runtime` | ブラウザで実行されるもの（Three.js / WebGPU / p5） |
-| `video` | 映像が本体のもの（Houdini / UE / Blender / 録画） |
-| `image` | 静止画（レンダリング / フォトグラメトリ / 生成画像） |
-
-**導出できないので frontmatter に持つ。** 例: WebGL で作ったが live は公開せず録画だけ出した sketch は、
-`embedUrl` が無いので項目の有無からは `video` に見えるが、実体は `runtime`。これは「作ったものの性質」で、
-「公開した形」からは分からない。
-
-さらに**後から遡って埋められない**。500 件溜まってから種別を入れたくなったら 500 ファイルを開くことになる。
-1 日 1 件書くときに 1 語書くのは 2 秒。`lab:add` script が推測して埋める（`--video` だけなら `video`、
-`lab` repo に `index.html` があれば `runtime`）ので、手で直すのは例外のときだけ。
-
-3 つで始めて、必要になったら足す（enum を広げるのは後方互換）。表示には使わず、分類と集計にだけ使う。
+力を入れたものが埋もれる心配は**構造ではなく表示で解く**（50 件を超えたら `featured` を足す、代表作は `works` に出す）。
+箱もカテゴリも増やさない（決定 0003）。
 
 ### 設計の意図（変えるときに読む）
-
-- **`tech` と `themes` を分ける。** `tech` は検索・集計の軸（2 年後に「WebGPU を何件やったか」を数える）。`themes` は視覚・感覚の軸で、技術とは直交する。混ぜると両方使えなくなる。
-- **`themes` は検査しない（永久に自由）。** `tech` と違い、新しい感覚を言葉にするたびに語彙ファイルを編集するのは、**一番摩擦が嫌な軸に摩擦を置く**ことになる。表記ゆれが集計を壊す度合いも `tech` より小さい。代わりに `lab:add` script が**既存の themes を候補として表示する**だけにして、ゲートを置かずに収束させる。
-- **`tech` は enum にしない。** enum にすると新しい技術を触るたびに schema 編集が必要になり、sketch の摩擦になる。代わりに表記ゆれを検査で潰す（`three.js` / `ThreeJS` → `threejs`）。許可語彙は `src/data/tech.ts` の 1 ファイルに置き、`harness check` が frontmatter と突き合わせる。**未知の語は検査が落ちる**ので、語彙を足す commit が意識的になる。
-- **`core` を持たせる理由。** 「毎作品、最低 1 つは自分で直接触る技術的コア」という制作ルールを frontmatter に残す。v0 では optional だが、`harness check` で**未記入率を警告として出す**（落とさない）。2 年後に「どこを自分で訓練したか」が集計可能になる。
+- **タグは 1 本（`tags`）にまとめる。** 技術（`threejs` / `glsl` / `webgpu`）と意図（`density` / `silence` / `erosion`）を分けない。2 本あると**書くたびに「これは技術か意図か」を考えることになり**、しかも境界が曖昧なものが必ず出る（`feedback` はどちらか）。1 本なら考えない。「`webgpu` が何件あるか」は 1 本でも数えられ、技術タグだけの一覧が欲しければ `src/data/tech.ts`（技術タグの正規名リスト）と交差を取れば導出できる。
+- **検査は「既知語の表記ゆれ」だけ。未知語は自由に通す。** `three.js` / `ThreeJS` → `threejs` のような alias に引っかかったら落とす。語彙そのものをゲートにすると、新しい語を書くたびに語彙ファイルを編集することになり、**一番摩擦が嫌な軸に摩擦を置く**ことになる。
+- **`core`（自分が直接書いた部分）は frontmatter に持たない。** 「毎 sketch 1 つは自分で触る」ルールを毎回 1 文書く義務の形にすると続かない。ルールは `AGENTS.md`（AI との分担）に書き、守れているかは自分の感覚で判断する。
+- **`description` は任意で、空のまま運用してよい。** 用意だけしておき、書きたい作品にだけ書く。長さ制限は付けない（カードでは CSS で行数を切り、`og:description` は先頭を使う）。
 - **`no`（連番）は frontmatter に持たない。** slug（`001-flow-field`）の先頭から導出する。二重管理にしない。並び順は `date` desc → slug desc。
-- **frontmatter に何を持つかは 2 段で判断する。** (1) 導出できるもの → **持たない**（後からいつでも計算できる。`no` は slug の先頭から、表示は項目の有無から）。(2) 導出できず、後から遡って埋めるのが高いもの → **最初から持つ**（`medium` がこれ。500 件溜まってからでは埋められない）。(3) 導出できず、今も後も要らないもの → 持たない。
+- **frontmatter に何を持つかは 2 段で判断する。** (1) 導出できるもの → **持たない**（後からいつでも計算できる。`no` は slug の先頭から、表示は項目の有無から）。(2) 導出できず、後から遡って埋めるのが高いもの → **最初から持つ**（`tags` と `description` がこれ。500 件溜まってからでは埋められない）。(3) 導出できず、今も後も要らないもの → 持たない。
   二重に持ったものは必ずいつかズレるので (1) は徹底する。一方 (2) を「先回りしない」と言って省くと、取り返しがつかなくなる。
 - **本文（Markdown 本体）は原則空。** sketch に本文を書き始めると 1 件あたりのコストが上がり、英語対応時の翻訳量も跳ねる。深掘りは Notes に書いて `note` で繋ぐ。
-- **「技術の性格」を軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは媒体でも見せ方でもなく中身の性格だった。これは `note` が紐付いているかで判定できる（= technical study）。軸は 3 つに分ける: `medium`（媒体）/ `tech`（技術）/ `themes`（感覚）。
+- **「技術の性格」を軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは媒体でも見せ方でもなく中身の性格だった。これは `note` が紐付いているかで判定できる（= technical study）。軸は `tags`（技術と意図）1 本だけ。
 
 ## works
 
@@ -119,7 +101,7 @@ const works = z.object({
   title: z.string(),
   year: z.number().int(),
   date: z.coerce.date(),                 // 公開日（並び順）
-  summary: z.string(),                   // 必須。一覧とOGPで使う
+  description: z.string(),               // works は必須。一覧と OGP で使う
   role: z.array(z.string()).default([]),  // 'concept' | 'programming' | 'graphics' | 'sound' | ...
   kind: z.enum(['interactive', 'video', 'installation', 'library']),
   poster: mediaKey,
@@ -127,7 +109,7 @@ const works = z.object({
   video: mediaKey.optional(),
   embedUrl: z.string().url().optional(),
   repo: z.string().url().optional(),
-  tech: z.array(z.string()).min(1),
+  tags: z.array(z.string()).min(1),
   credits: z.array(z.object({ role: z.string(), name: z.string(), url: z.string().url().optional() })).default([]),
   relatedLab: z.array(z.string()).default([]),  // lab の slug。「この作品はこの sketch から来た」を示す
   featured: z.boolean().default(false),
@@ -144,9 +126,8 @@ const notes = z.object({
   title: z.string(),
   date: z.coerce.date(),
   updated: z.coerce.date().optional(),
-  summary: z.string(),
+  description: z.string(),
   tags: z.array(z.string()).default([]),
-  tech: z.array(z.string()).default([]),
   relatedLab: z.array(z.string()).default([]),
   relatedWork: z.array(z.string()).default([]),
   poster: mediaKey.optional(),           // 無ければ既定の OGP 画像
@@ -176,8 +157,8 @@ Notes / Works の執筆のために入れるもの（いずれも設定数行）
 - [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` で再生され、無いものは `poster` 画像が出る
 - [ ] `embedUrl` がある sketch は別タブで開くリンクが出る（v0 では iframe を生成しない）
 - [ ] frontmatter の全 mediaKey が `media/manifest.json` に存在することを検査する（`harness check` の `media keys resolve`、ネットワークに触らない）
-- [ ] `tech` の全要素が `src/data/tech.ts` の語彙にあることを検査する（`harness check` の `tech vocabulary`）
-- [ ] `draft: true` は本番ビルドに出ない / `pnpm dev` では見える
+- [ ] `tags` に既知語の表記ゆれ（`three.js` / `ThreeJS` など）が無いことを検査する（`harness check` の `tag normalization`）。**未知語は通す**
+- [ ] `works` / `notes` の `draft: true` は本番ビルドに出ない / `pnpm dev` では見える（`lab` は `draft` を持たない）
 
 ## 範囲外（v0 でやらない）
 

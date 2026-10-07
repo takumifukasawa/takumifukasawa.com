@@ -62,3 +62,31 @@
 # プロジェクト固有のルール
 
 <!-- ここから下はプロジェクトが書く。目的、ディレクトリ構成、ビルド/テストコマンド、規約、やらないこと -->
+
+## このプロジェクトの目的
+
+個人サイトは**作品を束ねるハブ**であり、作り込むことが目的ではない。
+評価軸は「2 年で sketch 300〜500 / technical study 20〜30 / major work 4〜6 を積み上げる制作量を支えられるか」。
+サイトの完成度・技術的な面白さは下位に置く。迷ったら**薄い方**を選ぶ。
+
+詳細は `docs/README.md`（索引）→ `docs/decisions/0001-overall-architecture.md`。
+
+## AI との分担（最重要の規律）
+
+このプロジェクトでは AI にかなりコードを書かせる。ただし**訓練対象として自分に残す領域**を決めている。
+エージェントは以下を勝手に書き切らず、**方針と骨組みを示して止まる**こと。
+
+| 領域 | 分担 |
+|---|---|
+| **自分で直接書く**（エージェントは書き切らない） | shader の核、数式、GPU アルゴリズム、座標変換、rendering logic、visual behavior、procedural logic |
+| **共同**（提案して確認を取る） | Three.js の scene setup、WebGPU の pipeline setup、UE / Blender / Houdini 周辺の補助コード、tooling |
+| **任せる** | boilerplate、UI、debug、file handling、utility、build / publish 周辺 |
+
+**毎 sketch、最低 1 つは自分で直接触る技術的コアを持つ**。これは記録（frontmatter のフィールド）としては持たない
+（毎回 1 文書く義務にすると続かない）。守れているかは「自分が学べている感覚があるか」で判断する。
+
+## やらないこと
+
+- 設計を先回りして複雑にしない。**3 回同じコードを書くまで共通化しない**（`lab` repo の `core/AGENTS.md`）
+- frontmatter に導出できる情報を持たせない（`docs/spec/content-model.md` の 2 段の判断基準）
+- v0 の範囲を広げない（`docs/spec/site-v0.md` の「P1 で作らないもの」）

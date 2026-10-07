@@ -21,7 +21,7 @@
 |---|---|---|---|
 | ハブ（Works / sketch 索引 / Notes / About） | `takumifukasawa.com` repo（Astro, static） | Cloudflare Pages → `takumifukasawa.com` | サイトが落ちる |
 | 作品の実行環境（Three.js / WebGPU の interactive） | `lab` repo（Vite, multi-page） | Cloudflare Pages → `lab.takumifukasawa.com` | その作品の iframe だけ表示されない |
-| メディア（mp4 / webm / poster 画像） | Cloudflare R2 bucket | custom domain → `media.takumifukasawa.com` | 画像・動画が出ない |
+| メディア（mp4 / poster 画像） | Cloudflare R2 bucket | custom domain → `media.takumifukasawa.com` | 画像・動画が出ない |
 
 **サイトは作品の実行環境ではなく、作品を束ねるハブ**という方針（依頼文のまま）を、repo とデプロイ単位にそのまま落とす。
 この 3 分割が「作品側のビルド事故でサイトが落ちない」「サイトの改修で作品の URL が変わらない」を構造で保証する。

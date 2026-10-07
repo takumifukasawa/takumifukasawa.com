@@ -16,14 +16,14 @@ takumifukasawa.com  (このリポジトリ / Astro static / Cloudflare Pages)
   ├─ media/manifest.json               R2 に置いたメディアの索引（生成物だがコミットする）
   └─ 外部参照
        ├─ lab.takumifukasawa.com       lab repo の deploy。v0 では別タブで開く（将来 iframe）
-       └─ media.takumifukasawa.com      R2 bucket。poster / mp4 / webm
+       └─ media.takumifukasawa.com      R2 bucket。poster / mp4
 ```
 
 ### このリポジトリ内の層
 
 ```
 src/content/        frontmatter（データ）           … content.config.ts の schema が境界
-src/data/           語彙の定義（tech / themes）     … 依存なし
+src/data/           語彙の定義（技術タグの正規名と alias）  … 依存なし
 src/lib/            純粋ロジック（media 解決・collection クエリ）
 src/components/     表示
 src/layouts/        ページの外枠
@@ -46,7 +46,7 @@ scripts/            公開フローの CLI（Astro に依存しない）
 |---|---|---|
 | frontmatter は schema を満たす | `astro check` / `astro build`（`.harness/checks.sh`） | 未強制（実装前） |
 | frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（ネットワークに触らない） | 未強制（実装前） |
-| `tech` の語は `src/data/tech.ts` の語彙に含まれる | `.harness/checks.sh` の `tech vocabulary` | 未強制（実装前） |
+| `tags` に既知語の表記ゆれが無い（未知語は通す） | `.harness/checks.sh` の `tag normalization` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
 | v0 のサイトは iframe を 1 つも生成しない（`embedUrl` は別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
 | サイトのビルドは lab repo / R2 に到達できなくても成功する | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |

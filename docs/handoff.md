@@ -20,7 +20,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 | tier 1 の命名（`lab` / `sketch`） | 草案（合意待ち） | `decisions/0002-naming-lab-sketch.md` |
 | コードの置き場（昇格モデル） | 草案（合意待ち） | `decisions/0003-code-placement.md` |
 | content schema | 草案（合意待ち） | `spec/content-model.md` |
-| サイト v0 の範囲（P1 = 3 ページ） | 草案（合意待ち） | `spec/site-v0.md` |
+| サイト v0 の範囲（P1 = 2 ページ） | 草案（合意待ち） | `spec/site-v0.md` |
 | 公開フロー | 草案（合意待ち） | `spec/publish-pipeline.md` |
 | Cloudflare の制限・料金の調査 | 完了（2026-10-07 取得） | `references/cloudflare-limits.md` |
 | Astro プロジェクト | 未着手 | — |
@@ -38,7 +38,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
    - Cloudflare Pages で `lab.takumifukasawa.com` を自動 deploy
    - sketch を 5〜10 件積む（schema を実データで壊してから P1 に入る。架空の 1 件で設計を固めない）
 4. P1: このリポジトリに Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開。
-   - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tech vocabulary` を登録
+   - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` を登録
    - 500 件ダミーでビルド時間と Lighthouse を実測し `learnings.md` に残す
 
 ## 未確定事項（人間の判断待ち）
@@ -49,8 +49,15 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 
 ### 解決済（記録のため残す）
 
+- frontmatter をどこまで削れるか → **必須 4 + 任意 3 = 7 フィールド**。`medium` / `videoWebm` / `repo` / `x` / `featured` / `note` / `draft` を落とした（いずれも後から足せる。`spec/content-model.md` の「持たないフィールドと、その代わり」）
+- タグを 2 本に分けるか → 分けない。`tech` と `themes` を 1 本の `tags` に統合（`spec/content-model.md`）
+
+- sketch の詳細ページは必要か → **不要**。直リンクで足りる。サイトは `/` と `/about/` の 2 ページ（`spec/site-v0.md`）
+- sketch ごとの OGP → lab 側の `index.html` に置く。R2 key が予測可能なので `pnpm new` が録画前から `og:image` を書ける（`spec/publish-pipeline.md`）
+- `core` は必要か → **不要**。毎回 1 文書く義務にすると続かない。ルールは `AGENTS.md`（AI との分担）に書いた
+- `description` → 任意で用意だけする。空のまま運用してよい。長さ制限なし（`spec/content-model.md`）
+
 - `lab` が 4 つのものを指して紛らわしい → 名前は変えず `glossary.md` で呼び分けを定義（lab リポジトリ / lab サイト / lab コレクション / `/lab/`）
-- `themes` の語彙を固定するか → **固定しない（永久に自由）**。検査を置かず、`lab:add` が既存の語を候補表示するだけ（`spec/content-model.md`）
 - 録画の既定フォーマット → 1920×1080 / 60fps / 8〜12 秒ループ / 音なし / H.264（`spec/publish-pipeline.md`）
 
 - OGP は Cloudflare で出るか → 出る。OGP は HTML の meta タグなのでホスト無関係。`astro.config` の `site` 設定と `poster` を `og:image` に使うだけ（`spec/site-v0.md`）
@@ -61,10 +68,10 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - `daily` という命名 → 頻度を構造に埋めないため廃止。`lab` / `sketch` に（決定 0002）
 - 重いものと軽いものの住み分け → 置き場は昇格モデル（決定 0003）、見せ方は `lab` / `notes` / `works`（決定 0002）
 - バズった時のコスト → 構造的に $0。実際に効くのは R2 Class B のみで 1 件に月 41 万 PV 相当まで無料枠内（`references/cloudflare-limits.md`）
-- GIF を使うか → 使わない。mp4 + webm で `autoplay muted loop playsinline`（決定 0003）
+- GIF を使うか → 使わない。mp4 のみで `autoplay muted loop playsinline`（webm も作らない。決定 0003）
 - R2 を使わない選択肢 → 使わない方が先に課金される（Git LFS の帯域）か品質が落ちる（`references/cloudflare-limits.md`）
 - モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たず、動かないものは `embedUrl` を付けず `video` だけ入れる（`spec/content-model.md`）
-- 種別フラグは必要か → **必要**。`medium: runtime | video | image` を必須で持つ。導出できず、後から 500 件を遡って埋められないため。見せ方の分岐用フィールドは持たない（`spec/content-model.md`）
+- 種別フラグ（`medium`）は必要か → **不要**。クリック先は `embedUrl ?? video ?? poster` で決まり、分類は `tags` から復元できる（`spec/content-model.md`）
 - live 作品の見せ方 → v0 は別タブで開くリンク。サイト内 embed は P2（URL が変わらないので移行はリンクの差し替えだけ。決定 0001）
 - GitHub Pages にするか → しない。帯域 100 GB/月のソフト上限でバズ時に止まる側に倒れる／R2 を使う時点で Cloudflare DNS が前提になる（決定 0001 落選案 E）
 

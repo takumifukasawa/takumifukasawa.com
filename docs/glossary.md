@@ -10,11 +10,12 @@
 |---|---|---|
 | `lab.takumifukasawa.com/<NNN-slug>/` | **ある** | **作品が実際に動く**（lab repo のデプロイ） |
 | `takumifukasawa.com/` | **ある** | 全 sketch のグリッド。クリックで上へ飛ぶ |
-| `takumifukasawa.com/lab/<NNN-slug>/` | **ない** | 詳細ページ。P2 で足すかもしれない（足しても既存 URL は壊れない） |
+| `takumifukasawa.com/lab/<NNN-slug>/` | **ある（301）** | `lab.takumifukasawa.com/<NNN-slug>/` へリダイレクト。口頭で言える URL を確保するため（決定 0001）。サイト側の詳細ページを作る予定は無い |
 
-サブドメインが分かれるのは、**repo とデプロイが分かれている物理的な帰結**。
-2 つの Cloudflare Pages project を 1 ドメイン配下にパスで混ぜるには Workers のルーティングが必要になり、
-決定 0001 の核心（作品側のビルド事故でサイトが落ちない）と引き換えに複雑さを買うことになる。
+サブドメインが正規なのは、1 ドメインに寄せる 2 つの方法がどちらも割に合わないため（決定 0001）。
+Workers プロキシは無料枠 10 万リクエスト/日を 1 件のバズで 2.4 時間で尽くしてサイトが落ちる。
+1 repo 統合は 500 件分のビルド成果物を repo にコミットすることになる。
+代わりに `_redirects` 1 行で `takumifukasawa.com/lab/*` も使える URL にしてある。
 
 ## sketch 1 件は 2 つの場所に分かれている
 
@@ -35,7 +36,7 @@
 | **lab サイト** / `lab.takumifukasawa.com` | 上をデプロイしたもの。作品が動く場所 |
 | **lab コレクション** / `src/content/lab/` | この個人サイト側の metadata（md 群）。Astro の content collection |
 
-（`/lab/` という URL は v0 では存在しない。P2 で詳細ページを足したら 4 つ目になる）
+（`takumifukasawa.com/lab/*` は 301 リダイレクトとしてだけ存在する。ページは無い）
 
 ## その他
 

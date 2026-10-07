@@ -47,6 +47,7 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 
 ### P1 に入れる機能（ページ以外）
 
+- **`_redirects` に 1 行**: `/lab/* https://lab.takumifukasawa.com/:splat 301`。`takumifukasawa.com/lab/<slug>/` も使える URL にする（決定 0001）
 - sitemap.xml
 - **Cloudflare Web Analytics**（script 1 行、無料、Cookie なし）。バズった時に数字が見られない状態を作らない
 - OGP（`astro.config` の `site` 設定 + `poster` を `og:image` に使う）
@@ -74,7 +75,8 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 - [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れず、詳細ページではネイティブ比率で出る
 - [ ] JS を無効にしても sketch 索引と詳細（poster・テキスト・リンク）が読める
 - [ ] sitemap.xml が生成される
-- [ ] md を消して push するとそのカードがサイトから消える（kill switch。1 分以内に反映）
+- [ ] `takumifukasawa.com/lab/001-flow-field/` が `lab.takumifukasawa.com/001-flow-field/` に 301 される
+- [ ] `draft: true` にして push するとそのカードがサイトから消える（kill switch。1 分以内に反映）
 
 ### 500 件のダミー検証について
 

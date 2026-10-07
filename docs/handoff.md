@@ -49,7 +49,9 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 
 ### 解決済（記録のため残す）
 
-- frontmatter をどこまで削れるか → **必須 4 + 任意 3 = 7 フィールド**。`medium` / `videoWebm` / `repo` / `x` / `featured` / `note` / `draft` を落とした（いずれも後から足せる。`spec/content-model.md` の「持たないフィールドと、その代わり」）
+- 作品の URL は `lab.` サブドメインか `takumifukasawa.com/lab` か → **サブドメインが正規**。`_redirects` 1 行で `takumifukasawa.com/lab/*` → 301 も張り、両方使える URL にする。1 repo 統合は「作品ごとに Vite でビルドする自由」を捨てることになるので採らない。Worker プロキシは無料枠 10 万 req/日をバズで 2.4 時間で尽くす。また 2 repo → 1 repo は URL を保って移行できるが逆は保てない（決定 0001）
+- frontmatter 最終形 → 必須 5（`date` / `title` / `medium` / `poster` / `tags`）+ 任意 5（`description` / `video` / `embedUrl` / `repo` / `draft`）。`x` / `note` / `featured` / `videoWebm` / `core` / `no` は持たない。`note` は notes 側の `relatedLab` に一本化（`spec/content-model.md`）
+
 - タグを 2 本に分けるか → 分けない。`tech` と `themes` を 1 本の `tags` に統合（`spec/content-model.md`）
 
 - sketch の詳細ページは必要か → **不要**。直リンクで足りる。サイトは `/` と `/about/` の 2 ページ（`spec/site-v0.md`）
@@ -71,7 +73,6 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - GIF を使うか → 使わない。mp4 のみで `autoplay muted loop playsinline`（webm も作らない。決定 0003）
 - R2 を使わない選択肢 → 使わない方が先に課金される（Git LFS の帯域）か品質が落ちる（`references/cloudflare-limits.md`）
 - モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たず、動かないものは `embedUrl` を付けず `video` だけ入れる（`spec/content-model.md`）
-- 種別フラグ（`medium`）は必要か → **不要**。クリック先は `embedUrl ?? video ?? poster` で決まり、分類は `tags` から復元できる（`spec/content-model.md`）
 - live 作品の見せ方 → v0 は別タブで開くリンク。サイト内 embed は P2（URL が変わらないので移行はリンクの差し替えだけ。決定 0001）
 - GitHub Pages にするか → しない。帯域 100 GB/月のソフト上限でバズ時に止まる側に倒れる／R2 を使う時点で Cloudflare DNS が前提になる（決定 0001 落選案 E）
 

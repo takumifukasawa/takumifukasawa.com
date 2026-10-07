@@ -9,7 +9,7 @@ sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src
 ## 目的
 
 - 実行できる作品・映像・静止画を 1 つの collection に共存させる。種類ごとに collection を分けず、見せ方のフィールドも持たない（「あるものを出す」だけ）。
-- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 4 項目（`date` / `title` / `poster` / `tags`）で、**人間が書くのは `title` だけ**。残りは script が埋める。
+- sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 5 項目（`date` / `title` / `medium` / `poster` / `tags`）で、**人間が書くのは `title` だけ**。残りは script が埋める。
 - 制作方針（毎作品 1 つは自分で直接触るコアを持つ）を schema 上に残し、後から振り返れるようにする。
 
 ## 共通: メディア参照
@@ -28,18 +28,24 @@ const mediaKey = z.string().regex(/^[a-z0-9][a-z0-9/_.-]*$/);
 
 ```ts
 const lab = z.object({
-  // --- 必須 4 項目。うち人間が書くのは title だけ。残りは script が埋める ---
+  // --- 必須 5 項目。人間が書くのは title だけ（残りは script が初期値を入れる） ---
   date: z.coerce.date(),                 // 制作日。並び順の第一キー
   title: z.string(),
+  medium: z.enum(['runtime', 'video', 'image']), // 媒体の種別。明示的に持つ
   poster: mediaKey,                      // グリッドのサムネ。常に必須
-  tags: z.array(z.string()).min(1),      // 技術と意図を混ぜた 1 本のタグ列。script がソースから推定して埋める
+  tags: z.array(z.string()).min(1),      // 技術と意図を混ぜた 1 本のタグ列
 
-  // --- 任意 3 項目 ---
+  // --- 任意 5 項目 ---
   description: z.string().optional(),    // 空のまま運用してよい。長さ制限は付けない
-  video: mediaKey.optional(),            // mp4。これがあると「動画で見せる」になる
-  embedUrl: z.string().url().optional(), // これがあると「別タブで実物を開ける」になる
+  video: mediaKey.optional(),            // mp4
+  embedUrl: z.string().url().optional(), // 別タブで開く実物の URL
+  repo: z.string().url().optional(),     // 導出しない。lab repo 外のものや repo が無いものがある
+  draft: z.boolean().default(false),     // 何らかの理由で落としたい時のため。notes / works と同じ扱い
 });
 ```
+
+`medium` は script が初期値を入れる（`--video` だけなら `video`、`lab` repo に `index.html` があれば `runtime`）。
+**導出に頼らず明示フィールドとして持つ**ので、推測が違う場合（WebGL で作ったが live は公開せず録画だけ出した等）に直せる。
 
 ### 持たないフィールドと、その代わり
 
@@ -47,13 +53,10 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
 
 | 持たないもの | 代わり |
 |---|---|
-| `medium`（媒体の種別） | **導出する。** クリック先は `embedUrl ?? video ?? poster` のフォールバックで決まる。分類が欲しければ `tags` から分かる（`houdini` なら映像、`threejs` なら runtime） |
-| `videoWebm` | **mp4 だけ。** H.264 は全ブラウザ・全モバイルで再生できる。webm は容量が少し減るだけで、エンコード時間・アップロード・R2 容量が 2 倍になる |
-| `repo` | **導出する。** `github.com/takumifukasawa/lab/tree/main/src/<slug>` は slug から決まる（`index.html` が無い sketch でもディレクトリはある） |
-| `x`（投稿 URL） | 持たない。投稿は `lab:add` の**後**なので script が埋められず、md を再編集する摩擦になる。自分のプロフィールを辿れば分かる |
+| `videoWebm` | **mp4 だけ。** H.264 は全ブラウザ・全モバイルで再生でき、webm を併せ持つとエンコード時間・アップロード・R2 容量が 2 倍になる。長尺の動画作品は YouTube 等に置く可能性があるので、その時に考える |
+| `x`（投稿 URL） | 持たない。投稿は `lab:add` の**後**なので script が埋められず、md を再編集する摩擦になる |
+| `note`（Notes への参照） | **`notes` 側の `relatedLab` に一本化する。** 両方向にリンクを持つと必ず片方が腐る。「この sketch に記事があるか」はサイト側で notes を走査すれば分かる |
 | `featured` | 持たない。10 件の時点では全部見えるので無意味。50 件を超えてから足す |
-| `note`（Notes への参照） | 持たない。Notes は P1.5。記事を書いた日に 1 行足す |
-| `draft` | 持たない。公開したくなければ md を作らない。隠したければ消して push（kill switch もそれで足りる） |
 | `no`（連番） | slug（`001-flow-field`）の先頭から導出する |
 | `core`（自分が書いた部分） | 毎回 1 文書く義務にすると続かない。ルールは `AGENTS.md`（AI との分担）に書く |
 
@@ -84,10 +87,10 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
 - **`core`（自分が直接書いた部分）は frontmatter に持たない。** 「毎 sketch 1 つは自分で触る」ルールを毎回 1 文書く義務の形にすると続かない。ルールは `AGENTS.md`（AI との分担）に書き、守れているかは自分の感覚で判断する。
 - **`description` は任意で、空のまま運用してよい。** 用意だけしておき、書きたい作品にだけ書く。長さ制限は付けない（カードでは CSS で行数を切り、`og:description` は先頭を使う）。
 - **`no`（連番）は frontmatter に持たない。** slug（`001-flow-field`）の先頭から導出する。二重管理にしない。並び順は `date` desc → slug desc。
-- **frontmatter に何を持つかは 2 段で判断する。** (1) 導出できるもの → **持たない**（後からいつでも計算できる。`no` は slug の先頭から、表示は項目の有無から）。(2) 導出できず、後から遡って埋めるのが高いもの → **最初から持つ**（`tags` と `description` がこれ。500 件溜まってからでは埋められない）。(3) 導出できず、今も後も要らないもの → 持たない。
+- **frontmatter に何を持つかは 2 段で判断する。** (1) 導出できるもの → **持たない**（後からいつでも計算できる。`no` は slug の先頭から、表示は項目の有無から）。(2) 導出できず、後から遡って埋めるのが高いもの → **最初から持つ**（`medium` / `tags` / `description` がこれ。500 件溜まってからでは埋められない）。(3) 導出できず、今も後も要らないもの → 持たない。
   二重に持ったものは必ずいつかズレるので (1) は徹底する。一方 (2) を「先回りしない」と言って省くと、取り返しがつかなくなる。
 - **本文（Markdown 本体）は原則空。** sketch に本文を書き始めると 1 件あたりのコストが上がり、英語対応時の翻訳量も跳ねる。深掘りは Notes に書いて `note` で繋ぐ。
-- **「技術の性格」を軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは媒体でも見せ方でもなく中身の性格だった。これは `note` が紐付いているかで判定できる（= technical study）。軸は `tags`（技術と意図）1 本だけ。
+- **「技術の性格」を軸に混ぜない。** 当初 `kind` に `technical`（実装解説が主役）を入れていたが、これは媒体でも見せ方でもなく中身の性格だった。これは `note` が紐付いているかで判定できる（= technical study）。軸は `medium`（媒体）と `tags`（技術と意図）の 2 つ。
 
 ## works
 
@@ -128,7 +131,7 @@ const notes = z.object({
   updated: z.coerce.date().optional(),
   description: z.string(),
   tags: z.array(z.string()).default([]),
-  relatedLab: z.array(z.string()).default([]),
+  relatedLab: z.array(z.string()).default([]),   // この記事が扱う sketch の slug。lab→notes の逆リンクは持たない（片方が腐るため）
   relatedWork: z.array(z.string()).default([]),
   poster: mediaKey.optional(),           // 無ければ既定の OGP 画像
   draft: z.boolean().default(false),
@@ -158,7 +161,7 @@ Notes / Works の執筆のために入れるもの（いずれも設定数行）
 - [ ] `embedUrl` がある sketch は別タブで開くリンクが出る（v0 では iframe を生成しない）
 - [ ] frontmatter の全 mediaKey が `media/manifest.json` に存在することを検査する（`harness check` の `media keys resolve`、ネットワークに触らない）
 - [ ] `tags` に既知語の表記ゆれ（`three.js` / `ThreeJS` など）が無いことを検査する（`harness check` の `tag normalization`）。**未知語は通す**
-- [ ] `works` / `notes` の `draft: true` は本番ビルドに出ない / `pnpm dev` では見える（`lab` は `draft` を持たない）
+- [ ] `draft: true` は本番ビルドに出ない / `pnpm dev` では見える（`lab` / `works` / `notes` すべて）
 
 ## 範囲外（v0 でやらない）
 

@@ -30,6 +30,8 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 git add -A && git commit && git push      # → takumifukasawa.com に自動 deploy
 ```
 
+`pnpm lab:add` は lab repo とサイト repo の両方を commit + push できる（`--no-push` で止められる）。**手数は 1 コマンド。**
+
 X への投稿は手でやる（動画は X に直接アップロードする。サイトの OGP 画像ではなく動画そのものが伸びるため）。
 `pnpm lab:add` は最後に**投稿用テキストの雛形**（title / 1 行 / 作品 URL / ハッシュタグ候補）を標準出力に出す。
 
@@ -40,7 +42,7 @@ X への投稿は手でやる（動画は X に直接アップロードする。
 | 雛形生成 | `pnpm new <slug> "<title>"`。lab 側の雛形は「canvas と requestAnimationFrame が動く最小」+ **OGP 入りの `index.html`**（下記）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<YYYY>/<NNN-slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため） |
-| frontmatter | **人間が書くのは `title` だけ。** 必須 4 項目のうち 3 つは script が埋める: `date`（今日）/ `poster`（動画の 1 フレーム）/ `tags`（lab repo のソースから推定: 依存、`.glsl` / `.wgsl` の有無、import 文）。`video` と `embedUrl`（`index.html` があれば）も script が埋める。`description` は任意で空のままでよい |
+| frontmatter | **人間が書くのは `title` だけ。** 必須 5 項目のうち 4 つは script が埋める: `date`（今日）/ `medium`（`--video` だけなら `video`、`index.html` があれば `runtime`）/ `poster`（動画の 1 フレーム）/ `tags`（lab repo のソースから推定: 依存、`.glsl` / `.wgsl` の有無、import 文）。`video` / `embedUrl` / `repo` も埋める。`medium` は明示フィールドなので推測が違えば直す。`description` は任意で空のままでよい |
 | 失敗したとき | script は冪等。同じ `slug` で再実行したら、既存 key は put をスキップし manifest と md を更新する |
 
 ## lab 側のページで OGP を出す
@@ -99,7 +101,7 @@ lab repo の `core/` は**最初は空**にする。「作品 → 共通化 → 
 - [ ] 同じ引数で 2 回実行しても壊れない（既存 key を上書きしない / md を重複生成しない）
 - [ ] `--dry-run` で R2 に触らず生成内容を出せる
 - [ ] 生成された md がそのまま `astro check` を通る（手で直さなくてもビルドが通る状態で出る）
-- [ ] **人間が書く必須項目は `title` だけ**。`date` / `poster` / `tags` は script が埋める
+- [ ] **人間が書く必須項目は `title` だけ**。`date` / `medium` / `poster` / `tags` は script が埋める（`medium` の推測が違えば直せる）
 - [ ] `pnpm new <slug> "<title>"` が OGP 入りの `index.html` を生成し、`og:image` が録画前から正しい R2 URL を指す
 - [ ] `--video` を省略し `--poster <path>` だけでも通る（静止画の sketch / Houdini のレンダリング用）
 - [ ] lab repo のビルドが壊れていても、サイトのビルドと deploy は成功する

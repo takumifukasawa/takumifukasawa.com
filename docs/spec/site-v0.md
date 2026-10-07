@@ -28,8 +28,8 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 
 | URL | 内容 |
 |---|---|
-| `/` | **全 sketch の索引を兼ねる**。年別セクションで区切り（`/#2026`）、`featured` を上に出す。サムネは poster のみ。1 段落の自己紹介 |
-| `/lab/<slug>/` | 1 件の詳細。poster（必須）、`video` があれば動画、`embedUrl` があれば別タブで開くリンク（`content-model.md`） |
+| `/` | **全 sketch の索引を兼ねる**。年別セクションで区切り（`/#2026`）、`featured` を上に出す。サムネは poster のみ。1 段落の自己紹介。**セルは正方形固定 + `object-fit: cover`**（縦横混在でも崩れない。masonry は使わない） |
+| `/lab/<slug>/` | 1 件の詳細。poster（必須）、`video` があれば動画、`embedUrl` があれば別タブで開くリンク。**ここはネイティブ比率**で出す（manifest の width / height を使う） |
 | `/about/` | 自己紹介・やっていること・Links / Contact・PaleGL へのリンク |
 | `/404` | |
 
@@ -58,7 +58,8 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 - [ ] `/lab/<slug>/` は **iframe を 1 つも生成しない**（`embedUrl` は別タブで開くリンク。決定 0001）
 - [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` でループ再生され、コントロールは出ない
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
-- [ ] 全ページで `<img>` に `width` / `height` が入り、CLS が 0.1 未満
+- [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
+- [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れず、詳細ページではネイティブ比率で出る
 - [ ] JS を無効にしても sketch 索引と詳細（poster・テキスト・リンク）が読める
 - [ ] sitemap.xml が生成される
 - [ ] `draft: true` にして push すると、そのページがサイトから消える（kill switch。1 分以内に反映）
@@ -76,6 +77,7 @@ Lighthouse までは測らない — iframe を外し画像を R2 に出した�
 - Works 一覧 / 詳細ページ、Major Work の専用ページ
 - tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/lab/` の年別で足りる）
 - 動的 OGP 画像生成（`poster` をそのまま `og:image` に使う）
+- masonry レイアウト（高さがばらつくタイル）。正方形グリッドで足りるうえ、500 件での挙動が読めない
 - ダークモード以外のテーマ切り替え、凝った transition、カスタムカーソル等の演出
 - i18n（下記の「準備だけする」を参照）
 - CMS・管理画面（frontmatter を手で書く + scaffold script で足りる）

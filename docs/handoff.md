@@ -45,11 +45,13 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 
 - 草案 6 本（上記 NEXT 1）
 - `lab` か `labs` か → **`lab`（単数）を推奨**。決定 0002 の「なぜ `lab`（単数）か」を参照
-- `themes` の語彙を固定するか（`spec/content-model.md`。v0 は自由の方針）
-- 録画の既定フォーマット（長さ・解像度・fps。`spec/publish-pipeline.md`）
 - フォント・配色・レイアウトの方向性（P1 着手時）
 
 ### 解決済（記録のため残す）
+
+- `lab` が 4 つのものを指して紛らわしい → 名前は変えず `glossary.md` で呼び分けを定義（lab リポジトリ / lab サイト / lab コレクション / `/lab/`）
+- `themes` の語彙を固定するか → **固定しない（永久に自由）**。検査を置かず、`lab:add` が既存の語を候補表示するだけ（`spec/content-model.md`）
+- 録画の既定フォーマット → 1920×1080 / 60fps / 8〜12 秒ループ / 音なし / H.264（`spec/publish-pipeline.md`）
 
 - OGP は Cloudflare で出るか → 出る。OGP は HTML の meta タグなのでホスト無関係。`astro.config` の `site` 設定と `poster` を `og:image` に使うだけ（`spec/site-v0.md`）
 - 重め / 軽めの住み分け → 一緒くた。`experiments` という箱は作らず、`lab` repo + `lab` collection に全部入れる。「重さ」のカテゴリも持たず `note` の有無で導出（決定 0003 の一覧表）

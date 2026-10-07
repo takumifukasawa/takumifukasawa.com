@@ -49,7 +49,7 @@ CNAME を `r2.dev` に向けるのは非サポート。**必ず custom domain �
 
 | 項目 | 見積り | 無料枠に対して |
 |---|---|---|
-| R2 ストレージ | 500 ×（poster 150KB + mp4 3MB + webm 2MB）≈ **2.6 GB** | 10 GB の 26%。2 年通して無料枠内 |
+| R2 ストレージ | 500 ×（poster 150KB + mp4 5MB + webm 3MB）≈ **4 GB**（1080p60 / 10 秒の既定。`../spec/publish-pipeline.md`） | 10 GB の 40%。2 年通して無料枠内 |
 | R2 Class A | 2 年で put 1,500 回 | 無視できる |
 | R2 Class B | `/lab/` 1 表示で poster 24 枚 → **月 41 万 PV 相当**まで無料枠内 | 十分 |
 | Pages ファイル数 | HTML 600 + JS/CSS で数千 | 20,000 の天井に対して余裕 |
@@ -88,8 +88,8 @@ R2 は追加コストではなく、**repo を軽く保つための無料の置�
 | 案 | 配信コスト | 詰まる場所 |
 |---|---|---|
 | **R2（採用）** | -e（egress 無料） | 無料枠内。実際に効くのは Class B のみで、1 件に月 41 万 PV 相当まで持つ |
-| メディアをサイト repo に入れて Pages で配る | -e | repo が 2.6 GB（clone・ビルドが毎回運ぶ）／git 履歴は消せない／Pages の 1 ファイル 25 MiB 上限で 1〜2 分の動画が入らない／20,000 ファイル上限を 3 倍速く消費 |
-| 同上 + Git LFS | -e | **GitHub Free の LFS 無料枠はストレージ 10 GiB / 帯域 10 GiB/月**（`https://docs.github.com/en/billing/concepts/product-billing/git-lfs`、2026-10-07 取得）。Pages はビルドごとに repo を clone するので帯域が先に尽きる（2.6 GB × 月 120 ビルド = 312 GiB） |
+| メディアをサイト repo に入れて Pages で配る | -e | repo が 4 GB（clone・ビルドが毎回運ぶ）／git 履歴は消せない／Pages の 1 ファイル 25 MiB 上限で 1〜2 分の動画が入らない／20,000 ファイル上限を 3 倍速く消費 |
+| 同上 + Git LFS | -e | **GitHub Free の LFS 無料枠はストレージ 10 GiB / 帯域 10 GiB/月**（`https://docs.github.com/en/billing/concepts/product-billing/git-lfs`、2026-10-07 取得）。Pages はビルドごとに repo を clone するので帯域が先に尽きる（4 GB × 月 120 ビルド = 480 GiB） |
 | YouTube / Vimeo | -e | 埋め込みが重い／UI が自分のものにならない／関連動画に他人の作品が並ぶ／ループが汚い。ポートフォリオとしてのコントロールを失う |
 | Cloudflare Stream | 有料（保存 + 配信） | 8 秒のループには過剰 |
 

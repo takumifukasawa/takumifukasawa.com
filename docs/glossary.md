@@ -18,7 +18,7 @@
 | | パス | 中身 | コミットするか |
 |---|---|---|---|
 | ソース | `lab/<NNN-slug>/` | `index.html`（OGP 入り）/ `main.ts` / シェーダー。Vite / npm / TS / GLSL を自由に使う | する |
-| ビルド成果物 | `public/lab/<NNN-slug>/` | 手元で `pnpm build` した出力 | **する**（これが配信される） |
+| ビルド成果物 | `public/lab/<NNN-slug>/` | 手元で `pnpm lab:build` した出力（Vite の `outDir` が直接ここへ） | **する**（これが配信される） |
 | カード | `src/content/lab/<NNN-slug>.md` | frontmatter（`date` / `title` / `medium` / `poster` / `tags` …） | する |
 
 **成果物をコミットするのが設計の核**。Cloudflare Pages のビルドは Astro だけを走らせ、

@@ -38,7 +38,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
    - Cloudflare Pages で `takumifukasawa.com` を自動 deploy
    - sketch を 5〜10 件積む（schema を実データで壊してから P1 に入る。架空の 1 件で設計を固めない）
 4. P1: このリポジトリに Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開。
-   - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` を登録
+   - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` / `lab build in sync` / `no large files` を登録
    - 500 件ダミーでビルド時間と初期転送量を実測し `learnings.md` に残す
    - P0 の時点で **repo サイズ（`public/lab/` の成果物）も実測**し、決定 0001 の見込み ~20 MB と照合する
 

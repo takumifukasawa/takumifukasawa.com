@@ -64,7 +64,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 
 ## 受け入れ条件
 
-- [ ] `harness check` が pass（`astro check`、`astro build`、`media keys resolve`、`tag normalization`）
+- [ ] `harness check` が pass（`astro check`、`astro build`、`media keys resolve`、`tag normalization`、`lab build in sync`、`no large files`）
       ※ `src/data/tech.ts`（技術タグの正規名と alias）は**空から作らず、P0 で積んだ sketch 5〜10 件で実際に使った語**を初期値にする
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/` の初期転送 1.5 MB 以内

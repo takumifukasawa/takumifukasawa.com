@@ -33,13 +33,81 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 **人間が書くのは `pnpm new` のタイトル 1 つだけ。** frontmatter を手で触る必要はない。
 `pnpm lab:add` は投稿用テキストの雛形（title / 1 行 / 作品 URL / ハッシュタグ候補）を標準出力に出す。
 
+## 何をコミットし、何をコミットしないか
+
+判断軸は 2 つ。**配信されるもの**と**再生成できないもの**をコミットする。**中間生成物**と**巨大バイナリ**は入れない。
+
+| | コミット | 理由 |
+|---|---|---|
+| `lab/<NNN-slug>/`（ソース） | **する** | 再生成できない。`repo` フィールドの誘導先になり、**低レイヤーの技術力を示す資産として読まれる**。テキストなので数十 KB |
+| `public/lab/<NNN-slug>/`（成果物） | **する** | **配信される**。再生成できるが、これが設計の核（決定 0001） |
+| `src/content/lab/*.md`（カード） | する | 再生成できない |
+| `media/manifest.json` | する | 生成物だが、key の実在をオフラインで検査するのに必要 |
+| `node_modules/` `.astro/` `dist/` | しない | 再生成できる |
+| mp4 / 録画の元ファイル | しない | R2 に行く |
+| `.hip` / `.blend` / `.uasset` / `.exr` など | しない | 巨大バイナリ、差分が取れない（決定 0003） |
+
+`public/lab/` の成果物だけが「再生成できるのにコミットする」例外で、これは意図的。
+
+```gitignore
+node_modules/
+.astro/
+dist/              # サイトのビルド出力
+lab/*/.vite/
+captures/          # 録画の元ファイル置き場
+
+# DCC のプロジェクトファイル（決定 0003）
+*.hip *.hiplc *.hipnc *.blend *.blend1
+*.uproject *.uasset *.umap *.fbx *.abc *.exr *.psd
+```
+
+**拡張子リストは必ず漏れるので、サイズで止める検査を併せて入れる。**
+`harness check` の `no large files`: git の index に 2 MB 超のファイルがあったら落とす（例外は許可リストに 1 行書く）。
+閾値 2 MB は、Three.js の vendor チャンク（~700 KB）が通り、テクスチャやモデルが引っかかる位置。
+
+作品で大きいテクスチャやモデルを使う場合は、**それも R2 に置いて作品から絶対 URL で読む**
+（`media.takumifukasawa.com/lab/<YYYY>/<NNN-slug>/model.glb`）。repo が軽く保たれ、immutable キャッシュにも乗る。
+
+## Vite の設定は `pnpm new` が書く
+
+作品ごとの `vite.config.ts` に次の 2 つを入れる。どちらも slug から機械的に決まるので人間は触らない。
+
+```ts
+// lab/001-flow-field/vite.config.ts
+export default {
+  base: '/lab/001-flow-field/',               // 配信される URL のサブパス
+  build: {
+    outDir: '../../public/lab/001-flow-field', // 中間の dist/ を作らず直接ここへ
+    emptyOutDir: true,
+  },
+};
+```
+
+- **`base`** を設定しないとアセットのパスが `/assets/...` になって 404 する。
+  1 ドメインに寄せた（作品がサブパスで配信される）ことで必要になった設定（決定 0001）。
+- **`outDir`** を `public/lab/<NNN-slug>/` に直接向けるので、中間ディレクトリもコピー手順も生まれない。
+
+## ソースと成果物の乖離を検知する
+
+この設計で新しく生まれる唯一の摩擦が、**ソースを直したのに再ビルドし忘れること**。
+放置すると公開されているものと手元が静かに食い違う。
+
+`pnpm lab:build <slug>` が `public/lab/<NNN-slug>/.build-meta.json` に次を書く。
+
+```json
+{ "sourceHash": "<lab/<NNN-slug>/ の全ファイルの内容ハッシュ>", "builtAt": "2026-10-20T12:34:56Z" }
+```
+
+`harness check` の `lab build in sync` が現在のソースからハッシュを再計算して比べ、違えば落とす
+（ネットワークに触らず、オフラインで決定的に判定できる）。
+
 ## 各ステップの約束
 
 | ステップ | 約束 |
 |---|---|
 | 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」+ **OGP 入りの `index.html`**（下記）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<YYYY>/<NNN-slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
-| ビルド成果物 | `public/lab/<NNN-slug>/` にコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
+| ビルド成果物 | Vite の `outDir` が直接 `public/lab/<NNN-slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため） |
 | frontmatter | **人間が書くのは `title` だけ。** 必須 5 項目のうち 4 つは script が埋める: `date`（今日）/ `medium`（`--video` だけなら `video`、`index.html` があれば `runtime`）/ `poster`（動画の 1 フレーム）/ `tags`（作品のソースから推定: 依存、`.glsl` / `.wgsl` の有無、import 文）。`video` / `embedUrl` / `repo` も埋める。`medium` は明示フィールドなので推測が違えば直す。`description` は任意で空のままでよい |
 | 失敗したとき | script は冪等。同じ `slug` で再実行したら、既存 key は put をスキップし manifest と md を更新する |

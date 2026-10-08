@@ -15,7 +15,7 @@ takumifukasawa.com  (1 repo / Astro static / Cloudflare Pages)
   ├─ src/                        Astro（サイト本体）
   ├─ src/content/lab/            カード = metadata の正本（Markdown）
   ├─ lab/<NNN-slug>/             作品のソース（Vite / npm / TS / GLSL 自由）
-  ├─ public/lab/<NNN-slug>/      作品のビルド成果物（★ コミットする。Pages はコピーするだけ）
+  ├─ public/lab/<NNN-slug>/      作品のビルド成果物（★ コミットする。Vite の outDir が直接ここへ出す）
   ├─ media/manifest.json         R2 に置いたメディアの索引（生成物だがコミットする）
   └─ 外部参照
        └─ media.takumifukasawa.com   R2 bucket。poster / mp4
@@ -57,6 +57,8 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | サイトのビルドは作品のコードに触らない（`public/lab/` をコピーするだけ） | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
 | R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
 | `src/` は `lab/` を import しない（作品はサイトのビルドに参加しない） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
+| `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`.build-meta.json` の sourceHash と再計算値を比較） | 未強制（実装前） |
+| git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files` | 未強制（実装前） |
 
 ## 意図的に許している自由
 

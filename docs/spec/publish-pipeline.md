@@ -34,6 +34,13 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 ```
 
 **人間が書くのは `pnpm new` のタイトル 1 つだけ。** frontmatter を手で触る必要はない。
+
+`pnpm lab:add <slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]`（`scripts/lab-add.ts`）:
+- `--video` / `--poster` の少なくとも一方が要る。poster を省くと、再エンコード後の動画の**真ん中のフレーム**を使う（ループの頭は黒いことが多いため）。WebP 化は sharp（Homebrew の ffmpeg は WebP を書けない）
+- title は md → `--title` → `lab/<slug>/index.html` の `og:title`（`pnpm new` の引数）の順に取る。`index.html` の無い sketch（Houdini 等）は初回だけ `--title` が要る
+- **再実行では md の既存の値が勝つ**（手で直した title / tags / medium は上書きされない。欠けている項目だけ埋める）。R2 に既にある key は put せず、manifest の既存の行も書き換えない
+- R2 の認証情報は `.env`（git に入らないのでマシンごとに作る。`../setup.md`）。`--dry-run` は `.env` 無しで動く
+- commit するのはその sketch に関わるパスだけ（`lab/<slug>/`、`public/lab/<slug>/`、build-meta、manifest、md）
 `pnpm lab:add` は投稿用テキストの雛形（title / 1 行 / 作品 URL / ハッシュタグ候補）を標準出力に出す。
 
 ## 何をコミットし、何をコミットしないか

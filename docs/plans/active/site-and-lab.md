@@ -39,9 +39,9 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 済 | 一時ディレクトリに出し、成功時だけ差し替える。md からの `<head>` 書き直しは 0-8 で足す | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 済 | 決定 0004。見た目は P1 で決める |
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
-| 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 未着手 | 0-7 が前提 |
+| 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 一部済 | `scripts/lab-add.ts`。`--dry-run` で ffmpeg / sharp / md / manifest まで確認済み。**R2 への実 put・commit・push は未確認**（`.env` が埋まってから、sketch 001 で初回実行して確かめる） |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 済 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ）。`astro.config.ts` / `scripts/preview.ts`。http で確認済み、`--https` は 0-4b と同じく未確認 |
-| 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 一部済 | `tests green (>0)` / `lab build in sync` / `lab shell embedded` / `no large files` を登録（すべて pre-commit で走る）。`lab head in sync` と `media keys resolve` は md の形が決まる 0-8 で足す |
+| 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 済 | `tests green (>0)` / `lab build in sync` / `lab shell embedded` / `no large files` / `lab head in sync` / `media keys resolve`（すべて pre-commit で走る）。`astro check` / `astro build` と `src/` の grep は P1（1-5） |
 | 0-11 | **sketch 001 を作る** | **人間** | 未着手 | 技術的コアは自分で書く |
 | 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・Pages の差分アップロード・R2 Class B） | AI + 人間 | 未着手 | 結果は `../../handoff.md` の表の書き戻し先へ |
 | 0-13 | **sketch を 5〜10 件積み**、schema を実データで直す | **人間** | 未着手 | 架空の 1 件で設計を固めない |
@@ -67,6 +67,8 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 0-10 の一部。検査の本体は `scripts/lib/checks.ts`（`node scripts/check.ts <name>` で 1 つずつ走る）、テストは `node:test`（`pnpm test`、`scripts/**/*.test.ts`）。あわせて `sourceHash` を `git ls-files`（tracked + 未追跡のうち ignore されないもの）に変えた。ディレクトリを素で歩くと Finder が作る `.DS_Store` でハッシュが変わり、手元だけ落ちて fresh clone では通る食い違いが出るため。
 - 2026-10-08: 0-7 の続き。Cloudflare で `takumifukasawa.com` が Active になった（DNS Setup: Full）。次は R2（バケット・custom domain・CORS・API トークン）
 - 2026-10-08: 0-7 の R2 分が済。バケット `takumifukasawa-media`、custom domain `media.takumifukasawa.com`（TLS 有効、R2 が応答することを curl で確認）、r2.dev は無効、CORS は `AllowedOrigins: ["*"]` / GET・HEAD（開発時の入口が dev:lab 5173 / dev 4321 / preview 8788 / `--https` の LAN IP とばらばらで許可リストが必ず漏れる。公開メディアの読み取りだけなので `*` で失うものが無い。落選案: 本番ドメイン + localhost だけを許可）。API トークン `takumifukasawa-media-lab-add`（Object Read & Write、このバケットのみ）は人間の手元に保管し、0-8 で `.env` に入れる。残り: Pages
+- 2026-10-08: 0-8 の大半と 0-10 の残り。`lab:add`（aws4fetch で R2 の S3 API に署名、yaml、sharp）、`src/content.config.ts`（content-model の lab だけ。生成した md が `astro build` を通り、壊れた md で落ちることを確認）、`.env.example` と `docs/setup.md`（`.env` はマシンごとに要る、を 3 か所に書いた: `.env.example` の冒頭・setup.md・`lab:add` のエラー文）。`lab:build` も最後に md から `<head>` を書き直す。テスト 25 件
+- 2026-10-08: `.env` を人間が記入。`lab:add` と同じ関数で R2 の `_test/` に put → `media.takumifukasawa.com` から 200（`Cache-Control: immutable`、CORS `*`）→ DELETE まで通ることを確認し、テスト用ファイルは消した。`.webp` は CDN にキャッシュされる（MISS → HIT）。`.txt` はされない（`../../learnings.md`）
 
 ## 未確定事項（人間の判断待ち）
 

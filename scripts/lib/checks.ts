@@ -3,6 +3,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { headMatches, labMdSlugs, readLabMd, readManifest } from './content.ts';
 import { buildMetaPath, repoRoot, SLUG_PATTERN, sourceHash, webSketchSlugs, type BuildMeta } from './lab.ts';
 
 // public/lab/<slug>/ was built from the current lab/<slug>/ (docs/spec/publish-pipeline.md「再ビルド」).
@@ -94,4 +95,30 @@ export const checkNoLargeFiles = (root = repoRoot, limit = LARGE_FILE_LIMIT): st
         `メディアやテクスチャなら R2 に置いて絶対 URL で読む（docs/spec/publish-pipeline.md）。` +
         `どうしてもコミットするなら ${LARGE_FILES_ALLOW} に理由のコメントと 1 行で足す`,
     );
+};
+
+// The built page's <title> / og:title / og:description show the md (decision 0004: the md is the source of truth).
+export const checkLabHeadInSync = (root = repoRoot): string[] =>
+  labMdSlugs(root).flatMap((slug) => {
+    const page = join(root, 'public', 'lab', slug, 'index.html');
+    const data = readLabMd(slug, root)?.data;
+    if (!existsSync(page) || !data?.title) return [];
+    return headMatches(readFileSync(page, 'utf8'), { title: data.title, description: data.description })
+      ? []
+      : [`public/lab/${slug}/index.html の <title> / OGP が src/content/lab/${slug}.md と違う。pnpm lab:build ${slug} で md から書き直す（手で直さない）`];
+  });
+
+// Every media key in the md exists in media/manifest.json (offline; docs/spec/content-model.md).
+export const checkMediaKeysResolve = (root = repoRoot): string[] => {
+  const manifest = readManifest(root);
+  return labMdSlugs(root).flatMap((slug) => {
+    const data = readLabMd(slug, root)?.data ?? {};
+    return (['poster', 'video'] as const)
+      .filter((field) => data[field] !== undefined && !(data[field]! in manifest))
+      .map(
+        (field) =>
+          `src/content/lab/${slug}.md の ${field}: "${data[field]}" が media/manifest.json に無い。` +
+          `pnpm lab:add ${slug} --video <mp4> / --poster <image> で R2 に上げる（key の打ち間違いなら md を直す）`,
+      );
+  });
 };

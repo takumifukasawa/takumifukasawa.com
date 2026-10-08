@@ -7,51 +7,49 @@
 
 ## いま何をしているか（1〜3 行）
 
-個人サイト（制作アーカイブ + 技術ノート + ポートフォリオ）の設計が一巡し、**決定 4 本・spec 3 本に 2026-10-08 合意した**。
-double-check で 9 件の誤りを直し済み。**コードは 1 行も無い**（Astro も `lab/` も未作成）。
-次は P0 = `lab/` の雛形と公開 CLI を作り、Cloudflare を繋いで sketch を 5〜10 件積む。
+P0（`lab/` と公開フロー）の **AI 側のタスクがほぼ終わった**。`pnpm new` / `dev:lab` / `lab:build` / `lab:add` / `dev` / `preview` と検査 6 件が動く。
+Cloudflare は Active、R2（`media.takumifukasawa.com`）は書き込みから配信まで確認済み。**次は人間が sketch 001 を作る番**（0-11）。
 
 ## 別の PC で再開するとき（最初にやること）
 
-`.git/config` と gitignore 対象のファイルは clone に乗らないので、2 つだけ手当てが必要。
+**`docs/setup.md` を上から順に**やる。clone で揃わないもの（Node・pnpm・`core.hooksPath`・**`.env`**・ffmpeg・mkcert の証明書）の一覧はそこが正。
 
 ```bash
 git clone https://github.com/takumifukasawa/takumifukasawa.com.git
 cd takumifukasawa.com
 bash .harness/bin/harness doctor        # ← まずこれ。足りないものを全部教えてくれる
 git config core.hooksPath .githooks     # pre-commit を有効化（git config は clone に乗らない）
+cp .env.example .env                    # R2 のトークンをパスワードマネージャーから写す（lab:add だけが使う）
 ```
 
 - `core.hooksPath` を設定しないと **commit は成功するのに検査が走らない**（`learnings.md` の 1 件目）。`doctor` が WARN で教える。
+- **`.env` は git に入らない。** 無くても `lab:add` 以外は動く。`lab:add` は無いと直し方を出して止まる。
 - `.harness/source.local`（gitignore 対象）が無いので `doctor` が「source が辿れない」と WARN する。
   `harness update` / `harness upstream` を使うときだけ、agent-harness を clone してそのパスを 1 行書く。使わないなら放置してよい。
-- Cloudflare / R2 の認証（`wrangler login`）は P0 に入ってから。
 
 ## 状態
 
 | 項目 | 状態 | 出典 |
 |---|---|---|
-| agent-harness 導入 | 検証済み | `bash .harness/bin/harness doctor` |
-| 管理ファイルの drift | 無し | `bash .harness/bin/harness status` |
-| 検査の登録 | seed のみ（プロダクト検査 0 件） | `bash .harness/bin/harness check` |
-| 全体構成（1 repo / 1 ドメイン / media は R2） | 採用（2026-10-08） | `decisions/0001-overall-architecture.md` |
-| tier 1 の命名（`lab` / `sketch`） | 採用（2026-10-08） | `decisions/0002-naming-lab-sketch.md` |
-| コードの置き場（昇格モデル） | 採用（2026-10-08） | `decisions/0003-code-placement.md` |
-| 作品ページからトップへの導線（`/_shell.js`） | 採用（2026-10-08） | `decisions/0004-lab-shell.md` |
-| content schema | 合意済（2026-10-08） | `spec/content-model.md` |
-| サイト v0 の範囲（P1 = 2 ページ） | 合意済（2026-10-08） | `spec/site-v0.md` |
-| 公開フロー | 合意済（2026-10-08） | `spec/publish-pipeline.md` |
-| 境界と不変条件 | 確定 | `architecture.md` |
-| Cloudflare / GitHub の制限調査 | 完了（2026-10-07 取得） | `references/cloudflare-limits.md` |
-| Astro プロジェクト | 未着手 | — |
-| `lab/` と公開 CLI（`pnpm new` / `lab:add` / `lab:build`） | 未着手 | — |
-| Cloudflare Pages / R2 | 未着手 | — |
+| 決定 0001〜0004 / spec 3 本 | 採用・合意済（2026-10-08） | `decisions/`, `spec/` |
+| 検査 | 8 件 pass（テスト 25 件 + lab 系 5 件 + docs / doctor）。すべて pre-commit で走る | `bash .harness/bin/harness check`、`.harness/checks.sh` |
+| `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
+| `/_shell.js` | 配信まで確認。**ブラウザでの見た目・`h` キー・`?clean` は未確認** | 計画 0-6、決定 0004 |
+| 最小の Astro（ページ 0 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認 | 計画 0-9 |
+| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（sketch 001）で commit / push まで通すのが残り** | 計画 0-8 |
+| Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
+| R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
+| Cloudflare Pages | 未設定。sketch 001 を公開するときに作る（設定値は `spec/site-v0.md`） | 計画 0-7 |
+| `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **計画 `plans/active/site-and-lab.md` のタスク 0-1 から進める**（P0 → P1 のタスク分解・担当・受け入れ条件はそこが正）。
-   人間がやるのは 0-7（Cloudflare のアカウント操作）・0-11 / 0-13（sketch を作る）。
-2. **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md` のフェーズ表）。sketch を 5〜10 件積んでから P1 に入る。
+1. **人間: sketch 001 を作る（計画 0-11）。** `pnpm new 001-<slug> "<title>"` → `pnpm dev:lab 001-<slug>`。技術的コアは自分で書く。
+2. 録画したら `pnpm lab:add 001-<slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
+   **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。
+3. 同じタイミングで **Cloudflare Pages を設定**（`spec/site-v0.md` の表）し、P0 の実測（下の表）を始める。
+4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の見た目・`h`・`?clean`）。
+5. **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md`）。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -60,7 +58,7 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 | repo サイズ（`du -sh .git` と working tree） | 500 件 ~150 MB の見込みが当たっているか。外れたら Three.js を external にして共有コピー 1 本にする | `decisions/0001` の「repo サイズ」と `learnings.md` |
 | Pages のデプロイ所要時間とログ | **差分アップロードされるかが未確認**。毎回全件上がるならデプロイ時間に効く | `references/cloudflare-limits.md` の未確認事項 |
 | `base: './'` の成果物が Worker・動的 import・`new URL(..., import.meta.url)` 込みで動くか | (B) への乗り換えを `git mv` だけにする前提（決定 0004） | `decisions/0004-lab-shell.md` |
-| `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301 | `decisions/0004-lab-shell.md` |
+| `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301。**ローカルの `pnpm preview` では 308 で転送された**（本番は未確認） | `decisions/0004-lab-shell.md` |
 | R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | `references/cloudflare-limits.md` の未確認事項 |
 
 ## 未確定事項（人間の判断待ち）
@@ -103,6 +101,6 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 
 ## このセッションで触らなかったが確認したもの
 
-- `docs/tech-debt.md` は空のまま。コードが無いので負債も無い
+- `docs/tech-debt.md` は空のまま
 - `docs/roles/` は harness の seed のまま。`task-orchestrate` を回す段階になったら読む
-- `docs/rules/README.md` に `lab/core/AGENTS.md`（3 回ルール）を登録済み。ファイル自体は P0 で作る
+- `docs/rules/README.md` に `lab/AGENTS.md` と `lab/core/AGENTS.md`（3 回ルール）を登録済み

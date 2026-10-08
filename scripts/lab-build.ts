@@ -6,6 +6,7 @@
 import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'vite';
+import { applyHeadFromMd } from './lib/content.ts';
 import { buildMetaDir, buildMetaPath, labDir, publicLabDir, sourceHash, webSketchSlugs, type BuildMeta } from './lib/lab.ts';
 
 const tmpRoot = join(labDir, '.build-tmp');
@@ -23,7 +24,8 @@ const buildOne = async (slug: string): Promise<void> => {
   rmSync(out, { recursive: true, force: true });
   renameSync(tmpOut, out);
 
-  // TODO(0-8): once src/content/lab/<slug>.md exists, rewrite <title> / OGP in out/index.html from it (decision 0004).
+  // The md is the source of truth for <title> / OGP once lab:add has created it (decision 0004).
+  applyHeadFromMd(slug);
 
   const meta: BuildMeta = { sourceHash: sourceHash(slug), builtAt: new Date().toISOString() };
   mkdirSync(buildMetaDir, { recursive: true });

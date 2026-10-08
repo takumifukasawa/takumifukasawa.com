@@ -18,6 +18,7 @@
 | [roles/](roles/README.md) | 長期タスクの役割分担（統括 / 実装 / レビュー / 機械検査） | 役割の責務を変えた時 |
 | [rules/](rules/README.md) | パス限定の規律（サブディレクトリ `AGENTS.md`）の一覧 | 規律を足した時 |
 | [coding.md](coding.md) | コードの書き方の規約（lab: class を使わない、文字列で参照するプロパティはクォート、mangle の確かめ方） | 規約を足した・変えた時 |
+| [setup.md](setup.md) | 新しいマシンで要るもの（`.env`・ffmpeg・mkcert の証明書など、clone で揃わないもの） | マシンごとに要るものを足した時 |
 | [glossary.md](glossary.md) | 同じ語が複数のものを指す場所（`lab` の 3 つの意味、sketch 1 件が分かれる 3 か所） | 語の指すものが増えた時 |
 
 <!-- プロジェクト固有の doc はこの下に追加する。例:

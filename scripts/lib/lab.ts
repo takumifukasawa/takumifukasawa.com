@@ -26,7 +26,7 @@ export const webSketchSlugs = (root = repoRoot): string[] => {
 
 // Source files of lab/<slug>/ as git sees them: tracked + untracked-but-not-ignored.
 // Ignored files (.DS_Store, node_modules/, .vite/) never count, so the hash matches a fresh clone.
-const sketchFiles = (root: string, slug: string): string[] => {
+export const sketchFiles = (slug: string, root = repoRoot): string[] => {
   const prefix = `lab/${slug}/`;
   const out = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', prefix], {
     cwd: root,
@@ -44,7 +44,7 @@ const sketchFiles = (root: string, slug: string): string[] => {
 export const sourceHash = (slug: string, root = repoRoot): string => {
   const dir = join(root, 'lab', slug);
   const hash = createHash('sha256');
-  for (const file of sketchFiles(root, slug)) {
+  for (const file of sketchFiles(slug, root)) {
     hash.update(file).update('\0');
     hash.update(readFileSync(join(dir, file))).update('\0');
   }

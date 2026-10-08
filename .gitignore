@@ -39,3 +39,6 @@ captures/
 
 # --- lab:build の一時出力（成功した時だけ public/lab/<slug>/ に差し替える） ---
 lab/.build-tmp/
+
+# --- 秘密情報。R2 の API トークン（pnpm lab:add が読む）。マシンごとに .env.example から作る（docs/setup.md） ---
+.env

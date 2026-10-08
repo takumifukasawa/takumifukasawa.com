@@ -43,3 +43,13 @@
 - 原因: macOS（APFS の既定）は大文字小文字を区別しない。2 つの名前は同じファイルを指していて、書き込みは上書き、`rm` はその 1 つを消した。
 - 対処: 大文字小文字だけのリネームは `git mv Old.ts old.ts`（未追跡なら `mv Old.ts tmp && mv tmp old.ts`）で行い、旧名を `rm` しない。
   **再発したらまず**、リネーム後に `ls` で新しい名前の実体があるかを見る。
+
+## 2026-10-08 R2 の custom domain は、拡張子によって CDN にキャッシュされない
+
+- 症状: `media.takumifukasawa.com` に置いた `.txt` は `Cache-Control: immutable` を付けても毎回 `cf-cache-status: DYNAMIC`（キャッシュされない）。
+  同じ場所の `.webp` は 1 回目 `MISS`、2 回目から `HIT` になった。
+- 原因: Cloudflare は既定で**拡張子の許可リスト**に入るファイルだけを CDN にキャッシュする。`.mp4` / `.webp` は入っているが、入っていない拡張子もある
+  （どれが入っているかは公式の「Default cache behavior」の一覧を見る）。Cache-Control ヘッダーだけでは決まらない。
+- 対処 / 再発したら: 作品で R2 から `.glb` / `.hdr` / `.ktx2` / `.bin` などを読むようになったら、まず `curl -sI` で `cf-cache-status` を見る。
+  `DYNAMIC` なら Cloudflare の Cache Rules で `media.takumifukasawa.com` を「Eligible for cache」にする（無料プランで可）。
+  確かめるときは R2 の `lab/` 以下ではなく `_test/` に置いて、終わったら消す（`lab/` の key は上書きしない約束なので試し書きに使わない）。

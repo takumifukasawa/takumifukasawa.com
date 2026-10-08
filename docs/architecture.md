@@ -51,8 +51,8 @@ scripts/            公開フローの CLI（Astro に依存しない）
 
 | 不変条件 | 強制手段 | 状態 |
 |---|---|---|
-| frontmatter は schema を満たす | `astro check` / `astro build`（`.harness/checks.sh`） | 未強制（実装前） |
-| frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（ネットワークに触らない） | 未強制（実装前） |
+| frontmatter は schema を満たす | `src/content.config.ts` の schema。`astro build`（Pages の `pnpm build`）が違反で落ちる。`.harness/checks.sh` への登録は P1（1-5） | 一部強制（deploy 時のみ） |
+| frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（md の `poster` / `video` を manifest と照合。ネットワークに触らない） | 強制（pre-commit） |
 | `tags` に既知語の表記ゆれが無い（未知語は通す） | `.harness/checks.sh` の `tag normalization` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
 | v0 のサイトは iframe を 1 つも生成しない（実物へは別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
@@ -62,7 +62,7 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`lab/.build-meta/<slug>.json` の sourceHash と再計算値を比較。ハッシュは git が見るファイルだけ = gitignore 済みの `.DS_Store` 等は数えない） | 強制（pre-commit。`scripts/lib/checks.ts`） |
 | git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files`（index に載った blob のサイズ。許可リストは `scripts/large-files-allow.txt`） | 強制（pre-commit） |
 | `public/lab/*/index.html` はすべて `<script src="/_shell.js" defer>` を含む（`data-shell="none"` で無効化するのは可） | `.harness/checks.sh` の `lab shell embedded` | 強制（pre-commit） |
-| 成果物の `<title>` / `og:title` が md の `title` と一致する（正本は md） | `.harness/checks.sh` の `lab head in sync` | 未強制（md の形が決まる 0-8 で足す） |
+| 成果物の `<title>` / `og:title` が md の `title` と一致する（正本は md） | `.harness/checks.sh` の `lab head in sync`（md から書き直した結果と今の成果物が一致するか。md が無い = `lab:add` 前の作品は対象外） | 強制（pre-commit） |
 
 ## 意図的に許している自由
 

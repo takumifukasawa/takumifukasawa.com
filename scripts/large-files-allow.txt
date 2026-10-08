@@ -1,0 +1,2 @@
+# Files over 2 MB that may be committed anyway (checked by `no large files`, docs/spec/publish-pipeline.md).
+# One repo-relative path per line. Write the reason in a comment above it.

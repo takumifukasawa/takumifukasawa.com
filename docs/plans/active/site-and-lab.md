@@ -41,7 +41,7 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
 | 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 未着手 | 0-7 が前提 |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 済 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ）。`astro.config.ts` / `scripts/preview.ts`。http で確認済み、`--https` は 0-4b と同じく未確認 |
-| 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 未着手 | 受け入れ条件の検査一覧 |
+| 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 一部済 | `tests green (>0)` / `lab build in sync` / `lab shell embedded` / `no large files` を登録（すべて pre-commit で走る）。`lab head in sync` と `media keys resolve` は md の形が決まる 0-8 で足す |
 | 0-11 | **sketch 001 を作る** | **人間** | 未着手 | 技術的コアは自分で書く |
 | 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・Pages の差分アップロード・R2 Class B） | AI + 人間 | 未着手 | 結果は `../../handoff.md` の表の書き戻し先へ |
 | 0-13 | **sketch を 5〜10 件積み**、schema を実データで直す | **人間** | 未着手 | 架空の 1 件で設計を固めない |
@@ -64,6 +64,7 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 計画を作成。0-1 / 0-2 を実施（`package.json` / `.nvmrc` / `.gitignore` / `media/manifest.json`）。依存はまだ入れていない（0-4 で Vite、0-9 で Astro）。
 - 2026-10-08: 0-7 の一部。`takumifukasawa.com`（レジストラはお名前.com）を Cloudflare に追加（Free）、ネームサーバーを `carrera` / `kaiser.ns.cloudflare.com` に変更（DNSSEC はもともと無効）。旧 A レコード `160.16.82.214` は解約済みのさくら VPS の IP で、**再割り当て先の他人のサイトが表示されていた**ため削除した。Cloudflare の Active 待ち。残り: R2 バケット・custom domain・CORS・API トークン、Pages（0-9 の後）
 - 2026-10-08: 0-9 を実施。Astro 7.3.6 + wrangler 4.148.0。Astro 7.3.7 は公開 1 日未満で pnpm 11 の `minimumReleaseAge` に止められたため、除外設定を足さず 7.3.6 にした。esbuild / workerd の install script は `pnpm-workspace.yaml` の `allowBuilds` で許可。Astro dev は `public/**/index.html` をディレクトリ URL で返さないため、`astro.config.ts` に dev 用の middleware を足した（dev では末尾スラッシュ無しは 404 のまま。リダイレクトは preview で見る）。`pnpm preview` では `/lab/<slug>` → `/lab/<slug>/` が **308**、`/_shell.js` に `_headers` の `Cache-Control: public, max-age=300` が付くことを確認（本番の実測は 0-12）。
+- 2026-10-08: 0-10 の一部。検査の本体は `scripts/lib/checks.ts`（`node scripts/check.ts <name>` で 1 つずつ走る）、テストは `node:test`（`pnpm test`、`scripts/**/*.test.ts`）。あわせて `sourceHash` を `git ls-files`（tracked + 未追跡のうち ignore されないもの）に変えた。ディレクトリを素で歩くと Finder が作る `.DS_Store` でハッシュが変わり、手元だけ落ちて fresh clone では通る食い違いが出るため。
 
 ## 未確定事項（人間の判断待ち）
 

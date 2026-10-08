@@ -59,10 +59,10 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | サイトのビルドは作品のコードに触らない（`public/lab/` をコピーするだけ） | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
 | R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
 | `src/` は `lab/` を import しない（作品はサイトのビルドに参加しない） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
-| `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`lab/.build-meta/<slug>.json` の sourceHash と再計算値を比較） | 未強制（実装前） |
-| git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files` | 未強制（実装前） |
-| `public/lab/*/index.html` はすべて `<script src="/_shell.js" defer>` を含む（`data-shell="none"` で無効化するのは可） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
-| 成果物の `<title>` / `og:title` が md の `title` と一致する（正本は md） | `.harness/checks.sh` の `lab head in sync` | 未強制（実装前） |
+| `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`lab/.build-meta/<slug>.json` の sourceHash と再計算値を比較。ハッシュは git が見るファイルだけ = gitignore 済みの `.DS_Store` 等は数えない） | 強制（pre-commit。`scripts/lib/checks.ts`） |
+| git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files`（index に載った blob のサイズ。許可リストは `scripts/large-files-allow.txt`） | 強制（pre-commit） |
+| `public/lab/*/index.html` はすべて `<script src="/_shell.js" defer>` を含む（`data-shell="none"` で無効化するのは可） | `.harness/checks.sh` の `lab shell embedded` | 強制（pre-commit） |
+| 成果物の `<title>` / `og:title` が md の `title` と一致する（正本は md） | `.harness/checks.sh` の `lab head in sync` | 未強制（md の形が決まる 0-8 で足す） |
 
 ## 意図的に許している自由
 

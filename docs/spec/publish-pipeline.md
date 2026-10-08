@@ -55,7 +55,7 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 除外の正本はリポジトリ直下の `.gitignore`（除外の理由もそこにコメントで書く）。ここに例を写さない（二重管理になる）。
 
 **拡張子リストは必ず漏れるので、サイズで止める検査を併せて入れる。**
-`harness check` の `no large files`: git の index に 2 MB 超のファイルがあったら落とす（例外は許可リストに 1 行書く）。
+`harness check` の `no large files`: git の index に 2 MB 超のファイルがあったら落とす（例外は許可リスト `scripts/large-files-allow.txt` に 1 行書く）。
 閾値 2 MB は、Three.js を含む作品のバンドル（通常 400〜600 KB、addons を多用して 1.5 MB 級まで）が通り、テクスチャやモデルが引っかかる位置。
 例外が必要になる作品は許可リストに 1 行書く。
 

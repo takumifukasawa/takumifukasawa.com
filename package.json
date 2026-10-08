@@ -13,7 +13,8 @@
     "new": "node scripts/new.ts",
     "dev:lab": "node scripts/dev-lab.ts",
     "lab:build": "node scripts/lab-build.ts",
-    "lab:rebuild": "node scripts/lab-build.ts"
+    "lab:rebuild": "node scripts/lab-build.ts",
+    "test": "node --test \"scripts/**/*.test.ts\""
   },
   "devDependencies": {
     "astro": "^7.3.6",

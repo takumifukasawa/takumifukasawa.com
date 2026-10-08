@@ -31,11 +31,11 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 
 | # | タスク | 担当 | 状態 | 備考 |
 |---|---|---|---|---|
-| 0-1 | `package.json`（pnpm）・`.nvmrc`・`.gitignore`（DCC 拡張子と理由のコメント込み） | AI | 済 | pnpm 11.28.5（`packageManager`）、Node 24。除外の正本は `.gitignore` |
+| 0-1 | `package.json`（pnpm）・`.node-version`・`.gitignore`（DCC 拡張子と理由のコメント込み） | AI | 済 | pnpm 11.28.5（`packageManager`）、Node 24.21.0（`.node-version`。nodenv と Pages の両方が読む）。除外の正本は `.gitignore` |
 | 0-2 | `media/manifest.json` に空の `{}` をコミット | AI | 済 | **無いと初回ビルドが落ちる**。0-1 と同じコミットでよい |
 | 0-3 | `lab/core/AGENTS.md`（3 回ルール）と `lab/core/CLAUDE.md` | AI | 済 | `../../rules/README.md` に登録済み |
-| 0-4 | `pnpm new <slug> "<title>"`: 雛形（canvas + rAF の最小、OGP、`/_shell.js` の 1 行、`vite.config.ts` は `base: './'`、絶対パス禁止と `?clean` の慣習をコメントで） | AI → 確認 | 未着手 | 雛形は「共同」寄り。生成物を見せて確認を取る |
-| 0-4b | `pnpm dev:lab <slug>`: 作品 1 件を Vite で起動（HMR）。`/_shell.js` も配信して導線込みで見る。`--https`（mkcert）で LAN 内の実機から HTTPS で開ける（iOS のカメラ・ジャイロは HTTPS 必須） | AI | 未着手 | 作品ごとの `vite.config.ts` は増やさず、`dev:lab` 側で 1 か所だけ設定する |
+| 0-4 | `pnpm new <slug> "<title>"`: 雛形（canvas + rAF の最小、OGP、`/_shell.js` の 1 行、`vite.config.ts` は `base: './'`、絶対パス禁止と `?clean` の慣習をコメントで） | AI → 確認 | 済 | 2026-10-08 に動作を確認してもらった。雛形は「共同」寄り。`scripts/new.ts` と `scripts/templates/sketch/`。生成物を見せて確認を取る |
+| 0-4b | `pnpm dev:lab <slug>`: 作品 1 件を Vite で起動（HMR）。`/_shell.js` も配信して導線込みで見る。`--https`（mkcert）で LAN 内の実機から HTTPS で開ける（iOS のカメラ・ジャイロは HTTPS 必須） | AI | 一部済 | `scripts/dev-lab.ts`。HMR と `/_shell.js` の配信は確認済み。`--https` は未確認（mkcert のルート証明書の登録に sudo が要るため、初回は人間が実行する） |
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 未着手 | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 未着手 | 決定 0004。見た目は P1 で決める |
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |

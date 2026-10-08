@@ -5,5 +5,13 @@
   "packageManager": "pnpm@11.28.5",
   "engines": {
     "node": ">=24"
+  },
+  "scripts": {
+    "new": "node scripts/new.ts",
+    "dev:lab": "node scripts/dev-lab.ts"
+  },
+  "devDependencies": {
+    "vite": "^8.3.3",
+    "vite-plugin-mkcert": "^2.1.0"
   }
 }

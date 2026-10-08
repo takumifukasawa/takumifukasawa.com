@@ -53,7 +53,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 | Framework preset | なし（Astro を選ぶと余計な設定が入る） |
 | Build command | `pnpm build` |
 | Build output directory | `dist` |
-| Node version | `.nvmrc` か環境変数 `NODE_VERSION` で固定する（Pages の既定は変わりうる） |
+| Node version | `.node-version`（nodenv と共用）か環境変数 `NODE_VERSION` で固定する（Pages の既定は変わりうる） |
 | 環境変数 | `PUBLIC_MEDIA_BASE_URL=https://media.takumifukasawa.com` |
 | Production branch | `main` |
 

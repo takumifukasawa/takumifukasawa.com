@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- title / OGP: pnpm new writes these from the title argument.
+         After lab:add, lab:add / lab:build rewrite them from src/content/lab/__SLUG__.md (the source of truth). Do not edit by hand. -->
+    <title>__TITLE__ — takumifukasawa</title>
+    <meta property="og:title" content="__TITLE__" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://takumifukasawa.com/lab/__SLUG__/" />
+    <meta property="og:image" content="https://media.takumifukasawa.com/lab/__SLUG__/poster.webp" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Link back to the site. The contents live in public/_shell.js on the site side (decision 0004). Keep this exact line.
+         Opt out: <html data-shell="none">. Position: <html data-shell-position="top-right">. Hide for recording: ?clean -->
+    <script src="/_shell.js" defer></script>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      canvas { display: block; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

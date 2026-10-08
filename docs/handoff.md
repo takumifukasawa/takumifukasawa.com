@@ -61,7 +61,6 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 | Pages のデプロイ所要時間とログ | **差分アップロードされるかが未確認**。毎回全件上がるならデプロイ時間に効く | `references/cloudflare-limits.md` の未確認事項 |
 | `base: './'` の成果物が Worker・動的 import・`new URL(..., import.meta.url)` 込みで動くか | (B) への乗り換えを `git mv` だけにする前提（決定 0004） | `decisions/0004-lab-shell.md` |
 | `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301 | `decisions/0004-lab-shell.md` |
-| ビルド後も `<script src="/_shell.js">` が `./_shell.js` に書き換わっていないか | 書き換わると全作品で導線が 404 | 同上 |
 | R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | `references/cloudflare-limits.md` の未確認事項 |
 
 ## 未確定事項（人間の判断待ち）

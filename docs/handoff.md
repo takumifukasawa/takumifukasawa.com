@@ -16,7 +16,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 | 項目 | 状態 | 出典 |
 |---|---|---|
 | agent-harness 導入 | 検証済み | commit `c190c31`、`bash .harness/bin/harness doctor` |
-| 全体構成（2 repo / 2 deployment / media は R2） | 草案（合意待ち） | `decisions/0001-overall-architecture.md` |
+| 全体構成（1 repo / 1 ドメイン / media は R2） | 草案（合意待ち） | `decisions/0001-overall-architecture.md` |
 | tier 1 の命名（`lab` / `sketch`） | 草案（合意待ち） | `decisions/0002-naming-lab-sketch.md` |
 | コードの置き場（昇格モデル） | 草案（合意待ち） | `decisions/0003-code-placement.md` |
 | content schema | 草案（合意待ち） | `spec/content-model.md` |
@@ -24,7 +24,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 | 公開フロー | 草案（合意待ち） | `spec/publish-pipeline.md` |
 | Cloudflare の制限・料金の調査 | 完了（2026-10-07 取得） | `references/cloudflare-limits.md` |
 | Astro プロジェクト | 未着手 | — |
-| `lab` repo | 未着手 | — |
+| `lab/` と公開フロー（`pnpm new` / `pnpm lab:add`） | 未着手 | — |
 | Cloudflare Pages / R2 | 未着手 | — |
 | `.harness/checks.sh` | seed のみ（プロダクト検査 0 件） | `bash .harness/bin/harness check` |
 
@@ -33,13 +33,14 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 1. **草案 6 本に合意する**（人間の判断）。合意したら各 doc の 状態 を「合意済」、decisions を「採用」に直す。
 2. 合意後、`plans/active/site-and-lab.md` を作る（P0 → P1 の計画。`plans/README.md` の雛形）。
 3. **P0 を先にやる**（サイトより先。`spec/site-v0.md` のフェーズ表）
-   - サブドメイン確保（`lab.` / `media.`）、R2 bucket + custom domain（`r2.dev` は本番不可）
-   - `lab` repo 作成（Vite multi-page、`pnpm new`、`core/AGENTS.md` の 3 回ルール、DCC 拡張子の gitignore）
-   - Cloudflare Pages で `lab.takumifukasawa.com` を自動 deploy
+   - `media.takumifukasawa.com` のサブドメイン確保、R2 bucket + custom domain（`r2.dev` は本番不可）
+   - このリポジトリに `lab/` と `pnpm new` / `pnpm lab:add` を作る（`core/AGENTS.md` の 3 回ルール、DCC 拡張子の gitignore）
+   - Cloudflare Pages で `takumifukasawa.com` を自動 deploy
    - sketch を 5〜10 件積む（schema を実データで壊してから P1 に入る。架空の 1 件で設計を固めない）
 4. P1: このリポジトリに Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開。
    - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` を登録
-   - 500 件ダミーでビルド時間と Lighthouse を実測し `learnings.md` に残す
+   - 500 件ダミーでビルド時間と初期転送量を実測し `learnings.md` に残す
+   - P0 の時点で **repo サイズ（`public/lab/` の成果物）も実測**し、決定 0001 の見込み ~20 MB と照合する
 
 ## 未確定事項（人間の判断待ち）
 
@@ -49,24 +50,23 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 
 ### 解決済（記録のため残す）
 
-- 作品の URL は `lab.` サブドメインか `takumifukasawa.com/lab` か → **サブドメインが正規**。`_redirects` 1 行で `takumifukasawa.com/lab/*` → 301 も張り、両方使える URL にする。1 repo 統合は「作品ごとに Vite でビルドする自由」を捨てることになるので採らない。Worker プロキシは無料枠 10 万 req/日をバズで 2.4 時間で尽くす。また 2 repo → 1 repo は URL を保って移行できるが逆は保てない（決定 0001）
+- 作品の URL は `lab.` サブドメインか `takumifukasawa.com/lab` か → **`takumifukasawa.com/lab/<slug>/`**。サブドメインは使わない。実装は「作品を手元でビルドして `public/lab/<slug>/` にコミットする」方式で、Pages のビルドは Astro だけを走らせる。これで 1 ドメイン・1 repo のまま「作品の事故がサイトを落とさない」「依存更新で古い作品が壊れない」が成り立つ（決定 0001）
 - frontmatter 最終形 → 必須 5（`date` / `title` / `medium` / `poster` / `tags`）+ 任意 5（`description` / `video` / `embedUrl` / `repo` / `draft`）。`x` / `note` / `featured` / `videoWebm` / `core` / `no` は持たない。`note` は notes 側の `relatedLab` に一本化（`spec/content-model.md`）
 
 - タグを 2 本に分けるか → 分けない。`tech` と `themes` を 1 本の `tags` に統合（`spec/content-model.md`）
 
 - sketch の詳細ページは必要か → **不要**。直リンクで足りる。サイトは `/` と `/about/` の 2 ページ（`spec/site-v0.md`）
-- sketch ごとの OGP → lab 側の `index.html` に置く。R2 key が予測可能なので `pnpm new` が録画前から `og:image` を書ける（`spec/publish-pipeline.md`）
+- sketch ごとの OGP → 作品の `index.html` に置く。R2 key が予測可能なので `pnpm new` が録画前から `og:image` を書ける（`spec/publish-pipeline.md`）
 - `core` は必要か → **不要**。毎回 1 文書く義務にすると続かない。ルールは `AGENTS.md`（AI との分担）に書いた
 - `description` → 任意で用意だけする。空のまま運用してよい。長さ制限なし（`spec/content-model.md`）
 
-- `lab` が 4 つのものを指して紛らわしい → 名前は変えず `glossary.md` で呼び分けを定義（lab リポジトリ / lab サイト / lab コレクション / `/lab/`）
+- `lab` が複数のものを指して紛らわしい → 名前は変えず `glossary.md` で呼び分けを定義（`lab/` ディレクトリ / lab コレクション / `/lab/` URL）
 - 録画の既定フォーマット → 1920×1080 / 60fps / 8〜12 秒ループ / 音なし / H.264（`spec/publish-pipeline.md`）
 
 - OGP は Cloudflare で出るか → 出る。OGP は HTML の meta タグなのでホスト無関係。`astro.config` の `site` 設定と `poster` を `og:image` に使うだけ（`spec/site-v0.md`）
 - 重め / 軽めの住み分け → 一緒くた。`experiments` という箱は作らず、`lab` repo + `lab` collection に全部入れる。「重さ」のカテゴリも持たず `note` の有無で導出（決定 0003 の一覧表）
 - v0 をさらに薄くした → `/lab/` 索引・日付密度グリッド・Notes 一式・Lighthouse 計測を外し、**P1 は 3 ページ**に（`spec/site-v0.md`）
 
-- サブドメイン名 → `lab.takumifukasawa.com`（決定 0002）
 - `daily` という命名 → 頻度を構造に埋めないため廃止。`lab` / `sketch` に（決定 0002）
 - 重いものと軽いものの住み分け → 置き場は昇格モデル（決定 0003）、見せ方は `lab` / `notes` / `works`（決定 0002）
 - バズった時のコスト → 構造的に $0。実際に効くのは R2 Class B のみで 1 件に月 41 万 PV 相当まで無料枠内（`references/cloudflare-limits.md`）

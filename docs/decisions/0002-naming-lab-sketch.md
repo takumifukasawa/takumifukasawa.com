@@ -20,8 +20,8 @@
 |---|---|
 | サイトの索引 / 詳細 | `takumifukasawa.com/lab/`, `/lab/<NNN-slug>/` |
 | Astro の collection | `lab`（`src/content/lab/*.md`） |
-| 実行環境の repo | `github.com/takumifukasawa/lab` |
-| 実行環境の deploy | `lab.takumifukasawa.com/<NNN-slug>/` |
+| 作品のソース | `lab/<NNN-slug>/`（サイトと同じ repo） |
+| 作品の URL | `takumifukasawa.com/lab/<NNN-slug>/` |
 | R2 の key prefix | `lab/<YYYY>/<NNN-slug>/...` |
 | 公開 CLI | `pnpm lab:add <slug>` |
 

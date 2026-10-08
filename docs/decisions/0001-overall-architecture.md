@@ -1,4 +1,4 @@
-# 0001: 全体構成 — 2 repo / 2 deployment / media は R2
+# 0001: 全体構成 — 1 repo / 1 ドメイン / media は R2
 
 - 日付: 2026-10-08
 - 状態: 草案（この doc で合意を取る。合意後に「採用」へ）
@@ -17,19 +17,27 @@
 
 ### 層の分離
 
-| 層 | 置き場 | deploy 先 | 壊れたときの影響 |
+repo は 1 つ。分けるのは**ビルドのタイミング**と**メディアの置き場**。
+
+| 層 | 置き場 | 配信 | ビルドされるタイミング |
 |---|---|---|---|
-| ハブ（Works / sketch 索引 / Notes / About） | `takumifukasawa.com` repo（Astro, static） | Cloudflare Pages → `takumifukasawa.com` | サイトが落ちる |
-| 作品の実行環境（Three.js / WebGPU の interactive） | `lab` repo（Vite, multi-page） | Cloudflare Pages → `lab.takumifukasawa.com` | その作品の iframe だけ表示されない |
-| メディア（mp4 / poster 画像） | Cloudflare R2 bucket | custom domain → `media.takumifukasawa.com` | 画像・動画が出ない |
+| ハブ（sketch のグリッド / About） | `takumifukasawa.com` repo の `src/`（Astro, static） | Cloudflare Pages → `takumifukasawa.com` | push ごと |
+| 作品（Three.js / WebGPU など） | 同 repo の `lab/<NNN-slug>/`（Vite / npm / TS / GLSL を自由に） | 同 Pages（`public/lab/` 経由） | **手元で作った時に 1 回だけ** |
+| メディア（mp4 / poster 画像） | Cloudflare R2 bucket | custom domain → `media.takumifukasawa.com` | — |
 
-**サイトは作品の実行環境ではなく、作品を束ねるハブ**という方針（依頼文のまま）を、repo とデプロイ単位にそのまま落とす。
-この 3 分割が「作品側のビルド事故でサイトが落ちない」「サイトの改修で作品の URL が変わらない」を構造で保証する。
+**サイトは作品の実行環境ではなく、作品を束ねるハブ**という方針は維持する。
+ただしそれを「repo を分ける」ことで実現するのではなく、**作品のビルド成果物を固定する**ことで実現する。
+これで 1 ドメイン・1 repo のまま「作品側の事故がサイトを落とさない」が成り立つ（詳細は下の「鍵は『作品をビルドするタイミング』」）。
 
-### metadata の正本はサイト repo
+### metadata の正本
 
-sketch 1 件 = `takumifukasawa.com` repo の `src/content/lab/<NNN-slug>.md` 1 ファイル。
-lab repo は**実行コードだけ**を持ち、metadata を持たない（将来 `meta.yaml` を正本に移す余地は残すが、v0 ではやらない。→ 落選案 B）。
+sketch 1 件 = 3 つのものが同じ repo に揃う。
+
+| | パス |
+|---|---|
+| ソース | `lab/<NNN-slug>/` |
+| ビルド成果物 | `public/lab/<NNN-slug>/`（コミットする） |
+| カード（metadata） | `src/content/lab/<NNN-slug>.md` |
 
 ### メディアは R2、frontmatter は key だけを持つ
 
@@ -52,7 +60,7 @@ v0 ではサイト内に `<iframe>` を置かない。`embedUrl` を**別タブ�
 薄く始められること以上に、副作用が良い方向に効く。
 
 - クリックロード機構、GPU を食う作品が一覧に影響する問題、モバイルの出し分けが v0 から全部消える
-- `lab.takumifukasawa.com/<NNN-slug>/` が主役になり、**作品の URL が独立して流通する**（X から直リンクが張れる）
+- `takumifukasawa.com/lab/<NNN-slug>/` が主役になり、**作品の URL が独立して流通する**（X から直リンクが張れる）
 
 将来サイト内で完結させるときは、**URL が変わらないのでリンクを iframe に差し替えるだけ**で移行できる。
 その時点では以下を守る（v0 で捨てた判断ではなく、embed を入れる時に適用する）。
@@ -60,39 +68,59 @@ v0 ではサイト内に `<iframe>` を置かない。`embedUrl` を**別タブ�
 > `<iframe>` は最初から DOM に置かない。poster 画像 + 再生ボタンを出し、**クリックで初めて iframe を挿入**する。
 > `loading="lazy"` や IntersectionObserver による自動ロードは採らない（WebGPU / Three.js の作品が複数同時に走ると、一覧ページで GPU とメモリを食い潰す）。
 
-### 作品は `lab.takumifukasawa.com` が正規。`takumifukasawa.com/lab/*` から 301 を張る
+### 作品も同じドメインに置く。URL は `takumifukasawa.com/lab/<NNN-slug>/`
 
-`_redirects` に 1 行だけ書き、`takumifukasawa.com/lab/<NNN-slug>/` も**使える URL** にする（口頭で言える・名刺に書ける・後から辿れる）。
+サブドメイン（`lab.takumifukasawa.com`）は採らない。**URL を削ってトップへ行こうとする人は必ずいる**し、
+2 つのドメインを行き来する構成は、貼る URL・OGP・キャッシュのすべてで 2 系統を考えることになる。
 
 ```
-/lab/* https://lab.takumifukasawa.com/:splat 301
+takumifukasawa.com/
+├── src/                          Astro（サイト）
+├── lab/<NNN-slug>/               作品のソース（Vite / npm / TS / GLSL を自由に使う）
+├── public/lab/<NNN-slug>/        作品のビルド成果物（★ コミットする）
+└── src/content/lab/<NNN-slug>.md  カード（frontmatter）
 ```
 
-アクセス後にアドレスバーは `lab.` に変わる。1 ドメインに完全に寄せる方法は 2 つあるが、どちらも割に合わない。
+### 鍵は「作品をビルドするタイミング」
 
-**① Cloudflare Workers でプロキシする** — 20 行で可能だが、**一番避けたい失敗モードを作る**。
-Workers Free は 10 万リクエスト/日。1 件バズって 10 万人が来ると（1 人あたりアセット 10 リクエストで）1 日 100 万リクエストになり、
-無料枠は 2.4 時間で尽きてエラーが返る = **サイトが落ちる**。有料でも月 $11 前後。
-「バズっても構造的に $0」という性質を URL の見た目のために捨てることになる。採らない。
+**Cloudflare Pages のビルドは Astro だけを走らせる。** `public/` はコピーされるだけなので、
+**サイトのビルドは作品のコードに一切触らない**。作品のビルドは手元で 1 件ずつ、作った時に 1 回だけ走る。
 
-**② 1 repo に統合して作品のビルド成果物を `public/lab/` に置く** — Astro は `public/` をコピーするだけなのでビルドは独立するが、
-**500 件分のビルド成果物（JS バンドル・テクスチャ）をサイト repo にコミット**することになる。
-メディアを repo に入れないと決めたのと同じ理由（clone とビルドが重くなる）で避けたいうえ、Pages の 20,000 ファイル上限にも効く。採らない。
+これで 1 repo 統合の懸念が 2 つとも消える。
 
-**③ 1 repo に統合し、サイトのビルドで作品も出す** — URL は `takumifukasawa.com/lab/...` になるが、**サイトのデプロイが作品に依存する**。
-500 件のうち 1 件のビルドが壊れるとサイトが出せなくなり、2 年スパンではいつか必ず起きる。
-作品ごとに依存を CDN 固定の ESM にすればこのリスクは下がるが、**作品ごとに Vite でビルドする自由を捨てる**ことになる
-（ESM を CDN 配布していない npm パッケージ、`import shader from './x.glsl'` のようなプラグイン、WASM のバンドル、ハッシュ付きアセット、HMR が使えない）。
-日々の手数は変わらない（`pnpm lab:add` が両 repo を commit + push できるので 1 コマンドのまま）。採らない。
-
-### 戻せる方向の非対称性
-
-| 移行 | URL を保てるか |
+| 懸念 | なぜ消えるか |
 |---|---|
-| 2 repo → 1 repo（後で統合したくなった） | **保てる**。`lab.` の URL を `/lab/` に 301 すればいい |
-| 1 repo → 2 repo（ビルドが重くなった） | **保てない**。Worker が必要になり、無料枠の問題に戻る |
+| 500 件の Vite ビルドが Pages の 20 分上限に当たる | Pages は作品をビルドしない |
+| 古い作品のビルドが壊れてサイトのデプロイが止まる | 成果物が固定されている。**依存を上げても既存作品の bundle は変わらない** |
 
-迷ったら戻せる側から始める。だから 2 repo + サブドメインで始め、`/lab/*` の 301 で URL だけ確保しておく。
+2 つ目は副産物として大きい。共通の `package.json` でも、ビルド済みの作品は依存更新の影響を受けない。
+**別 repo にする理由（デプロイの独立）が、成果物の固定で代替される。**
+
+### repo サイズの実測見込み
+
+Vite は依存を content-hash 付きの vendor チャンクに分けるので、**同じ依存バージョンなら同じファイル名・同じ中身 = git は 1 つの blob を共有する**。
+
+| | サイズ |
+|---|---|
+| vendor チャンク（Three.js ~700 KB）× バージョン更新 10 回 | ~7 MB |
+| 作品のコード 500 件 × ~20 KB | ~10 MB |
+| 合計 | **~20 MB** |
+
+Pages のファイル数も 500 件 × 約 5 ファイル = 2,500 で 20,000 の上限に余裕がある（`../references/cloudflare-limits.md`）。
+
+### 落選案
+
+**サブドメイン + リダイレクト** — `lab.takumifukasawa.com` を正規にし、`/lab/*` から 301 を張る。
+URL が 2 系統になり「どちらを貼るか」が毎回の判断になる。URL を削った人の救済にもリダイレクトが必要で、
+全体がややこしい。上記の成果物コミット方式でデプロイの独立性が保てるので、分ける理由が無い。採らない。
+
+**Cloudflare Workers で `/lab/*` を別 Pages project にプロキシする** — URL は同じになるが、
+Workers Free は 10 万リクエスト/日。1 件バズって 10 万人が来ると（1 人あたりアセット 10 リクエストで）1 日 100 万リクエストになり、
+無料枠は 2.4 時間で尽きてエラーが返る = **サイトが落ちる**。有料（$5/月）でも Worker の運用が増える。
+成果物コミット方式なら $0 で同じ URL が得られる。採らない。
+
+**サイトのビルドで作品もビルドする（成果物をコミットしない）** — 500 件の Vite ビルドが Pages の 20 分上限に当たり、
+古い作品の 1 件が壊れるとサイトが出せなくなる。採らない。
 
 ### Astro / Cloudflare Pages
 
@@ -100,15 +128,18 @@ Workers Free は 10 万リクエスト/日。1 件バズって 10 万人が来�
 
 ## 落選案と落選理由
 
-**A. 1 repo に全部入れる（サイト + lab）**
-sketch 1 件の commit がサイトのビルドを毎回走らせ、作品側の壊れた WebGPU コードがサイトのデプロイを止める。500 件の Vite entry を 1 つのビルドに同居させるのも無理が出る。採らない。
+**A. サイトと作品を別 repo・別デプロイにする（サブドメイン `lab.takumifukasawa.com`）**
+当初の案。URL が 2 系統になり「どちらを貼るか」が毎回の判断になるうえ、URL を削った人の救済にもリダイレクトが要る。
+分ける唯一の実利は「作品側のビルド事故がサイトを落とさない」ことだが、**作品の成果物をコミットすれば同じ保証が 1 repo で得られる**。
+分ける理由が無くなったので採らない。
 
-**B. lab repo の `meta.yaml` を metadata の正本にし、サイトがビルド時に取り込む**
+**B. 作品の metadata を作品ディレクトリ側（`lab/<slug>/meta.yaml`）に置く**
 「作品を作った repo で metadata も書く」ほうが筋は良いが、submodule か GitHub API fetch が必要になり、ビルドが外部状態に依存する（= Cloudflare 側のプレビュービルドが壊れやすく、ローカルと挙動が違う）。Astro Content Collections の型検査も repo 内で完結しなくなる。
 v0 では採らない。**移行可能性だけ確保する**: frontmatter にサイト固有の表示指示（レイアウト名・並び順の手指定など）を入れず、フラットな値だけにしておく。将来 B へ移るときは生成元が変わるだけになる。
 
 **C. sketch ごとに repo を分ける**
-依頼文のとおり管理コストが高い。Cloudflare Pages の project も 1 作品 1 個になる。採らない。
+依頼文のとおり管理コストが高い。Cloudflare Pages の project も 1 作品 1 個になる。採らない
+（ただし決定 0003 の 4 条件を満たす重いもの — PaleGL のようなライブラリ、wasm / Rust が混ざるもの — だけは独立 repo に出す）。
 
 **D. メディアをサイト repo に入れて Astro の画像最適化に任せる（`src/assets`）**
 500 件 × 動画の repo は clone もビルドも重くなり、ビルド時間が件数に比例して伸びる。Astro の画像最適化は mp4 を扱わない。採らない。
@@ -116,7 +147,7 @@ v0 では採らない。**移行可能性だけ確保する**: frontmatter に�
 **E. GitHub Pages**
 不可能ではないが採らない。公式の制限（2026-10-07 確認。`../references/cloudflare-limits.md`）で差が出るのは 2 点。
 
-1. **帯域が 100 GB/月のソフト上限**。メディアは R2 なのでサイト本体は軽く（詳細ページ 150 KB なら月 67 万 PV 相当）問題にならないが、効くのは `lab` 側で、Three.js のバンドルが 1 MB なら **10 万回で上限**。1 件バズれば数日で到達し、超えると警告 → throttle。**バズった時に「止まる側」に倒れる。** Cloudflare Pages は静的アセットの帯域制限がドキュメントに存在しない。
+1. **帯域が 100 GB/月のソフト上限**。メディアは R2 なのでサイト本体は軽く（詳細ページ 150 KB なら月 67 万 PV 相当）問題にならないが、効くのは作品側で、Three.js のバンドルが 1 MB なら **10 万回で上限**。1 件バズれば数日で到達し、超えると警告 → throttle。**バズった時に「止まる側」に倒れる。** Cloudflare Pages は静的アセットの帯域制限がドキュメントに存在しない。
 2. **R2 の custom domain は同じ Cloudflare アカウントのゾーンにしか張れない**。つまり R2 を使う時点で Cloudflare DNS が前提になり、そこから Pages を使わない積極的な理由が残らない。
 
 ほかに `_headers` / `_redirects` が無く Cache-Control も CSP もリダイレクトも設定できない、PR プレビューが無い、という差もある。
@@ -128,5 +159,11 @@ GitHub Pages の利点（GitHub だけで完結する／ビルドが Actions で
 
 ## 影響・やり直す条件
 
-- `lab.takumifukasawa.com` と `media.takumifukasawa.com` のサブドメインを確保する前提になる。
-- **やり直す条件**: (1) 1 日の公開手数が 3 コマンドを超えて恒常的に摩擦になったら、落選案 B（lab repo 側を正本に）へ移る。(2) Cloudflare が Pages を新規受付停止したら、同じ静的成果物を Workers Static Assets へ移す（成果物が `dist/` の静的ファイルなので移行は deploy 設定だけで済む。この独立性は意図的）。
+- `media.takumifukasawa.com` のサブドメインを確保する前提になる（R2 の custom domain）。作品用のサブドメインは不要。
+- **ビルド成果物を git にコミットする**ことを受け入れる。見込み ~20 MB（上の実測見込み）。
+  Vite の vendor チャンクが content-hash で共有されることに依存しているので、
+  **P0 で sketch 5〜10 件を積んだ時点で実測し、見込みから外れていたら `../learnings.md` に残す。**
+- **やり直す条件**:
+  1. repo サイズが 200 MB を超えたら、作品の成果物を R2 に移し `/lab/*` を Worker でプロキシする方式を検討する（URL は変わらない）。
+  2. Cloudflare が Pages を新規受付停止したら、同じ静的成果物を Workers Static Assets へ移す（成果物が `dist/` の静的ファイルなので移行は deploy 設定だけで済む。この独立性は意図的）。
+  3. 1 日の公開手数が 3 コマンドを超えて恒常的に摩擦になったら、落選案 B（作品ディレクトリ側を metadata の正本に）へ移る。

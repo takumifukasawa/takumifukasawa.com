@@ -8,15 +8,17 @@
 
 ## 全体の地図
 
-このリポジトリは**ハブ**である。作品の実行環境とメディアは外にある（決定 `decisions/0001-overall-architecture.md`）。
+repo は 1 つ。サイト・作品・カードが同じ repo に揃い、**メディアだけが外**にある（決定 `decisions/0001-overall-architecture.md`）。
 
 ```
-takumifukasawa.com  (このリポジトリ / Astro static / Cloudflare Pages)
-  ├─ src/content/{lab,works,notes}   metadata の正本（Markdown / MDX）
-  ├─ media/manifest.json               R2 に置いたメディアの索引（生成物だがコミットする）
+takumifukasawa.com  (1 repo / Astro static / Cloudflare Pages)
+  ├─ src/                        Astro（サイト本体）
+  ├─ src/content/lab/            カード = metadata の正本（Markdown）
+  ├─ lab/<NNN-slug>/             作品のソース（Vite / npm / TS / GLSL 自由）
+  ├─ public/lab/<NNN-slug>/      作品のビルド成果物（★ コミットする。Pages はコピーするだけ）
+  ├─ media/manifest.json         R2 に置いたメディアの索引（生成物だがコミットする）
   └─ 外部参照
-       ├─ lab.takumifukasawa.com       lab repo の deploy。v0 では別タブで開く（将来 iframe）
-       └─ media.takumifukasawa.com      R2 bucket。poster / mp4
+       └─ media.takumifukasawa.com   R2 bucket。poster / mp4
 ```
 
 ### このリポジトリ内の層
@@ -28,6 +30,8 @@ src/lib/            純粋ロジック（media 解決・collection クエリ）
 src/components/     表示
 src/layouts/        ページの外枠
 src/pages/          ルーティング
+lab/                作品のソース。src/ からは参照しない（独立）
+public/lab/         作品のビルド成果物。Astro はコピーするだけ
 scripts/            公開フローの CLI（Astro に依存しない）
 ```
 
@@ -37,8 +41,9 @@ scripts/            公開フローの CLI（Astro に依存しない）
 
 - `src/lib` は `src/components` を知らない。
 - `src/components` は `getCollection()` を直接呼ばない。collection の取得は `src/pages`（または `src/lib/collections.ts`）で行い、components には**解決済みのデータを props で渡す**。
-- `scripts/` は `src/` に依存してよいが、`src/` は `scripts/` に依存しない。
-- 外部 URL（R2 / lab）の組み立ては `src/lib/media.ts` と `src/lib/urls.ts` だけが知る。**他の場所にホスト名を書かない。**
+- `scripts/` は `src/` と `lab/` に依存してよいが、`src/` は `scripts/` と `lab/` に依存しない。
+- **`lab/`（作品のソース）と `src/`（サイト）は互いに import しない。** 作品はサイトのビルドに参加せず、成果物として `public/lab/` に置かれるだけ。
+- 外部 URL（R2）の組み立ては `src/lib/media.ts` だけが知る。**他の場所にホスト名を書かない。**
 
 ## 不変条件と強制手段
 
@@ -49,11 +54,12 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | `tags` に既知語の表記ゆれが無い（未知語は通す） | `.harness/checks.sh` の `tag normalization` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
 | v0 のサイトは iframe を 1 つも生成しない（`embedUrl` は別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
-| サイトのビルドは lab repo / R2 に到達できなくても成功する | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
+| サイトのビルドは作品のコードに触らない（`public/lab/` をコピーするだけ） | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
 | R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
+| `src/` は `lab/` を import しない（作品はサイトのビルドに参加しない） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
 
 ## 意図的に許している自由
 
 - CSS の書き方（素の CSS / Tailwind / CSS Modules のいずれでもよい）。作品が主役なのでサイト側の見た目は後から変えられるようにしておく。
-- lab 側のライブラリ選択は作品ごとに自由（Three.js / 素の WebGPU / PaleGL など）。共通化は 3 回ルール（`spec/publish-pipeline.md`）のみで縛る。
+- `lab/` 配下のライブラリ選択とビルド設定は作品ごとに自由（Three.js / 素の WebGPU / PaleGL など）。成果物をコミットするので、後から依存を上げても既存作品は壊れない。共通化は 3 回ルール（`spec/publish-pipeline.md`）のみで縛る。
 - Notes の MDX コンポーネントの作り方。

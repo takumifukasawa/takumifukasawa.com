@@ -2,28 +2,28 @@
 
 同じ語が複数のものを指す場所だけを書く。自明な語は書かない。
 
-## sketch の URL は 1 つだけ（v0）
+## sketch の URL は 1 つだけ
 
-詳細ページを作らないので（`spec/site-v0.md`）、sketch を指す URL は 1 つ。
+| URL | 中身 |
+|---|---|
+| `takumifukasawa.com/lab/<NNN-slug>/` | **作品が実際に動く**（`public/lab/<NNN-slug>/` のビルド成果物） |
+| `takumifukasawa.com/` | 全 sketch のグリッド。クリックで上へ飛ぶ |
+| `takumifukasawa.com/about/` | 自己紹介・Links・PaleGL |
 
-| URL | v0 | 中身 |
-|---|---|---|
-| `lab.takumifukasawa.com/<NNN-slug>/` | **ある** | **作品が実際に動く**（lab repo のデプロイ） |
-| `takumifukasawa.com/` | **ある** | 全 sketch のグリッド。クリックで上へ飛ぶ |
-| `takumifukasawa.com/lab/<NNN-slug>/` | **ある（301）** | `lab.takumifukasawa.com/<NNN-slug>/` へリダイレクト。口頭で言える URL を確保するため（決定 0001）。サイト側の詳細ページを作る予定は無い |
+サブドメインは使わない（決定 0001）。URL を削れば `/lab/` → `/` と自然にトップへ着く。
+`media.takumifukasawa.com` だけはサブドメイン（R2 の custom domain はこの形しか取れない）。
 
-サブドメインが正規なのは、1 ドメインに寄せる 2 つの方法がどちらも割に合わないため（決定 0001）。
-Workers プロキシは無料枠 10 万リクエスト/日を 1 件のバズで 2.4 時間で尽くしてサイトが落ちる。
-1 repo 統合は 500 件分のビルド成果物を repo にコミットすることになる。
-代わりに `_redirects` 1 行で `takumifukasawa.com/lab/*` も使える URL にしてある。
+## sketch 1 件は同じ repo の 3 か所に分かれている
 
-## sketch 1 件は 2 つの場所に分かれている
+| | パス | 中身 | コミットするか |
+|---|---|---|---|
+| ソース | `lab/<NNN-slug>/` | `index.html`（OGP 入り）/ `main.ts` / シェーダー。Vite / npm / TS / GLSL を自由に使う | する |
+| ビルド成果物 | `public/lab/<NNN-slug>/` | 手元で `pnpm build` した出力 | **する**（これが配信される） |
+| カード | `src/content/lab/<NNN-slug>.md` | frontmatter（`date` / `title` / `medium` / `poster` / `tags` …） | する |
 
-| | コード（作品そのもの） | カード（グリッドの 1 枚） |
-|---|---|---|
-| どこ | **lab リポジトリ**（`github.com/takumifukasawa/lab`） | **この個人サイトの repo**（`src/content/lab/<NNN-slug>.md`） |
-| 中身 | `index.html`（OGP 入り）/ `main.ts` / シェーダー | frontmatter（`date` / `title` / `poster` / `tags`） |
-| 役割 | `lab.takumifukasawa.com/<NNN-slug>/` で動く | `takumifukasawa.com/` のグリッドに並ぶ |
+**成果物をコミットするのが設計の核**。Cloudflare Pages のビルドは Astro だけを走らせ、
+`public/` はコピーするだけなので、**サイトのビルドは作品のコードに触らない**。
+だから作品のビルドが壊れてもサイトは出るし、依存を上げても既存作品の bundle は変わらない（決定 0001）。
 
 ## `lab` が指すもの 3 つ
 
@@ -32,18 +32,17 @@ Workers プロキシは無料枠 10 万リクエスト/日を 1 件のバズで 
 
 | 呼び方 | 指すもの |
 |---|---|
-| **lab リポジトリ** / `lab` repo | 作品の実行コードが入る GitHub repo。`index.html` があるものだけがデプロイされる（決定 0003） |
-| **lab サイト** / `lab.takumifukasawa.com` | 上をデプロイしたもの。作品が動く場所 |
-| **lab コレクション** / `src/content/lab/` | この個人サイト側の metadata（md 群）。Astro の content collection |
-
-（`takumifukasawa.com/lab/*` は 301 リダイレクトとしてだけ存在する。ページは無い）
+| **`lab/` ディレクトリ** | 作品のソース置き場。`index.html` があるものだけがビルドされる（決定 0003） |
+| **lab コレクション** / `src/content/lab/` | カードの置き場（md 群）。Astro の content collection |
+| **`/lab/`** | 配信される URL（`takumifukasawa.com/lab/<NNN-slug>/`） |
 
 ## その他
 
 | 語 | 意味 |
 |---|---|
 | **sketch** | tier 1 の 1 件の呼び方。URL と識別子には出さない（決定 0002） |
-| **technical study** | `note` が紐付いた sketch。独立した階層ではない（`spec/content-model.md`） |
-| **`tags`** | 技術と意図を混ぜた 1 本のタグ列（`threejs` / `glsl` / `density` / `erosion` …）。script がソースから推定して埋める。検査は既知語の表記ゆれだけで、**未知語は通す**（`spec/content-model.md`） |
+| **technical study** | `notes` の記事が紐付いた sketch。独立した階層ではない（`spec/content-model.md`） |
+| **`medium`** | 媒体の種別（`runtime` / `video` / `image`）。明示フィールドとして持つ |
+| **`tags`** | 技術と意図を混ぜた 1 本のタグ列（`threejs` / `glsl` / `density` …）。script がソースから推定して埋める。検査は既知語の表記ゆれだけで、**未知語は通す** |
 | **`description`** | 任意の説明。空のまま運用してよい。長さ制限なし |
 | **mediaKey** | R2 のオブジェクトキー。frontmatter はこれだけを持ち、ホスト名を書かない（決定 0001） |

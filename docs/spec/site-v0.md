@@ -10,18 +10,18 @@
 
 ## フェーズ（順序が重要）
 
-サイトより **lab と公開フローを先に立てる**。サイトが無くても sketch は X に投稿できるが、
+サイトのページより **`lab/` と公開フローを先に立てる**。ページが無くても sketch は X に投稿できるが、
 sketch が無いサイトには載せるものが無い。順序を逆にすると「サイトを作り込む」ほうに時間が流れる。
 
 | Phase | 範囲 | 完了の条件 |
 |---|---|---|
-| **P0** | `lab` repo + `lab.takumifukasawa.com` + R2 + `media.takumifukasawa.com` | sketch 001 が `lab` で動き、poster/mp4 が R2 から配信され、X に投稿できる |
+| **P0** | `lab/` の雛形 + `pnpm new` / `pnpm lab:add` + R2 + `media.takumifukasawa.com` + Pages | sketch 001 が `takumifukasawa.com/lab/001-flow-field/` で動き、poster/mp4 が R2 から配信され、X に投稿できる |
 | **P1** | サイト v0（この doc の範囲）。**2 ページだけ** | sketch 1〜10 件程度が載ったサイトが `takumifukasawa.com` で公開されている |
 | **P1.5** | Notes 一式（`/notes/` + 記事ページ + MDX + Shiki + KaTeX + RSS） | **最初の記事を書きたくなった時に作る**。1 セッションで足りる |
 | **P2** | `/lab/` 索引の分離 / 日付密度グリッド / サイト内 embed（iframe のクリックロード）/ Works ページ / tag 一覧 / 動的 OGP | （別 spec） |
 | **P3** | 英語対応 / AI による metadata 生成 / X 連携の自動化 | （別 spec） |
 
-P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に sketch を 5〜10 件積んでから P1 に入る
+P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フローと Pages のデプロイだけ）。P0 の最中に sketch を 5〜10 件積んでから P1 に入る
 （schema は実データ 5 件を通すまで必ず間違っているので、架空の 1 件で設計を固めない）。
 
 ## P1 の範囲（作るページ）
@@ -38,16 +38,15 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
 
 | 条件 | 行き先 |
 |---|---|
-| `embedUrl` がある | `lab.takumifukasawa.com/<NNN-slug>/`（実物が動く） |
+| `embedUrl` がある | `takumifukasawa.com/lab/<NNN-slug>/`（実物が動く。同一ドメインだが別タブで開く） |
 | 無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
 | どちらも無い | `media.takumifukasawa.com/.../poster.webp` |
 
-人に特定の作品を見せるリンクも `lab.takumifukasawa.com/...` になるので、**OGP は lab 側の `index.html` 雛形**に入れておく（自動で付く）。
+人に特定の作品を見せるリンクも `takumifukasawa.com/lab/...` になるので、**OGP は作品の `index.html` 雛形**に入れておく（自動で付く）。
 サイト側の OGP は `/` と `/about/` だけで足りる（X には動画を直接アップロードする方針なので、サイトの URL を貼らない）。
 
 ### P1 に入れる機能（ページ以外）
 
-- **`_redirects` に 1 行**: `/lab/* https://lab.takumifukasawa.com/:splat 301`。`takumifukasawa.com/lab/<slug>/` も使える URL にする（決定 0001）
 - sitemap.xml
 - **Cloudflare Web Analytics**（script 1 行、無料、Cookie なし）。バズった時に数字が見られない状態を作らない
 - OGP（`astro.config` の `site` 設定 + `poster` を `og:image` に使う）
@@ -69,13 +68,13 @@ P0 は**サイト repo の作業を 1 行も含まない**。P0 の最中に ske
       ※ `src/data/tech.ts`（技術タグの正規名と alias）は**空から作らず、P0 で積んだ sketch 5〜10 件で実際に使った語**を初期値にする
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/` の初期転送 1.5 MB 以内
-- [ ] `/lab/<slug>/` は **iframe を 1 つも生成しない**（`embedUrl` は別タブで開くリンク。決定 0001）
+- [ ] サイトは **iframe を 1 つも生成しない**（`embedUrl` は別タブで開くリンク。決定 0001）
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
 - [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れず、詳細ページではネイティブ比率で出る
 - [ ] JS を無効にしても sketch 索引と詳細（poster・テキスト・リンク）が読める
 - [ ] sitemap.xml が生成される
-- [ ] `takumifukasawa.com/lab/001-flow-field/` が `lab.takumifukasawa.com/001-flow-field/` に 301 される
+- [ ] `takumifukasawa.com/lab/` は `/` にリダイレクトするか 404（URL を削った人がトップに辿れる）
 - [ ] `draft: true` にして push するとそのカードがサイトから消える（kill switch。1 分以内に反映）
 
 ### 500 件のダミー検証について
@@ -89,7 +88,7 @@ Lighthouse までは測らない — iframe を外し画像を R2 に出した�
 
 - **サイト内 embed（iframe）**。`embedUrl` は別タブで開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
 - Works 一覧 / 詳細ページ、Major Work の専用ページ
-- tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/lab/` の年別で足りる）
+- tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/` の年別セクションで足りる）
 - 動的 OGP 画像生成（`poster` をそのまま `og:image` に使う）
 - masonry レイアウト（高さがばらつくタイル）。正方形グリッドで足りるうえ、500 件での挙動が読めない
 - ダークモード以外のテーマ切り替え、凝った transition、カスタムカーソル等の演出
@@ -105,5 +104,5 @@ Lighthouse までは測らない — iframe を外し画像を R2 に出した�
 
 ## 未確定事項
 
-- （解決済 2026-10-08）サブドメインは `lab.takumifukasawa.com`。決定 0002 を参照
+- （解決済 2026-10-08）作品も同じドメインに置き、URL は `takumifukasawa.com/lab/<slug>/`。決定 0001 を参照
 - フォント・配色・レイアウトの方向性（作品が主役なので低彩度・余白重視を想定）→ P1 着手時に決める

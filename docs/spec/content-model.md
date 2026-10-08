@@ -39,7 +39,7 @@ const lab = z.object({
   description: z.string().optional(),    // 空のまま運用してよい。長さ制限は付けない
   video: mediaKey.optional(),            // mp4
   embedUrl: z.string().url().optional(), // 別タブで開く実物の URL
-  repo: z.string().url().optional(),     // 導出しない。lab repo 外のものや repo が無いものがある
+  repo: z.string().url().optional(),     // 導出しない。`lab/` 配下に無いもの（独立 repo のもの）や repo が無いものがある
   draft: z.boolean().default(false),     // 何らかの理由で落としたい時のため。notes / works と同じ扱い
 });
 ```
@@ -65,7 +65,7 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
 ```
 グリッド（/）  poster を正方形にトリミングして並べる（object-fit: cover）
                カードに title / date / tags
-クリック先     embedUrl があれば lab.takumifukasawa.com/<slug>/
+クリック先     embedUrl があれば takumifukasawa.com/lab/<slug>/
                無ければ video の mp4（ブラウザのプレイヤー）
                無ければ poster の画像
 ```

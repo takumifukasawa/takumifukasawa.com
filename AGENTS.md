@@ -87,6 +87,6 @@
 
 ## やらないこと
 
-- 設計を先回りして複雑にしない。**3 回同じコードを書くまで共通化しない**（`lab` repo の `core/AGENTS.md`）
+- 設計を先回りして複雑にしない。**3 回同じコードを書くまで共通化しない**（`lab/core/AGENTS.md`）
 - frontmatter に導出できる情報を持たせない（`docs/spec/content-model.md` の 2 段の判断基準）
 - v0 の範囲を広げない（`docs/spec/site-v0.md` の「P1 で作らないもの」）

@@ -9,7 +9,7 @@ const run = (cmd: string, args: string[]) => {
     return execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`${cmd} not found. Install it with: brew install ffmpeg (docs/setup.md)`);
+      throw new Error(`${cmd} not found. Install ffmpeg (macOS: brew install ffmpeg / Windows: winget install Gyan.FFmpeg --scope user). docs/setup.md`);
     }
     const stderr = String((error as { stderr?: string }).stderr ?? '').trim().split('\n').slice(-5).join('\n');
     throw new Error(`${cmd} failed:\n${stderr}`);

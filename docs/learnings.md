@@ -5,6 +5,18 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-08 Windows では `corepack enable` が admin 無しで失敗する
+
+- 症状: `corepack enable` が `EPERM: operation not permitted, open 'C:Program Files
+odejspnpx.ps1'` で落ちる。
+  pnpm が入らないので `pnpm install` 以降が全部進まない。
+- 原因: corepack はシムを **Node 本体のインストール先**（`C:Program Files
+odejs`）に書く。ここは admin 権限が要る。
+- 対処 / 再発したら: admin を使わずに済ませる。`npm install -g pnpm@<package.json の packageManager の版>` で入れる
+  （npm のグローバルは `%APPDATA%
+pm` でユーザー書き込み可）。版を合わせておけば `packageManager` と食い違わない。
+  OS 別の手順は `setup.md` の「OS 別のコマンド」。
+
 ## 2026-10-08 pre-commit の実行ビットが git index 上で落ちて、フックが黙って無視される（Windows）
 
 - 症状: `harness init` 直後は `doctor` が OK だったのに、`git add -A` を挟んだ後の `doctor` が

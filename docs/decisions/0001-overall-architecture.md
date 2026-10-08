@@ -180,8 +180,8 @@ GitHub Pages の利点（GitHub だけで完結する／ビルドが Actions で
 ## 影響・やり直す条件
 
 - `media.takumifukasawa.com` のサブドメインを確保する前提になる（R2 の custom domain）。作品用のサブドメインは不要。
-- **ビルド成果物を git にコミットする**ことを受け入れる。見込み ~20 MB（上の実測見込み）。
-  Vite の vendor チャンクが content-hash で共有されることに依存しているので、
+- **ビルド成果物を git にコミットする**ことを受け入れる。見込みは 500 件で working tree ~150 MB（上の「repo サイズ」）。
+  `.git` 側は delta 圧縮の効き方次第で実測しないと分からないので、
   **P0 で sketch 5〜10 件を積んだ時点で実測し、見込みから外れていたら `../learnings.md` に残す。**
 - **やり直す条件**:
   1. working tree が 300 MB を超えたら、**Three.js を external にして共有コピー 1 本にする**（上の「逃げ道」。URL も制作体験も変わらない）。それでも足りなければ成果物を R2 に移し `/lab/*` を Worker でプロキシする方式を検討する。

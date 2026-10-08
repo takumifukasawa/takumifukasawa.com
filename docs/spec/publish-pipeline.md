@@ -150,7 +150,7 @@ sketch を人に見せるリンクは `takumifukasawa.com/lab/<NNN-slug>/` に�
 
 問題は `og:image`。録画は制作の後なので `pnpm new` の時点で poster はまだ存在しない。
 しかし **R2 の key を `lab/<NNN-slug>/poster.webp` に固定してある**ので（決定 0001）、
-slug と今年から **URL が最初から予測できる**。だから `pnpm new` が全部書ける。
+slug だけから **URL が最初から予測できる**（key に年を入れない理由。`../learnings.md`）。だから `pnpm new` が全部書ける。
 
 ```html
 <!-- pnpm new 001-flow-field "Flow field with curl noise" が生成する -->

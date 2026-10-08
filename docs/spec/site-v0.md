@@ -28,7 +28,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 
 | URL | 内容 |
 |---|---|
-| `/` | **全 sketch のグリッド。これが索引も詳細も兼ねる。** 年別セクション（`/#2026`）、`featured` を上に。カードは正方形固定 + `object-fit: cover`（縦横混在でも崩れない）。カードに出すのは `title` / `date` / `tags`。**クリックで別タブに実物を開く**（下記） |
+| `/` | **全 sketch のグリッド。これが索引も詳細も兼ねる。** 年別セクション（`/#2026`）。カードは正方形固定 + `object-fit: cover`（縦横混在でも崩れない）。カードに出すのは `title` / `date` / `tags`。**クリックで別タブに実物を開く**（下記） |
 | `/about/` | 自己紹介・やっていること・Links / Contact・PaleGL へのリンク |
 | `/404` | |
 
@@ -39,8 +39,9 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 | 条件 | 行き先 |
 |---|---|
 | `public/lab/<NNN-slug>/index.html` がある | `takumifukasawa.com/lab/<NNN-slug>/`（実物が動く。同一ドメインだが別タブで開く） |
-| 無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
-| どちらも無い | `media.takumifukasawa.com/.../poster.webp` |
+| 無く `externalUrl` がある | その URL（独立 repo の作品。決定 0003） |
+| 上のどちらも無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
+| いずれも無い | `media.takumifukasawa.com/.../poster.webp` |
 
 人に特定の作品を見せるリンクも `takumifukasawa.com/lab/...` になるので、**OGP は作品の `index.html` 雛形**に入れておく（自動で付く）。
 サイト側の OGP は `/` と `/about/` だけで足りる（X には動画を直接アップロードする方針なので、サイトの URL を貼らない）。
@@ -84,8 +85,8 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 - [ ] サイトは **iframe を 1 つも生成しない**（実物へは別タブで開くリンク。決定 0001）
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
-- [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れず、詳細ページではネイティブ比率で出る
-- [ ] JS を無効にしても sketch 索引と詳細（poster・テキスト・リンク）が読める
+- [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れない（カードは正方形 + `object-fit: cover`）
+- [ ] JS を無効にしても `/` の sketch 索引（poster・テキスト・リンク）が読める
 - [ ] sitemap.xml が生成される
 - [ ] `takumifukasawa.com/lab/` は `/` にリダイレクトするか 404（URL を削った人がトップに辿れる）
 - [ ] `draft: true` にして push するとそのカードがサイトから消える（kill switch。1 分以内に反映）

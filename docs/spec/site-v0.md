@@ -75,7 +75,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 | 日付密度グリッド | sketch 10 件で出すと空白だらけで逆効果。50 件くらい溜まってから意味が出る | P2 |
 | Notes 一式（記事ページ / MDX / Shiki / KaTeX / RSS） | 記事が 0 本の段階で記事基盤を作るのは早い。空ページができるだけ。書く対象の sketch が溜まってから作る | P1.5 |
 | Works の一覧・詳細ページ | 代表作が出来てから。今あるのは PaleGL だけで、`/about` からリンクすれば足りる | P2 |
-| サイト内 embed（iframe） | 実物へは別タブで開くリンクにする（決定 0001） | P2 |
+| サイト内 embed（iframe） | 実物へは別タブで開くリンクにする（決定 0001）。P2 の形は three.js examples / atlab.io と同じ: **直接開けば作品だけ**（+ `_shell.js` のリンク）、**一覧から開けばハブの中に iframe で出す**。作品も URL も変わらないので P1 の成果物は壊れない（`_shell.js` は iframe の中では出ない。決定 0004）。**カメラ・センサー系の作品**は iframe の中で動かない恐れがある（iOS Safari。決定 0004）。P2 では (1) 同一オリジン + `allow` 属性で実機確認し、(2) 動かなければ `lab:build` がソースの `getUserMedia` / `DeviceMotionEvent` / `DeviceOrientationEvent` を検出して build-meta に書き、ハブはその作品だけ iframe ではなくページ遷移で開く（導出できるので frontmatter に持たない）。直接開く URL は常に動く | P2 |
 
 ## 受け入れ条件
 

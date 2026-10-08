@@ -1,11 +1,10 @@
 // pnpm new <NNN-slug> "<title>"
 // Scaffold lab/<NNN-slug>/ from scripts/templates/sketch/ (docs/spec/publish-pipeline.md).
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { labDir, SLUG_PATTERN } from './lib/lab.ts';
 
-const root = join(import.meta.dirname, '..');
 const templateDir = join(import.meta.dirname, 'templates', 'sketch');
-const labDir = join(root, 'lab');
 
 const fail = (message: string): never => {
   console.error(`pnpm new: ${message}`);
@@ -16,7 +15,7 @@ const [slug, title] = process.argv.slice(2);
 if (!slug || !title) {
   fail('usage: pnpm new <NNN-slug> "<title>"   e.g. pnpm new 001-flow-field "Flow field with curl noise"');
 }
-if (!/^\d{3}-[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
+if (!SLUG_PATTERN.test(slug)) {
   fail(`slug must look like 001-flow-field (3 digits, then lowercase words joined by "-"): ${slug}`);
 }
 
@@ -31,11 +30,13 @@ const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const outDir = join(labDir, slug);
-mkdirSync(outDir, { recursive: true });
-for (const file of readdirSync(templateDir)) {
-  const src = readFileSync(join(templateDir, file), 'utf8');
+cpSync(templateDir, outDir, { recursive: true });
+for (const file of readdirSync(outDir, { recursive: true, encoding: 'utf8' })) {
+  const path = join(outDir, file);
+  if (!/\.(html|ts)$/.test(file)) continue;
+  const src = readFileSync(path, 'utf8');
   const titleValue = file.endsWith('.html') ? escapeHtml(title) : title.replace(/\n/g, ' ');
-  writeFileSync(join(outDir, file), src.replaceAll('__SLUG__', slug).replaceAll('__TITLE__', titleValue));
+  writeFileSync(path, src.replaceAll('__SLUG__', slug).replaceAll('__TITLE__', titleValue));
 }
 
 console.log(`created lab/${slug}/`);

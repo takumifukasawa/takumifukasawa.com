@@ -18,4 +18,5 @@
 
 | パス | 規律の要点 |
 |---|---|
+| `lab/AGENTS.md` | コードを書く前に `docs/coding.md` の「lab」の節を読む（class を使わない・文字列で参照するプロパティはクォート）。作品の `vite.config.ts` は作品ごとのコピーにする |
 | `lab/core/AGENTS.md` | `core/` に出してよいのは**同じコードを 3 つ以上の sketch で書いた後**だけ。`core/` から `lab/<NNN-slug>/` への import は禁止（依存の向きは sketch → core の一方向）。詳細: `../spec/publish-pipeline.md` |

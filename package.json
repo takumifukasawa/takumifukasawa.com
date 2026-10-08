@@ -8,9 +8,12 @@
   },
   "scripts": {
     "new": "node scripts/new.ts",
-    "dev:lab": "node scripts/dev-lab.ts"
+    "dev:lab": "node scripts/dev-lab.ts",
+    "lab:build": "node scripts/lab-build.ts",
+    "lab:rebuild": "node scripts/lab-build.ts"
   },
   "devDependencies": {
+    "terser": "^5.51.2",
     "vite": "^8.3.3",
     "vite-plugin-mkcert": "^2.1.0"
   }

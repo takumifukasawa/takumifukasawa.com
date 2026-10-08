@@ -36,8 +36,8 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 0-3 | `lab/core/AGENTS.md`（3 回ルール）と `lab/core/CLAUDE.md` | AI | 済 | `../../rules/README.md` に登録済み |
 | 0-4 | `pnpm new <slug> "<title>"`: 雛形（canvas + rAF の最小、OGP、`/_shell.js` の 1 行、`vite.config.ts` は `base: './'`、絶対パス禁止と `?clean` の慣習をコメントで） | AI → 確認 | 済 | 2026-10-08 に動作を確認してもらった。雛形は「共同」寄り。`scripts/new.ts` と `scripts/templates/sketch/`。生成物を見せて確認を取る |
 | 0-4b | `pnpm dev:lab <slug>`: 作品 1 件を Vite で起動（HMR）。`/_shell.js` も配信して導線込みで見る。`--https`（mkcert）で LAN 内の実機から HTTPS で開ける（iOS のカメラ・ジャイロは HTTPS 必須） | AI | 一部済 | `scripts/dev-lab.ts`。HMR と `/_shell.js` の配信は確認済み。`--https` は未確認（mkcert のルート証明書の登録に sudo が要るため、初回は人間が実行する） |
-| 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 未着手 | |
-| 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 未着手 | 決定 0004。見た目は P1 で決める |
+| 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 済 | 一時ディレクトリに出し、成功時だけ差し替える。md からの `<head>` 書き直しは 0-8 で足す | |
+| 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 済 | 決定 0004。見た目は P1 で決める |
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
 | 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 未着手 | 0-7 が前提 |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 未着手 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ） |
@@ -55,6 +55,8 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 
 - 2026-10-08: 決定 0001〜0004 を採用、spec 3 本に合意。計画を開始。
 - 2026-10-08: pnpm は 11 系（11.28.5）。12 は 2026-08-26 リリースで 6 週間しか経っておらず、知見が少ない。Node は 24（Active LTS、2028-04 まで）。22 は 2027-04 で EOL になり 2 年の運用に足りない。
+- 2026-10-08: 雛形のループは takumifukasawa/html-game-template と同じ構造にする（`TimeAccumulator` で fixedUpdate を 60Hz 固定、`TimeSkipper` で update / render を 60fps に制限。pixel ratio は `Math.min(window.devicePixelRatio, 1.5)`）。2 ファイルは `lab/core/` ではなく**作品ごとにコピー**する。理由: 成果物は作品ごとに固まる（決定 0001）ので、core の変更が `lab:rebuild --all` で古い作品の挙動を変えるのを避ける。作品ごとに書き換えられる。落選案: `lab/core/` に置く（上記の理由に加え 3 回ルールに反する）、`AppBase` ごと持ち込む（分析用フックはゲーム用で不要）。
+- 2026-10-08: 作品のコードは **class を使わない**（状態はプレーンなオブジェクト + 関数。tree-shaking のため）。`time/` の 2 ファイルも関数に書き直した。ビルドは **terser でプロパティ名まで mangle**（`keep_quoted`。PaleGL と同じ方針）し、modulePreload の polyfill を切る（雛形のバンドル 1565 → 895 バイト）。コードの書き方の規約は `docs/coding.md` に置き、`lab/AGENTS.md` からはそこを読むように指示するだけにした。落選案: Vite 既定の minifier（Oxc）のまま（PaleGL と同じ terser の設定と挙動を使い回せない）、プロパティを `_` 接頭辞だけ mangle（class 前提の方式で、関数ベースでは効きが小さい）。
 - 2026-10-08: P0 に最小の Astro（0-9）を入れる。Pages のビルドコマンド `pnpm build` を P0 から通すため。ページは作らない。落選案: P0 では Pages のビルドを「`public/` をそのまま出す」設定にする（P1 で設定を変えることになり、P0 で実測した Pages の挙動が P1 と変わる）。
 
 ## 進捗ログ（セッションごとに 1〜3 行）

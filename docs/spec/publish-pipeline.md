@@ -80,6 +80,8 @@ export default {
   （作品を iframe で包む構成へ乗り換える時に `git mv` だけで済む。決定 0004）。
   代わりに**作品のコードで `/` から始まる絶対パスを書かない**（相対パスか `import.meta.env.BASE_URL`）。雛形のコメントにそう書く。
 - **`outDir`** を `public/lab/<NNN-slug>/` に直接向けるので、中間ディレクトリもコピー手順も生まれない。
+- **minify は terser**で、プロパティ名まで mangle する（`keep_quoted`。PaleGL と同じ方針）。文字列で参照されるプロパティはクォートする規律と、破損の確かめ方は `../coding.md`。
+  雛形の `vite.config.ts` は作品ごとのコピーなので、守れない作品はその作品だけ `mangleProperties = false` にできる。
 
 ## 再ビルド
 
@@ -129,7 +131,7 @@ pnpm lab:rebuild --all            # 全件（共通の変更を入れた時な�
 
 | ステップ | 約束 |
 |---|---|
-| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは `?clean` で出さない、を雛形のコメントに書く（録画用。決定 0004）。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
+| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」（ループは html-game-template と同じ構造: fixedUpdate 60Hz 固定 + update / render 60fps 上限。`time/` の 2 ファイルは作品ごとにコピー）+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは `?clean` で出さない、を雛形のコメントに書く（録画用。決定 0004）。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<NNN-slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
 | ビルド成果物 | Vite の `outDir` が直接 `public/lab/<NNN-slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため）。**P0 の最初に空の `{}` をコミットしておく**（1 件目を追加する前は存在しないので、無いと初回ビルドが落ちる） |

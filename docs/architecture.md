@@ -53,11 +53,11 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（ネットワークに触らない） | 未強制（実装前） |
 | `tags` に既知語の表記ゆれが無い（未知語は通す） | `.harness/checks.sh` の `tag normalization` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
-| v0 のサイトは iframe を 1 つも生成しない（`embedUrl` は別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
+| v0 のサイトは iframe を 1 つも生成しない（実物へは別タブリンク） | 未強制（レビュー観点。`spec/site-v0.md` の受け入れ条件） | 未強制 |
 | サイトのビルドは作品のコードに触らない（`public/lab/` をコピーするだけ） | ビルドがネットワークを使わないこと（外部 fetch を入れない） | 未強制（レビュー観点） |
 | R2 の key は上書きしない | `scripts/lab-add.ts` が既存 key を put しない | 未強制（実装前） |
 | `src/` は `lab/` を import しない（作品はサイトのビルドに参加しない） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
-| `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`.build-meta.json` の sourceHash と再計算値を比較） | 未強制（実装前） |
+| `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`lab/.build-meta/<slug>.json` の sourceHash と再計算値を比較） | 未強制（実装前） |
 | git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files` | 未強制（実装前） |
 
 ## 意図的に許している自由

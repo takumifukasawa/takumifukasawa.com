@@ -42,7 +42,7 @@ sketch 1 件 = 3 つのものが同じ repo に揃う。
 ### メディアは R2、frontmatter は key だけを持つ
 
 - `media/manifest.json`（サイト repo、生成物をコミット）が `key → { url 相対, width, height, bytes, durationSec }` を持つ。
-- frontmatter は `poster: lab/2026/001-flow-field/poster.webp` のような **key のみ**。ホスト名を書かない。
+- frontmatter は `poster: lab/001-flow-field/poster.webp` のような **key のみ**。ホスト名を書かない。
 - アップロード script が ffmpeg / sharp で最適化 → R2 に put → manifest に追記、までを 1 コマンドでやる。
 - 一度置いた key は上書きしない（immutable、`Cache-Control: public, max-age=31536000, immutable`）。差し替えは新 key。
 
@@ -55,7 +55,7 @@ sketch 1 件 = 3 つのものが同じ repo に揃う。
 
 ### live 作品は v0 では別タブで開く。サイト内 embed は後から
 
-v0 ではサイト内に `<iframe>` を置かない。`embedUrl` を**別タブで開くリンク**にする。
+v0 ではサイト内に `<iframe>` を置かない。実物へは**別タブで開くリンク**にする。
 
 薄く始められること以上に、副作用が良い方向に効く。
 
@@ -96,17 +96,37 @@ takumifukasawa.com/
 2 つ目は副産物として大きい。共通の `package.json` でも、ビルド済みの作品は依存更新の影響を受けない。
 **別 repo にする理由（デプロイの独立）が、成果物の固定で代替される。**
 
-### repo サイズの実測見込み
+### repo サイズ（成果物をコミットする代償）
 
-Vite は依存を content-hash 付きの vendor チャンクに分けるので、**同じ依存バージョンなら同じファイル名・同じ中身 = git は 1 つの blob を共有する**。
+**この方式の唯一の実コストがここ。** 当初「Vite の vendor チャンクが content-hash で git blob を共有するので ~20 MB」と見積もったが、
+2026-10-08 の検算で**機構ごと誤りだった**ことが分かった。
+
+- Vite は単一エントリのアプリビルドで**vendor チャンクを自動分割しない**（公式 build ドキュメントに自動分割の記述が無く、`build.rolldownOptions.output.codeSplitting` 等で明示設定する前提）。
+- より決定的なのは **tree-shaking**。作品ごとに使う Three.js の範囲が違うので、**仮に vendor チャンクを分けても中身が作品ごとに異なり、blob は共有されない**。
+
+再計算した見込み:
 
 | | サイズ |
 |---|---|
-| vendor チャンク（Three.js ~700 KB）× バージョン更新 10 回 | ~7 MB |
-| 作品のコード 500 件 × ~20 KB | ~10 MB |
-| 合計 | **~20 MB** |
+| WebGLRenderer を使う作品の minified バンドル | 400〜600 KB / 件 |
+| 素の WebGL / canvas の作品 | 10〜20 KB / 件 |
+| 500 件（6 割が Three.js 系と仮定）| **~150 MB（working tree）** |
+| `.git` | zlib と類似 blob の delta 圧縮が効くので小さくなるが、**実測しないと不明** |
 
-Pages のファイル数も 500 件 × 約 5 ファイル = 2,500 で 20,000 の上限に余裕がある（`../references/cloudflare-limits.md`）。
+**P0 で sketch 5〜10 件を積んだ時点で `du -sh .git` と working tree を実測し、`../learnings.md` に残す。**
+
+### 150 MB が許容できない場合の逃げ道（本当に共有する方法）
+
+Three.js を `external` にして、**1 本の共有コピー**を全作品が import する。
+
+```
+public/lab/_vendor/three@0.180.0.module.js    ← 1 コピーだけ置く
+```
+
+各作品は import map か直接 URL でこれを読む。Vite は作品自身のコード（TypeScript・GLSL プラグイン・HMR）に使い続けられるので、
+**制作体験は変わらない**。バージョンごとに 1 ファイルなので、10 バージョン使っても ~7 MB。
+
+これを**最初からやるかは P0 の実測で決める**（先回りして複雑にしない）。
 
 ### 落選案
 
@@ -164,6 +184,6 @@ GitHub Pages の利点（GitHub だけで完結する／ビルドが Actions で
   Vite の vendor チャンクが content-hash で共有されることに依存しているので、
   **P0 で sketch 5〜10 件を積んだ時点で実測し、見込みから外れていたら `../learnings.md` に残す。**
 - **やり直す条件**:
-  1. repo サイズが 200 MB を超えたら、作品の成果物を R2 に移し `/lab/*` を Worker でプロキシする方式を検討する（URL は変わらない）。
+  1. working tree が 300 MB を超えたら、**Three.js を external にして共有コピー 1 本にする**（上の「逃げ道」。URL も制作体験も変わらない）。それでも足りなければ成果物を R2 に移し `/lab/*` を Worker でプロキシする方式を検討する。
   2. Cloudflare が Pages を新規受付停止したら、同じ静的成果物を Workers Static Assets へ移す（成果物が `dist/` の静的ファイルなので移行は deploy 設定だけで済む。この独立性は意図的）。
   3. 1 日の公開手数が 3 コマンドを超えて恒常的に摩擦になったら、落選案 B（作品ディレクトリ側を metadata の正本に）へ移る。

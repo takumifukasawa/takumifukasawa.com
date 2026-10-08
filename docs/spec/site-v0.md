@@ -38,12 +38,25 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 
 | 条件 | 行き先 |
 |---|---|
-| `embedUrl` がある | `takumifukasawa.com/lab/<NNN-slug>/`（実物が動く。同一ドメインだが別タブで開く） |
+| `public/lab/<NNN-slug>/index.html` がある | `takumifukasawa.com/lab/<NNN-slug>/`（実物が動く。同一ドメインだが別タブで開く） |
 | 無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
 | どちらも無い | `media.takumifukasawa.com/.../poster.webp` |
 
 人に特定の作品を見せるリンクも `takumifukasawa.com/lab/...` になるので、**OGP は作品の `index.html` 雛形**に入れておく（自動で付く）。
 サイト側の OGP は `/` と `/about/` だけで足りる（X には動画を直接アップロードする方針なので、サイトの URL を貼らない）。
+
+### Cloudflare Pages の設定値（P0 で入れる）
+
+| 項目 | 値 |
+|---|---|
+| Framework preset | なし（Astro を選ぶと余計な設定が入る） |
+| Build command | `pnpm build` |
+| Build output directory | `dist` |
+| Node version | `.nvmrc` か環境変数 `NODE_VERSION` で固定する（Pages の既定は変わりうる） |
+| 環境変数 | `PUBLIC_MEDIA_BASE_URL=https://media.takumifukasawa.com` |
+| Production branch | `main` |
+
+**`pnpm build` は作品をビルドしない**（Astro だけ。作品は `public/lab/` に成果物が入っている。決定 0001）。
 
 ### P1 に入れる機能（ページ以外）
 
@@ -60,7 +73,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 | 日付密度グリッド | sketch 10 件で出すと空白だらけで逆効果。50 件くらい溜まってから意味が出る | P2 |
 | Notes 一式（記事ページ / MDX / Shiki / KaTeX / RSS） | 記事が 0 本の段階で記事基盤を作るのは早い。空ページができるだけ。書く対象の sketch が溜まってから作る | P1.5 |
 | Works の一覧・詳細ページ | 代表作が出来てから。今あるのは PaleGL だけで、`/about` からリンクすれば足りる | P2 |
-| サイト内 embed（iframe） | `embedUrl` は別タブで開くリンクにする（決定 0001） | P2 |
+| サイト内 embed（iframe） | 実物へは別タブで開くリンクにする（決定 0001） | P2 |
 
 ## 受け入れ条件
 
@@ -68,7 +81,7 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
       ※ `src/data/tech.ts`（技術タグの正規名と alias）は**空から作らず、P0 で積んだ sketch 5〜10 件で実際に使った語**を初期値にする
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/` の初期転送 1.5 MB 以内
-- [ ] サイトは **iframe を 1 つも生成しない**（`embedUrl` は別タブで開くリンク。決定 0001）
+- [ ] サイトは **iframe を 1 つも生成しない**（実物へは別タブで開くリンク。決定 0001）
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
 - [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れず、詳細ページではネイティブ比率で出る
@@ -86,7 +99,7 @@ Lighthouse までは測らない — iframe を外し画像を R2 に出した�
 
 ## 範囲外（P1 でやらないと明記するもの）
 
-- **サイト内 embed（iframe）**。`embedUrl` は別タブで開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
+- **サイト内 embed（iframe）**。実物へは別タブで開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
 - Works 一覧 / 詳細ページ、Major Work の専用ページ
 - tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/` の年別セクションで足りる）
 - 動的 OGP 画像生成（`poster` をそのまま `og:image` に使う）

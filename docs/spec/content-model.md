@@ -12,12 +12,27 @@ sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src
 - sketch の frontmatter を「書くのに 30 秒で済む量」に抑える。必須は 5 項目（`date` / `title` / `medium` / `poster` / `tags`）で、**人間が書くのは `title` だけ**。残りは script が埋める。
 - 制作方針（毎作品 1 つは自分で直接触るコアを持つ）を schema 上に残し、後から振り返れるようにする。
 
+## Astro 5 の collection 定義
+
+Astro 5 ではローカルファイルの collection も **`loader` が必須**。schema だけでは動かない。
+
+```ts
+// src/content.config.ts
+import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
+
+const lab = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/lab' }),
+  schema: /* 下記 */,
+});
+```
+
 ## 共通: メディア参照
 
 メディアは R2 の **key 文字列**で参照する。URL を frontmatter に書かない（決定 0001）。
 
 ```ts
-// key は media/manifest.json のキー。例: "lab/2026/001-flow-field/poster.webp"
+// key は media/manifest.json のキー。例: "lab/001-flow-field/poster.webp"
 const mediaKey = z.string().regex(/^[a-z0-9][a-z0-9/_.-]*$/);
 ```
 
@@ -38,7 +53,7 @@ const lab = z.object({
   // --- 任意 5 項目 ---
   description: z.string().optional(),    // 空のまま運用してよい。長さ制限は付けない
   video: mediaKey.optional(),            // mp4
-  embedUrl: z.string().url().optional(), // 別タブで開く実物の URL
+  externalUrl: z.string().url().optional(), // 独立 repo の作品だけ。通常は使わない（下記）
   repo: z.string().url().optional(),     // 導出しない。`lab/` 配下に無いもの（独立 repo のもの）や repo が無いものがある
   draft: z.boolean().default(false),     // 何らかの理由で落としたい時のため。notes / works と同じ扱い
 });
@@ -53,6 +68,7 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
 
 | 持たないもの | 代わり |
 |---|---|
+| `embedUrl` | **導出する。** 同じ repo なので `public/lab/<NNN-slug>/index.html` の有無で判定でき、URL は `/lab/<NNN-slug>/` で決まる。さらに `z.string().url()` は相対パスを拒否するので、絶対 URL を書くしかなくなり「ホスト名を frontmatter に書かない」（決定 0001）と矛盾していた。独立 repo の作品（決定 0003）だけ `externalUrl` で上書きする |
 | `videoWebm` | **mp4 だけ。** H.264 は全ブラウザ・全モバイルで再生でき、webm を併せ持つとエンコード時間・アップロード・R2 容量が 2 倍になる。長尺の動画作品は YouTube 等に置く可能性があるので、その時に考える |
 | `x`（投稿 URL） | 持たない。投稿は `lab:add` の**後**なので script が埋められず、md を再編集する摩擦になる |
 | `note`（Notes への参照） | **`notes` 側の `relatedLab` に一本化する。** 両方向にリンクを持つと必ず片方が腐る。「この sketch に記事があるか」はサイト側で notes を走査すれば分かる |
@@ -65,7 +81,8 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
 ```
 グリッド（/）  poster を正方形にトリミングして並べる（object-fit: cover）
                カードに title / date / tags
-クリック先     embedUrl があれば takumifukasawa.com/lab/<slug>/
+クリック先     public/lab/<slug>/index.html があれば /lab/<slug>/（実物が動く）
+               externalUrl があればそこ（独立 repo の作品）
                無ければ video の mp4（ブラウザのプレイヤー）
                無ければ poster の画像
 ```
@@ -110,7 +127,7 @@ const works = z.object({
   poster: mediaKey,
   gallery: z.array(mediaKey).default([]),
   video: mediaKey.optional(),
-  embedUrl: z.string().url().optional(),
+  externalUrl: z.string().url().optional(),
   repo: z.string().url().optional(),
   tags: z.array(z.string()).min(1),
   credits: z.array(z.object({ role: z.string(), name: z.string(), url: z.string().url().optional() })).default([]),
@@ -158,7 +175,8 @@ Notes / Works の執筆のために入れるもの（いずれも設定数行）
 
 - [ ] `astro check` が通る（`astro sync` の生成型を含む）
 - [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` で再生され、無いものは `poster` 画像が出る
-- [ ] `embedUrl` がある sketch は別タブで開くリンクが出る（v0 では iframe を生成しない）
+- [ ] `public/lab/<slug>/index.html` がある sketch は `/lab/<slug>/` への別タブリンクが出る（v0 では iframe を生成しない）
+- [ ] frontmatter に `embedUrl` を持たない（存在から導出する）
 - [ ] frontmatter の全 mediaKey が `media/manifest.json` に存在することを検査する（`harness check` の `media keys resolve`、ネットワークに触らない）
 - [ ] `tags` に既知語の表記ゆれ（`three.js` / `ThreeJS` など）が無いことを検査する（`harness check` の `tag normalization`）。**未知語は通す**
 - [ ] `draft: true` は本番ビルドに出ない / `pnpm dev` では見える（`lab` / `works` / `notes` すべて）

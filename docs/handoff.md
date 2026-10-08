@@ -40,7 +40,8 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 4. P1: このリポジトリに Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開。
    - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` / `lab build in sync` / `no large files` を登録
    - 500 件ダミーでビルド時間と初期転送量を実測し `learnings.md` に残す
-   - P0 の時点で **repo サイズ（`public/lab/` の成果物）も実測**し、決定 0001 の見込み ~20 MB と照合する
+   - P0 の時点で **repo サイズ（`du -sh .git` と working tree）を実測**し、決定 0001 の見込み ~150 MB と照合する
+   - P0 で **Pages のデプロイ所要時間とログ**も見る（差分アップロードされるかが未確認）
 
 ## 未確定事項（人間の判断待ち）
 
@@ -48,10 +49,21 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - `lab` か `labs` か → **`lab`（単数）を推奨**。決定 0002 の「なぜ `lab`（単数）か」を参照
 - フォント・配色・レイアウトの方向性（P1 着手時）
 
+### 検算（2026-10-08、double-check）で直したもの
+
+- **repo サイズ見積り ~20 MB は機構ごと誤りだった** → ~150 MB（working tree）に修正。Vite は vendor チャンクを自動分割せず、tree-shaking で作品ごとに中身が変わるので blob 共有は起きない。本当に共有する逃げ道（Three.js を external にして `public/lab/_vendor/` の 1 本を全作品が import）を決定 0001 に明記（決定 0001「repo サイズ」）
+- **`embedUrl` は導出可能だった** → 落として `public/lab/<slug>/index.html` の有無から導出。`z.string().url()` が相対パスを拒否するので、絶対 URL を書くしかなく「ホスト名を frontmatter に書かない」と矛盾していた。独立 repo の作品だけ `externalUrl` で上書き
+- **R2 key の年が年末年始に OGP を壊す** → key から年を外した（`lab/<NNN-slug>/...`）。12 月に `pnpm new` して 1 月に `lab:add` すると `og:image` が 404 のまま残り、X のカードキャッシュで取り返しがつかなかった
+- `.build-meta.json` を `public/` の外（`lab/.build-meta/`）へ。`public/` 配下は配信されるので内部メタデータが公開され、`emptyOutDir` で消える危険もあった
+- `media/manifest.json` の空 `{}` を P0 の最初にコミットすると明記（無いと初回ビルドが落ちる）
+- Cloudflare Pages の設定値の表を `spec/site-v0.md` に追加（P0 のダッシュボード作業で必要）
+- Astro 5 の collection は `loader` が必須という記載を `spec/content-model.md` に追加
+- **「Pages は差分アップロードする」は未確認**に格下げ（公式ドキュメントに記述が無い）。P0 で実測
+
 ### 解決済（記録のため残す）
 
 - 作品の URL は `lab.` サブドメインか `takumifukasawa.com/lab` か → **`takumifukasawa.com/lab/<slug>/`**。サブドメインは使わない。実装は「作品を手元でビルドして `public/lab/<slug>/` にコミットする」方式で、Pages のビルドは Astro だけを走らせる。これで 1 ドメイン・1 repo のまま「作品の事故がサイトを落とさない」「依存更新で古い作品が壊れない」が成り立つ（決定 0001）
-- frontmatter 最終形 → 必須 5（`date` / `title` / `medium` / `poster` / `tags`）+ 任意 5（`description` / `video` / `embedUrl` / `repo` / `draft`）。`x` / `note` / `featured` / `videoWebm` / `core` / `no` は持たない。`note` は notes 側の `relatedLab` に一本化（`spec/content-model.md`）
+- frontmatter 最終形 → 必須 5（`date` / `title` / `medium` / `poster` / `tags`）+ 任意 5（`description` / `video` / `externalUrl` / `repo` / `draft`）。`x` / `note` / `featured` / `videoWebm` / `core` / `no` は持たない。`note` は notes 側の `relatedLab` に一本化（`spec/content-model.md`）
 
 - タグを 2 本に分けるか → 分けない。`tech` と `themes` を 1 本の `tags` に統合（`spec/content-model.md`）
 
@@ -72,7 +84,7 @@ agent-harness を導入し、構成案を decisions 3 本 + spec 3 本 + referen
 - バズった時のコスト → 構造的に $0。実際に効くのは R2 Class B のみで 1 件に月 41 万 PV 相当まで無料枠内（`references/cloudflare-limits.md`）
 - GIF を使うか → 使わない。mp4 のみで `autoplay muted loop playsinline`（webm も作らない。決定 0003）
 - R2 を使わない選択肢 → 使わない方が先に課金される（Git LFS の帯域）か品質が落ちる（`references/cloudflare-limits.md`）
-- モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たず、動かないものは `embedUrl` を付けず `video` だけ入れる（`spec/content-model.md`）
+- モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たず、動かないものは `index.html` を置かず `video` だけ入れる（`spec/content-model.md`）
 - live 作品の見せ方 → v0 は別タブで開くリンク。サイト内 embed は P2（URL が変わらないので移行はリンクの差し替えだけ。決定 0001）
 - GitHub Pages にするか → しない。帯域 100 GB/月のソフト上限でバズ時に止まる側に倒れる／R2 を使う時点で Cloudflare DNS が前提になる（決定 0001 落選案 E）
 

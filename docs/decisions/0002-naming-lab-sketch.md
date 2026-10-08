@@ -22,7 +22,7 @@
 | Astro の collection | `lab`（`src/content/lab/*.md`） |
 | 作品のソース | `lab/<NNN-slug>/`（サイトと同じ repo） |
 | 作品の URL | `takumifukasawa.com/lab/<NNN-slug>/` |
-| R2 の key prefix | `lab/<YYYY>/<NNN-slug>/...` |
+| R2 の key prefix | `lab/<NNN-slug>/...` |
 | 公開 CLI | `pnpm lab:add <slug>` |
 
 **1 件の呼び方は `sketch` / スケッチ。** 文章・UI 文言・X の投稿でだけ使い、URL と識別子には出さないので、後からいつでも変えられる。

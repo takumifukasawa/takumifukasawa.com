@@ -49,7 +49,7 @@
 
 ### サイト側の表現は repo 分割に影響されない
 
-独立 repo のものも、サイトでは `lab` か `works` の 1 件として frontmatter を書き、`embedUrl` が別ドメインを指すだけ。
+独立 repo のものも、サイトでは `lab` か `works` の 1 件として frontmatter を書き、`externalUrl` が別ドメインを指すだけ。
 **repo をどう割ったかがサイトの構造に漏れない**のが、決定 0001 の「サイトはハブ」の効き目。
 したがってこの決定は後から変えても、既存の URL も frontmatter も壊れない。
 

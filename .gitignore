@@ -7,6 +7,8 @@
 # --- 再生成できるもの（docs/spec/publish-pipeline.md「何をコミットし、何をコミットしないか」） ---
 node_modules/
 .astro/
+# wrangler pages dev（pnpm preview）のローカル状態
+.wrangler/
 # dist/ はサイトのビルド出力。作品の成果物は public/lab/ にあり、そちらはコミットする（決定 0001）
 # 注意: .gitignore は行末コメントを書けない（# 以降もパターンの一部になる）
 dist/

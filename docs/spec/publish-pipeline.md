@@ -1,6 +1,6 @@
 # publish pipeline — 1 件を公開するまでの手順（制作を邪魔しない更新フロー）
 
-- 状態: 草案
+- 状態: 合意済（2026-10-08）
 - 関連: `../decisions/0001-overall-architecture.md`, `content-model.md`
 
 ## 目的

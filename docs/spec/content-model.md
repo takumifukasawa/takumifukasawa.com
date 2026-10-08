@@ -1,6 +1,6 @@
 # content model — Content Collections の schema（唯一の正）
 
-- 状態: 草案
+- 状態: 合意済（2026-10-08）
 - 関連: `../decisions/0001-overall-architecture.md`
 
 sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src/content.config.ts`（Astro 5 の置き場）で、この doc と 1:1 に対応させる。

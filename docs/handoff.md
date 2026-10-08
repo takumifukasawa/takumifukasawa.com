@@ -7,7 +7,7 @@
 
 ## いま何をしているか（1〜3 行）
 
-個人サイト（制作アーカイブ + 技術ノート + ポートフォリオ）の設計が一巡し、**草案 7 本 + 用語集 + 外部知識 1 本**が揃った。
+個人サイト（制作アーカイブ + 技術ノート + ポートフォリオ）の設計が一巡し、**決定 4 本・spec 3 本に 2026-10-08 合意した**。
 double-check で 9 件の誤りを直し済み。**コードは 1 行も無い**（Astro も `lab/` も未作成）。
 次は P0 = `lab/` の雛形と公開 CLI を作り、Cloudflare を繋いで sketch を 5〜10 件積む。
 
@@ -34,14 +34,14 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 | agent-harness 導入 | 検証済み | `bash .harness/bin/harness doctor` |
 | 管理ファイルの drift | 無し | `bash .harness/bin/harness status` |
 | 検査の登録 | seed のみ（プロダクト検査 0 件） | `bash .harness/bin/harness check` |
-| 全体構成（1 repo / 1 ドメイン / media は R2） | 草案（合意待ち） | `decisions/0001-overall-architecture.md` |
-| tier 1 の命名（`lab` / `sketch`） | 草案（合意待ち） | `decisions/0002-naming-lab-sketch.md` |
-| コードの置き場（昇格モデル） | 草案（合意待ち） | `decisions/0003-code-placement.md` |
-| 作品ページからトップへの導線（`/_shell.js`） | 草案（合意待ち） | `decisions/0004-lab-shell.md` |
-| content schema | 草案（合意待ち） | `spec/content-model.md` |
-| サイト v0 の範囲（P1 = 2 ページ） | 草案（合意待ち） | `spec/site-v0.md` |
-| 公開フロー | 草案（合意待ち） | `spec/publish-pipeline.md` |
-| 境界と不変条件 | 草案（決定 0001 の合意後に確定） | `architecture.md` |
+| 全体構成（1 repo / 1 ドメイン / media は R2） | 採用（2026-10-08） | `decisions/0001-overall-architecture.md` |
+| tier 1 の命名（`lab` / `sketch`） | 採用（2026-10-08） | `decisions/0002-naming-lab-sketch.md` |
+| コードの置き場（昇格モデル） | 採用（2026-10-08） | `decisions/0003-code-placement.md` |
+| 作品ページからトップへの導線（`/_shell.js`） | 採用（2026-10-08） | `decisions/0004-lab-shell.md` |
+| content schema | 合意済（2026-10-08） | `spec/content-model.md` |
+| サイト v0 の範囲（P1 = 2 ページ） | 合意済（2026-10-08） | `spec/site-v0.md` |
+| 公開フロー | 合意済（2026-10-08） | `spec/publish-pipeline.md` |
+| 境界と不変条件 | 確定 | `architecture.md` |
 | Cloudflare / GitHub の制限調査 | 完了（2026-10-07 取得） | `references/cloudflare-limits.md` |
 | Astro プロジェクト | 未着手 | — |
 | `lab/` と公開 CLI（`pnpm new` / `lab:add` / `lab:build`） | 未着手 | — |
@@ -49,20 +49,9 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **草案 7 本に合意する**（人間の判断）。後から戻しにくい順に 0002（URL）→ 0001（成果物コミット・R2 key）→ 0004（`_shell.js` の約束）→ publish-pipeline を重点的に見る。残りは後から変えられる。合意したら各 doc の 状態 を「合意済」、decisions を「採用」に直す。
-2. 合意後、`plans/active/site-and-lab.md` を作る（P0 → P1 の計画。`plans/README.md` の雛形）。
-3. **P0。サイトのページは 1 枚も作らない**（`spec/site-v0.md` のフェーズ表）
-   - `media.takumifukasawa.com` のサブドメイン確保、R2 bucket + custom domain（`r2.dev` は本番不可）
-   - `media/manifest.json` に空の `{}` をコミット（**無いと初回ビルドが落ちる**）
-   - `lab/` の雛形と `pnpm new <slug> "<title>"`（OGP 入り `index.html` + `base` / `outDir` 入りの `vite.config.ts` を生成）
-   - `pnpm lab:build` / `pnpm lab:add` / `pnpm lab:rebuild --all`
-   - `.gitignore`、`lab/core/AGENTS.md`（3 回ルール）
-   - `public/_shell.js`（左上のテキストリンク 1 つだけ）と `public/_headers`（`_shell.js` は短い max-age）。sketch 001 より前に（決定 0004）
-   - Cloudflare Pages を繋ぐ（設定値は `spec/site-v0.md` の表）
-   - **sketch を 5〜10 件積む。** schema を実データで壊してから P1 に入る（架空の 1 件で設計を固めない）
-4. P1: Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開（`/` と `/about/` の 2 ページ）
-   - `.harness/checks.sh` に `astro check` / `astro build` / `media keys resolve` / `tag normalization` / `lab build in sync` / `no large files` を登録
-   - 500 件ダミーでビルド時間と `/` の初期転送量を実測し `learnings.md` に残す
+1. **計画 `plans/active/site-and-lab.md` のタスク 0-1 から進める**（P0 → P1 のタスク分解・担当・受け入れ条件はそこが正）。
+   人間がやるのは 0-7（Cloudflare のアカウント操作）・0-11 / 0-13（sketch を作る）。
+2. **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md` のフェーズ表）。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -73,12 +62,11 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 | `base: './'` の成果物が Worker・動的 import・`new URL(..., import.meta.url)` 込みで動くか | (B) への乗り換えを `git mv` だけにする前提（決定 0004） | `decisions/0004-lab-shell.md` |
 | `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301 | `decisions/0004-lab-shell.md` |
 | ビルド後も `<script src="/_shell.js">` が `./_shell.js` に書き換わっていないか | 書き換わると全作品で導線が 404 | 同上 |
-| R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | 同上 |
+| R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | `references/cloudflare-limits.md` の未確認事項 |
 
 ## 未確定事項（人間の判断待ち）
 
-- 草案 7 本（上記 NEXT 1）
-- `lab` か `labs` か → **`lab`（単数）を推奨**。決定 0002 の「なぜ `lab`（単数）か」を参照
+- sketch 001 の題材
 - フォント・配色・レイアウトの方向性（P1 着手時に決める）
 
 ### 2026-10-08 の 2 回目のセッションで直したもの
@@ -99,6 +87,7 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 
 ### 解決済（記録のため残す。再提案されたら理由を読む）
 
+- `lab` か `labs` か → `lab`（単数）。決定 0002 の採用（2026-10-08）で確定
 - 作品の URL → `takumifukasawa.com/lab/<slug>/`。サブドメインは使わない。実装は「作品を手元でビルドして `public/lab/<slug>/` にコミットする」方式で、Pages のビルドは Astro だけを走らせる（決定 0001）
 - `daily` という命名 → 頻度を構造に埋めるため廃止。`lab` / `sketch` に（決定 0002）
 - 重め / 軽めの住み分け → 一緒くた。`experiments` という箱は作らず「重さ」のカテゴリも持たない（決定 0003 の一覧表）
@@ -115,7 +104,6 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 
 ## このセッションで触らなかったが確認したもの
 
-- `docs/plans/` は空のまま。計画は草案への合意後に作る（`plans/README.md` の雛形を使う）
 - `docs/tech-debt.md` は空のまま。コードが無いので負債も無い
 - `docs/roles/` は harness の seed のまま。`task-orchestrate` を回す段階になったら読む
 - `docs/rules/README.md` に `lab/core/AGENTS.md`（3 回ルール）を登録済み。ファイル自体は P0 で作る

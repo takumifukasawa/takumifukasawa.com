@@ -1,6 +1,6 @@
 # site v0 — 最初に公開するもの
 
-- 状態: 草案
+- 状態: 合意済（2026-10-08）
 - 関連: `../decisions/0001-overall-architecture.md`, `content-model.md`, `publish-pipeline.md`
 
 ## 目的

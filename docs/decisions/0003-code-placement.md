@@ -1,7 +1,7 @@
 # 0003: コードの置き場 — 既定は `lab` repo、独立 repo は条件つきの昇格
 
 - 日付: 2026-10-08
-- 状態: 草案（この doc で合意を取る）
+- 状態: 採用（2026-10-08）
 - 関連: `0001-overall-architecture.md`, `0002-naming-lab-sketch.md`, `../spec/publish-pipeline.md`
 
 ## 背景

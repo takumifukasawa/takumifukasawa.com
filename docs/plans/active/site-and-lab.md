@@ -33,13 +33,14 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 |---|---|---|---|---|
 | 0-1 | `package.json`（pnpm）・`.nvmrc`・`.gitignore`（DCC 拡張子と理由のコメント込み） | AI | 済 | pnpm 11.28.5（`packageManager`）、Node 24。除外の正本は `.gitignore` |
 | 0-2 | `media/manifest.json` に空の `{}` をコミット | AI | 済 | **無いと初回ビルドが落ちる**。0-1 と同じコミットでよい |
-| 0-3 | `lab/core/AGENTS.md`（3 回ルール）と `lab/core/CLAUDE.md` | AI | 未着手 | `../../rules/README.md` に登録済み |
+| 0-3 | `lab/core/AGENTS.md`（3 回ルール）と `lab/core/CLAUDE.md` | AI | 済 | `../../rules/README.md` に登録済み |
 | 0-4 | `pnpm new <slug> "<title>"`: 雛形（canvas + rAF の最小、OGP、`/_shell.js` の 1 行、`vite.config.ts` は `base: './'`、絶対パス禁止と `?clean` の慣習をコメントで） | AI → 確認 | 未着手 | 雛形は「共同」寄り。生成物を見せて確認を取る |
+| 0-4b | `pnpm dev:lab <slug>`: 作品 1 件を Vite で起動（HMR）。`/_shell.js` も配信して導線込みで見る。`--https`（mkcert）で LAN 内の実機から HTTPS で開ける（iOS のカメラ・ジャイロは HTTPS 必須） | AI | 未着手 | 作品ごとの `vite.config.ts` は増やさず、`dev:lab` 側で 1 か所だけ設定する |
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 未着手 | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 未着手 | 決定 0004。見た目は P1 で決める |
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
 | 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 未着手 | 0-7 が前提 |
-| 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 未着手 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る |
+| 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 未着手 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ） |
 | 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 未着手 | 受け入れ条件の検査一覧 |
 | 0-11 | **sketch 001 を作る** | **人間** | 未着手 | 技術的コアは自分で書く |
 | 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・Pages の差分アップロード・R2 Class B） | AI + 人間 | 未着手 | 結果は `../../handoff.md` の表の書き戻し先へ |
@@ -59,6 +60,7 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 ## 進捗ログ（セッションごとに 1〜3 行）
 
 - 2026-10-08: 計画を作成。0-1 / 0-2 を実施（`package.json` / `.nvmrc` / `.gitignore` / `media/manifest.json`）。依存はまだ入れていない（0-4 で Vite、0-9 で Astro）。
+- 2026-10-08: 0-7 の一部。`takumifukasawa.com`（レジストラはお名前.com）を Cloudflare に追加（Free）、ネームサーバーを `carrera` / `kaiser.ns.cloudflare.com` に変更（DNSSEC はもともと無効）。旧 A レコード `160.16.82.214` は解約済みのさくら VPS の IP で、**再割り当て先の他人のサイトが表示されていた**ため削除した。Cloudflare の Active 待ち。残り: R2 バケット・custom domain・CORS・API トークン、Pages（0-9 の後）
 
 ## 未確定事項（人間の判断待ち）
 

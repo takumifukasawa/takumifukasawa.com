@@ -16,7 +16,7 @@ repo は 1 つ。push も 1 回（決定 0001）。
 pnpm new 001-flow-field "Flow field with curl noise"
 #   lab/001-flow-field/ に雛形（OGP 入り index.html / main.ts / shader.glsl）
 
-cd lab/001-flow-field && pnpm dev     # 制作。Vite / npm / TS / GLSL を自由に。HMR あり
+pnpm dev:lab 001-flow-field           # 制作。Vite / npm / TS / GLSL を自由に。HMR あり。--https で実機（iPhone）からも開ける
 
 # 録画（横 1920×1080 or 縦 1080×1920 / 60fps / 8〜12 秒ループ / 音なし）
 

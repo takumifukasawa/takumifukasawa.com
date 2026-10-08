@@ -81,7 +81,7 @@ md の title を直したら `pnpm lab:build <slug>` で反映する。食い違
 - `base: './'` でビルドした作品が `/lab/<slug>/` で動くか。Web Worker・動的 import・`new URL('./x', import.meta.url)` で読むアセットを含めて確かめる。
 - Vite が、`type` の無い `<script src="/_shell.js">` を書き換えずに残すか（警告は出るが残る想定）。**`base: './'` で `./_shell.js` に書き換えられると 404 になる**ので必ず確かめる。
 - 末尾スラッシュ無しの `/lab/<slug>` で開いた時に `/lab/<slug>/` へリダイレクトされるか（`curl -I` で確かめる）。相対パスの成果物はスラッシュ無しで開かれるとアセットが全部 404 になる。Workers Static Assets はフォルダを `/folder/` へリダイレクトするが、Pages の既定は文書で確認できなかった。されなければ `public/_redirects` に `/lab/:slug /lab/:slug/ 301` を書く。
-- 作品単体の `pnpm dev`（Vite）では `/_shell.js` は 404 になり導線は出ない。これは無害なので許容する。サイトの dev サーバー（Astro は `public/` をそのまま配信する）経由なら導線込みで見える。
+- 作品単体の開発サーバー（`pnpm dev:lab <slug>`）も `/_shell.js` を配信し、導線込みで見えるようにする（作品ごとの `vite.config.ts` ではなく `dev:lab` 側で 1 か所だけ設定する）。サイトの dev サーバー（Astro は `public/` をそのまま配信する）経由でも見える。
 
 ## (B) へ乗り換える場合の手順（やり直す条件を満たした時のため）
 

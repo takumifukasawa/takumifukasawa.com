@@ -1,4 +1,36 @@
+# --- harness（agent-harness が管理。機械ローカルの状態） ---
 .harness/state/
 .harness/backup/
 .harness/conflicts/
 .harness/source.local
+
+# --- 再生成できるもの（docs/spec/publish-pipeline.md「何をコミットし、何をコミットしないか」） ---
+node_modules/
+.astro/
+# dist/ はサイトのビルド出力。作品の成果物は public/lab/ にあり、そちらはコミットする（決定 0001）
+# 注意: .gitignore は行末コメントを書けない（# 以降もパターンの一部になる）
+dist/
+lab/*/.vite/
+
+# --- 録画の元ファイル置き場。配信用の mp4 は lab:add が R2 に置く ---
+captures/
+
+# --- DCC のプロジェクトファイル・ソースアセット（決定 0003） ---
+# 巨大バイナリで差分が取れず、clone コストがサイト全体に乗るため git に入れない。
+# ローカル + 外部ストレージに置く。再現手順やパラメータは notes の記事に文章で残す。
+# このリストは必ず漏れるので、harness check の `no large files`（2 MB 超を落とす）で併せて止める。
+*.hip
+*.hiplc
+*.hipnc
+*.blend
+*.blend1
+*.uproject
+*.uasset
+*.umap
+*.fbx
+*.abc
+*.exr
+*.psd
+
+# --- OS / エディタ ---
+.DS_Store

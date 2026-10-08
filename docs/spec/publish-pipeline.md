@@ -50,17 +50,7 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 
 `public/lab/` の成果物だけが「再生成できるのにコミットする」例外で、これは意図的。
 
-```gitignore
-node_modules/
-.astro/
-dist/              # サイトのビルド出力
-lab/*/.vite/
-captures/          # 録画の元ファイル置き場
-
-# DCC のプロジェクトファイル（決定 0003）
-*.hip *.hiplc *.hipnc *.blend *.blend1
-*.uproject *.uasset *.umap *.fbx *.abc *.exr *.psd
-```
+除外の正本はリポジトリ直下の `.gitignore`（除外の理由もそこにコメントで書く）。ここに例を写さない（二重管理になる）。
 
 **拡張子リストは必ず漏れるので、サイズで止める検査を併せて入れる。**
 `harness check` の `no large files`: git の index に 2 MB 超のファイルがあったら落とす（例外は許可リストに 1 行書く）。

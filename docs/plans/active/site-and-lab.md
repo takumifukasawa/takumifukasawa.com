@@ -31,13 +31,13 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 
 | # | タスク | 担当 | 状態 | 備考 |
 |---|---|---|---|---|
-| 0-1 | `package.json`（pnpm）・`.nvmrc`・`.gitignore`（DCC 拡張子と理由のコメント込み） | AI | 未着手 | `spec/publish-pipeline.md` の gitignore |
-| 0-2 | `media/manifest.json` に空の `{}` をコミット | AI | 未着手 | **無いと初回ビルドが落ちる**。0-1 と同じコミットでよい |
+| 0-1 | `package.json`（pnpm）・`.nvmrc`・`.gitignore`（DCC 拡張子と理由のコメント込み） | AI | 済 | pnpm 11.28.5（`packageManager`）、Node 24。除外の正本は `.gitignore` |
+| 0-2 | `media/manifest.json` に空の `{}` をコミット | AI | 済 | **無いと初回ビルドが落ちる**。0-1 と同じコミットでよい |
 | 0-3 | `lab/core/AGENTS.md`（3 回ルール）と `lab/core/CLAUDE.md` | AI | 未着手 | `../../rules/README.md` に登録済み |
 | 0-4 | `pnpm new <slug> "<title>"`: 雛形（canvas + rAF の最小、OGP、`/_shell.js` の 1 行、`vite.config.ts` は `base: './'`、絶対パス禁止と `?clean` の慣習をコメントで） | AI → 確認 | 未着手 | 雛形は「共同」寄り。生成物を見せて確認を取る |
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 未着手 | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 未着手 | 決定 0004。見た目は P1 で決める |
-| 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す |
+| 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
 | 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 未着手 | 0-7 が前提 |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 未着手 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る |
 | 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 未着手 | 受け入れ条件の検査一覧 |
@@ -53,11 +53,12 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 ## 決定ログ（日付・決めたこと・理由・落選案）
 
 - 2026-10-08: 決定 0001〜0004 を採用、spec 3 本に合意。計画を開始。
+- 2026-10-08: pnpm は 11 系（11.28.5）。12 は 2026-08-26 リリースで 6 週間しか経っておらず、知見が少ない。Node は 24（Active LTS、2028-04 まで）。22 は 2027-04 で EOL になり 2 年の運用に足りない。
 - 2026-10-08: P0 に最小の Astro（0-9）を入れる。Pages のビルドコマンド `pnpm build` を P0 から通すため。ページは作らない。落選案: P0 では Pages のビルドを「`public/` をそのまま出す」設定にする（P1 で設定を変えることになり、P0 で実測した Pages の挙動が P1 と変わる）。
 
 ## 進捗ログ（セッションごとに 1〜3 行）
 
-- 2026-10-08: 計画を作成。コードはまだ無い。
+- 2026-10-08: 計画を作成。0-1 / 0-2 を実施（`package.json` / `.nvmrc` / `.gitignore` / `media/manifest.json`）。依存はまだ入れていない（0-4 で Vite、0-9 で Astro）。
 
 ## 未確定事項（人間の判断待ち）
 

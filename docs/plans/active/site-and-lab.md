@@ -65,6 +65,8 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 0-7 の一部。`takumifukasawa.com`（レジストラはお名前.com）を Cloudflare に追加（Free）、ネームサーバーを `carrera` / `kaiser.ns.cloudflare.com` に変更（DNSSEC はもともと無効）。旧 A レコード `160.16.82.214` は解約済みのさくら VPS の IP で、**再割り当て先の他人のサイトが表示されていた**ため削除した。Cloudflare の Active 待ち。残り: R2 バケット・custom domain・CORS・API トークン、Pages（0-9 の後）
 - 2026-10-08: 0-9 を実施。Astro 7.3.6 + wrangler 4.148.0。Astro 7.3.7 は公開 1 日未満で pnpm 11 の `minimumReleaseAge` に止められたため、除外設定を足さず 7.3.6 にした。esbuild / workerd の install script は `pnpm-workspace.yaml` の `allowBuilds` で許可。Astro dev は `public/**/index.html` をディレクトリ URL で返さないため、`astro.config.ts` に dev 用の middleware を足した（dev では末尾スラッシュ無しは 404 のまま。リダイレクトは preview で見る）。`pnpm preview` では `/lab/<slug>` → `/lab/<slug>/` が **308**、`/_shell.js` に `_headers` の `Cache-Control: public, max-age=300` が付くことを確認（本番の実測は 0-12）。
 - 2026-10-08: 0-10 の一部。検査の本体は `scripts/lib/checks.ts`（`node scripts/check.ts <name>` で 1 つずつ走る）、テストは `node:test`（`pnpm test`、`scripts/**/*.test.ts`）。あわせて `sourceHash` を `git ls-files`（tracked + 未追跡のうち ignore されないもの）に変えた。ディレクトリを素で歩くと Finder が作る `.DS_Store` でハッシュが変わり、手元だけ落ちて fresh clone では通る食い違いが出るため。
+- 2026-10-08: 0-7 の続き。Cloudflare で `takumifukasawa.com` が Active になった（DNS Setup: Full）。次は R2（バケット・custom domain・CORS・API トークン）
+- 2026-10-08: 0-7 の R2 分が済。バケット `takumifukasawa-media`、custom domain `media.takumifukasawa.com`（TLS 有効、R2 が応答することを curl で確認）、r2.dev は無効、CORS は `AllowedOrigins: ["*"]` / GET・HEAD（開発時の入口が dev:lab 5173 / dev 4321 / preview 8788 / `--https` の LAN IP とばらばらで許可リストが必ず漏れる。公開メディアの読み取りだけなので `*` で失うものが無い。落選案: 本番ドメイン + localhost だけを許可）。API トークン `takumifukasawa-media-lab-add`（Object Read & Write、このバケットのみ）は人間の手元に保管し、0-8 で `.env` に入れる。残り: Pages
 
 ## 未確定事項（人間の判断待ち）
 

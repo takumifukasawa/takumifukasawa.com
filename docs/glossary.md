@@ -10,7 +10,7 @@
 | `takumifukasawa.com/` | 全 sketch のグリッド。クリックで上へ飛ぶ |
 | `takumifukasawa.com/about/` | 自己紹介・Links・PaleGL |
 
-サブドメインは使わない（決定 0001）。URL を削れば `/lab/` → `/` と自然にトップへ着く。
+サブドメインは使わない（決定 0001）。URL を削れば `/lab/` → `/`（301。`spec/site-v0.md`）でトップへ着く。
 `media.takumifukasawa.com` だけはサブドメイン（R2 の custom domain はこの形しか取れない）。
 
 ## sketch 1 件は同じ repo の 3 か所に分かれている
@@ -45,4 +45,5 @@
 | **`medium`** | 媒体の種別（`runtime` / `video` / `image`）。明示フィールドとして持つ |
 | **`tags`** | 技術と意図を混ぜた 1 本のタグ列（`threejs` / `glsl` / `density` …）。script がソースから推定して埋める。検査は既知語の表記ゆれだけで、**未知語は通す** |
 | **`description`** | 任意の説明。空のまま運用してよい。長さ制限なし |
+| **shell** / `_shell.js` | 作品ページ（`/lab/<NNN-slug>/`）に出す、トップへの導線。作品には読み込みの 1 行だけが入り、見た目はサイト側の `public/_shell.js` 1 ファイルで決まる（決定 0004） |
 | **mediaKey** | R2 のオブジェクトキー。frontmatter はこれだけを持ち、ホスト名を書かない（決定 0001） |

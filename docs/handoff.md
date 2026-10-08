@@ -7,7 +7,7 @@
 
 ## いま何をしているか（1〜3 行）
 
-個人サイト（制作アーカイブ + 技術ノート + ポートフォリオ）の設計が一巡し、**草案 6 本 + 用語集 + 外部知識 1 本**が揃った。
+個人サイト（制作アーカイブ + 技術ノート + ポートフォリオ）の設計が一巡し、**草案 7 本 + 用語集 + 外部知識 1 本**が揃った。
 double-check で 9 件の誤りを直し済み。**コードは 1 行も無い**（Astro も `lab/` も未作成）。
 次は P0 = `lab/` の雛形と公開 CLI を作り、Cloudflare を繋いで sketch を 5〜10 件積む。
 
@@ -37,6 +37,7 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 | 全体構成（1 repo / 1 ドメイン / media は R2） | 草案（合意待ち） | `decisions/0001-overall-architecture.md` |
 | tier 1 の命名（`lab` / `sketch`） | 草案（合意待ち） | `decisions/0002-naming-lab-sketch.md` |
 | コードの置き場（昇格モデル） | 草案（合意待ち） | `decisions/0003-code-placement.md` |
+| 作品ページからトップへの導線（`/_shell.js`） | 草案（合意待ち） | `decisions/0004-lab-shell.md` |
 | content schema | 草案（合意待ち） | `spec/content-model.md` |
 | サイト v0 の範囲（P1 = 2 ページ） | 草案（合意待ち） | `spec/site-v0.md` |
 | 公開フロー | 草案（合意待ち） | `spec/publish-pipeline.md` |
@@ -48,7 +49,7 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **草案 6 本に合意する**（人間の判断）。合意したら各 doc の 状態 を「合意済」、decisions を「採用」に直す。
+1. **草案 7 本に合意する**（人間の判断）。後から戻しにくい順に 0002（URL）→ 0001（成果物コミット・R2 key）→ 0004（`_shell.js` の約束）→ publish-pipeline を重点的に見る。残りは後から変えられる。合意したら各 doc の 状態 を「合意済」、decisions を「採用」に直す。
 2. 合意後、`plans/active/site-and-lab.md` を作る（P0 → P1 の計画。`plans/README.md` の雛形）。
 3. **P0。サイトのページは 1 枚も作らない**（`spec/site-v0.md` のフェーズ表）
    - `media.takumifukasawa.com` のサブドメイン確保、R2 bucket + custom domain（`r2.dev` は本番不可）
@@ -56,6 +57,7 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
    - `lab/` の雛形と `pnpm new <slug> "<title>"`（OGP 入り `index.html` + `base` / `outDir` 入りの `vite.config.ts` を生成）
    - `pnpm lab:build` / `pnpm lab:add` / `pnpm lab:rebuild --all`
    - `.gitignore`、`lab/core/AGENTS.md`（3 回ルール）
+   - `public/_shell.js`（左上のテキストリンク 1 つだけ）と `public/_headers`（`_shell.js` は短い max-age）。sketch 001 より前に（決定 0004）
    - Cloudflare Pages を繋ぐ（設定値は `spec/site-v0.md` の表）
    - **sketch を 5〜10 件積む。** schema を実データで壊してから P1 に入る（架空の 1 件で設計を固めない）
 4. P1: Astro を入れ、`spec/site-v0.md` の受け入れ条件を満たして公開（`/` と `/about/` の 2 ページ）
@@ -68,13 +70,21 @@ git config core.hooksPath .githooks     # pre-commit を有効化（git config �
 |---|---|---|
 | repo サイズ（`du -sh .git` と working tree） | 500 件 ~150 MB の見込みが当たっているか。外れたら Three.js を external にして共有コピー 1 本にする | `decisions/0001` の「repo サイズ」と `learnings.md` |
 | Pages のデプロイ所要時間とログ | **差分アップロードされるかが未確認**。毎回全件上がるならデプロイ時間に効く | `references/cloudflare-limits.md` の未確認事項 |
+| `base: './'` の成果物が Worker・動的 import・`new URL(..., import.meta.url)` 込みで動くか | (B) への乗り換えを `git mv` だけにする前提（決定 0004） | `decisions/0004-lab-shell.md` |
+| `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301 | `decisions/0004-lab-shell.md` |
+| ビルド後も `<script src="/_shell.js">` が `./_shell.js` に書き換わっていないか | 書き換わると全作品で導線が 404 | 同上 |
 | R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | 同上 |
 
 ## 未確定事項（人間の判断待ち）
 
-- 草案 6 本（上記 NEXT 1）
+- 草案 7 本（上記 NEXT 1）
 - `lab` か `labs` か → **`lab`（単数）を推奨**。決定 0002 の「なぜ `lab`（単数）か」を参照
 - フォント・配色・レイアウトの方向性（P1 着手時に決める）
+
+### 2026-10-08 の 2 回目のセッションで直したもの
+
+- 検算の修正が他の doc に伝わっていなかった 11 件を直した（0001/0003 の「~20 MB」、`note` フィールドの残骸、OGP の「今年」、0002 の日付密度グリッドが P1 になっていた件、site-v0 の詳細ページ前提の受け入れ条件など）
+- 作品ページからトップへの導線を決定 0004 として追加。iframe で包む案（B）と比べ、iOS Safari のカメラ・センサーの不確実さから**作品をそのまま配信する（A）**を選んだ。作品には `<script src="/_shell.js" defer>` の 1 行だけ焼き込み、見た目はサイト側の 1 ファイルで後から決める。`base: './'` で (B) への乗り換えを `git mv` だけにしてある
 
 ### 検算（2026-10-08、double-check）で直したもの
 

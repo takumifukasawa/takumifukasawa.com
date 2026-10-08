@@ -16,6 +16,7 @@ takumifukasawa.com  (1 repo / Astro static / Cloudflare Pages)
   ├─ src/content/lab/            カード = metadata の正本（Markdown）
   ├─ lab/<NNN-slug>/             作品のソース（Vite / npm / TS / GLSL 自由）
   ├─ public/lab/<NNN-slug>/      作品のビルド成果物（★ コミットする。Vite の outDir が直接ここへ出す）
+  ├─ public/_shell.js            作品ページに出すサイトへの導線（サイト側の手書き 1 ファイル。決定 0004）
   ├─ media/manifest.json         R2 に置いたメディアの索引（生成物だがコミットする）
   └─ 外部参照
        └─ media.takumifukasawa.com   R2 bucket。poster / mp4
@@ -44,6 +45,7 @@ scripts/            公開フローの CLI（Astro に依存しない）
 - `scripts/` は `src/` と `lab/` に依存してよいが、`src/` は `scripts/` と `lab/` に依存しない。
 - **`lab/`（作品のソース）と `src/`（サイト）は互いに import しない。** 作品はサイトのビルドに参加せず、成果物として `public/lab/` に置かれるだけ。
 - 外部 URL（R2）の組み立ては `src/lib/media.ts` だけが知る。**他の場所にホスト名を書かない。**
+- **作品とサイトの接点は `/_shell.js` の 1 行だけ**（決定 0004）。作品は `_shell.js` をバンドルせず、`_shell.js` は作品の DOM・CSS・グローバル変数に依存しない。
 
 ## 不変条件と強制手段
 
@@ -59,6 +61,8 @@ scripts/            公開フローの CLI（Astro に依存しない）
 | `src/` は `lab/` を import しない（作品はサイトのビルドに参加しない） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
 | `public/lab/<slug>/` の成果物が `lab/<slug>/` の現在のソースから作られている | `.harness/checks.sh` の `lab build in sync`（`lab/.build-meta/<slug>.json` の sourceHash と再計算値を比較） | 未強制（実装前） |
 | git の index に 2 MB 超のファイルが無い（許可リストを除く） | `.harness/checks.sh` の `no large files` | 未強制（実装前） |
+| `public/lab/*/index.html` はすべて `<script src="/_shell.js" defer>` を含む（`data-shell="none"` で無効化するのは可） | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |
+| 成果物の `<title>` / `og:title` が md の `title` と一致する（正本は md） | `.harness/checks.sh` の `lab head in sync` | 未強制（実装前） |
 
 ## 意図的に許している自由
 

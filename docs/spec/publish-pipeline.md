@@ -25,6 +25,7 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 #   2. ffmpeg で mp4 を再エンコード + poster.webp を生成
 #   3. R2 に put（Cache-Control: immutable）、media/manifest.json に追記
 #   4. src/content/lab/001-flow-field.md を生成（title は pnpm new の引数から引き継ぐ）
+#      → 成果物の index.html の <head>（<title> / OGP）を md から書き直す（決定 0004）
 #   5. commit + push（--no-push で止められる）
 
 # X に投稿（動画を直接アップロード + takumifukasawa.com/lab/001-flow-field/ のリンク）
@@ -71,12 +72,12 @@ captures/          # 録画の元ファイル置き場
 
 ## Vite の設定は `pnpm new` が書く
 
-作品ごとの `vite.config.ts` に次の 2 つを入れる。どちらも slug から機械的に決まるので人間は触らない。
+作品ごとの `vite.config.ts` に次の 2 つを入れる。どちらも機械的に決まるので人間は触らない。
 
 ```ts
 // lab/001-flow-field/vite.config.ts
 export default {
-  base: '/lab/001-flow-field/',               // 配信される URL のサブパス
+  base: './',                                  // 相対パスでビルドする（配信先のパスを焼き込まない）
   build: {
     outDir: '../../public/lab/001-flow-field', // 中間の dist/ を作らず直接ここへ
     emptyOutDir: true,
@@ -84,8 +85,10 @@ export default {
 };
 ```
 
-- **`base`** を設定しないとアセットのパスが `/assets/...` になって 404 する。
-  1 ドメインに寄せた（作品がサブパスで配信される）ことで必要になった設定（決定 0001）。
+- **`base`** を設定しないとアセットのパスが `/assets/...` になって 404 する（作品はサブパス `/lab/<NNN-slug>/` で配信されるため。決定 0001）。
+  `'/lab/<NNN-slug>/'` ではなく `'./'` にするのは、成果物を別の場所へ動かしても動くようにするため
+  （作品を iframe で包む構成へ乗り換える時に `git mv` だけで済む。決定 0004）。
+  代わりに**作品のコードで `/` から始まる絶対パスを書かない**（相対パスか `import.meta.env.BASE_URL`）。雛形のコメントにそう書く。
 - **`outDir`** を `public/lab/<NNN-slug>/` に直接向けるので、中間ディレクトリもコピー手順も生まれない。
 
 ## 再ビルド
@@ -136,7 +139,7 @@ pnpm lab:rebuild --all            # 全件（共通の変更を入れた時な�
 
 | ステップ | 約束 |
 |---|---|
-| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」+ **OGP 入りの `index.html`**（下記）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
+| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは `?clean` で出さない、を雛形のコメントに書く（録画用。決定 0004）。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<NNN-slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
 | ビルド成果物 | Vite の `outDir` が直接 `public/lab/<NNN-slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため）。**P0 の最初に空の `{}` をコミットしておく**（1 件目を追加する前は存在しないので、無いと初回ビルドが落ちる） |
@@ -160,9 +163,14 @@ slug だけから **URL が最初から予測できる**（key に年を入れ�
 <meta property="og:url" content="https://takumifukasawa.com/lab/001-flow-field/">
 <meta property="og:image" content="https://media.takumifukasawa.com/lab/001-flow-field/poster.webp">
 <meta name="twitter:card" content="summary_large_image">
+<script src="/_shell.js" defer></script>  <!-- トップへの導線。中身はサイト側の 1 ファイル（決定 0004） -->
 ```
 
 **人間は後から触らない。** 録画して `lab:add` した時点で画像が実在するようになり、OGP が有効になる。
+
+**title と OGP の正本は md の frontmatter。** `pnpm new` の時点では md が無いので引数の title で書くが、
+md ができた後は `pnpm lab:add` と `pnpm lab:build` の最後に、成果物（`public/lab/<NNN-slug>/index.html`）の `<head>` を md から書き直す（JS は触らない）。
+md の title を直したら `pnpm lab:build <slug>` で反映する。食い違いは `harness check` の `lab head in sync` で落とす（決定 0004）。
 `index.html` が無い sketch（Houdini のレンダリングなど）は OGP ページも存在しない（リンク先が画像・動画そのものなので不要）。
 
 ### いつ貼るか
@@ -214,6 +222,9 @@ Card Validator が廃止されているので強制更新もできない。`pnpm
 - [ ] 生成された md がそのまま `astro check` を通る（手で直さなくてもビルドが通る状態で出る）
 - [ ] **人間が書く必須項目は `title` だけ**。`date` / `medium` / `poster` / `tags` は script が埋める（`medium` の推測が違えば直せる）
 - [ ] `pnpm new <slug> "<title>"` が OGP 入りの `index.html` を生成し、`og:image` が録画前から正しい R2 URL を指す
+- [ ] 生成された `index.html` に `<script src="/_shell.js" defer></script>` が入り、ビルド後の `public/lab/<slug>/index.html` にも書き換えられずに残る（決定 0004）
+- [ ] 成果物の `<title>` / `og:title` が md の `title` と一致する（`lab:add` / `lab:build` が書き直す。決定 0004）
+- [ ] `base: './'` でビルドした成果物を別のディレクトリへ動かしても動く（決定 0004）
 - [ ] `--video` を省略し `--poster <path>` だけでも通る（静止画の sketch / Houdini のレンダリング用）
 - [ ] 作品のビルドが壊れていても、サイトのビルドと deploy は成功する（Pages は `public/lab/` をコピーするだけ）
 

@@ -18,10 +18,12 @@
     "lab:add": "node scripts/lab-add.ts"
   },
   "devDependencies": {
+    "@types/three": "^0.186.0",
     "astro": "^7.3.6",
     "aws4fetch": "^1.0.20",
     "sharp": "^0.35.5",
     "terser": "^5.51.2",
+    "three": "^0.186.1",
     "vite": "^8.3.3",
     "vite-plugin-mkcert": "^2.1.0",
     "wrangler": "^4.148.0",

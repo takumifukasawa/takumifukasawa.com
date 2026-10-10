@@ -1,5 +1,5 @@
 // Mirror sphere — fragment stage. A perfect mirror: no roughness, no Fresnel, no BRDF.
-// Those arrive in 002 / 003 / 004 one at a time (docs/plans).
+// Those arrive in 002 / 003 / 004 one at a time.
 
 precision highp float;
 
@@ -14,20 +14,19 @@ out vec4 outColor;
 void main() {
   vec3 n = normalize(vWorldNormal);
 
-  // TODO(you): a perfect mirror is three lines.
+  // Points *toward* the surface, which is what reflect(I, N) expects. The other way round still
+  // produces a picture — it just comes out inside-out, which is why this one is easy to get wrong
+  // and hard to notice.
+  vec3 incident = normalize(vWorldPosition - cameraPosition);
+
+  vec3 reflected = reflect(incident, n);
+
+  // A samplerCube is indexed by a direction, not a uv: the magnitude is ignored, so the lookup
+  // itself does not need the normalize above. It is there because `incident` is also used as a
+  // direction by reflect().
   //
-  //  1. The view direction. Decide which way it points — from the eye to the surface, or the other
-  //     way. GLSL's reflect(I, N) expects I to point TOWARD the surface. Getting this backwards
-  //     gives a reflection that looks plausible at first and is inside-out.
-  //  2. Reflect it about n.
-  //  3. Sample envMap with that direction. A samplerCube is indexed by a direction, not a uv —
-  //     the magnitude is ignored, so there is no need to normalize for the lookup itself.
-  //
-  // Once it works, the thing to notice: the reflection does not depend on where the sphere is,
-  // only on the normal and the eye direction. That is exactly why a cube map is cheap, and also
-  // why it is wrong for anything but a small object in a distant environment.
-  //
-  // Placeholder: a grayscale ramp so the sphere is visible before the reflection exists.
-  float g = n.y * 0.5 + 0.5;
-  outColor = vec4(vec3(g), 1.0);
+  // Worth noticing: nothing here depends on where the sphere *is*, only on the normal and the eye
+  // direction. That is exactly why a cube map is cheap, and also why it is only correct for a small
+  // object inside a distant environment — move the sphere and the reflection does not parallax.
+  outColor = vec4(texture(envMap, reflected).rgb, 1.0);
 }

@@ -8,26 +8,27 @@ in vec3 normal;
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelMatrix;   // object -> world
-uniform mat3 normalMatrix;  // built from modelViewMatrix, so it maps normals into VIEW space
+uniform mat3 normalMatrix;  // built from modelViewMatrix, so it maps normals into VIEW space — not used here
 
 out vec3 vWorldPosition;
 out vec3 vWorldNormal;
 
 void main() {
-  // Clip space. Provided: this chain is fixed and there is nothing to decide here.
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
 
-  // TODO(you): both of these must be in WORLD space, because the cube map is a world-space lookup.
+  vWorldPosition = worldPosition.xyz;
+
+  // World space, because the cube map is a world-space lookup.
   //
-  //  - vWorldPosition: this vertex, in the world.
-  //  - vWorldNormal:   the surface direction, in the world.
-  //      `normalMatrix` above is the inverse-transpose of modelViewMatrix's 3x3, so it gives a
-  //      VIEW-space normal. Using it here is the single most common bug in this sketch: the
-  //      reflection will then swim around as the camera moves, because it is anchored to the camera
-  //      instead of to the world. Work out what to use instead, and why the transpose/inverse
-  //      matters at all (hint: it only differs from the plain 3x3 under non-uniform scale).
+  // Not `normalMatrix`: three builds that from modelViewMatrix, so it lands in view space. Using it
+  // here is the classic bug in this sketch — the reflection stays glued to the camera and swims as
+  // the camera moves, instead of staying anchored to the world.
   //
-  // Placeholder: correct only while the model matrix has no rotation or scale.
-  vWorldPosition = position;
-  vWorldNormal = normalize(normal);
+  // mat3(modelMatrix) is correct as long as the scale is uniform. Under non-uniform scale a normal
+  // is not a direction but a plane, so it transforms by the inverse-transpose; three does not hand
+  // that out for the world matrix, so it would have to be computed and passed in. This sphere has
+  // no scale at all, so the simple form is exact here.
+  vWorldNormal = normalize(mat3(modelMatrix) * normal);
+
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }

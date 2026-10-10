@@ -32,8 +32,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.setClearColor(0x000000, 1);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-camera.position.set(0, 0, 4.2);
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+camera.position.set(0, 0, 3.6);
 camera.lookAt(0, 0, 0);
 
 // --- the environment that gets reflected -------------------------------------------------------
@@ -58,16 +58,18 @@ const flat = new THREE.RawShaderMaterial({
 });
 
 const env = new THREE.Group();
-const bar = new THREE.BoxGeometry(0.08, 1.6, 0.08);
+const bar = new THREE.BoxGeometry(0.12, 2.4, 0.12);
 for (let ring = 0; ring < 2; ring++) {
-  const count = 18;
-  const radius = 3.0 + ring * 1.4;
-  const y = ring === 0 ? -0.2 : 0.6;
+  const count = 24;
+  // Far enough out that the near side of the ring sits behind the camera: nothing comes between
+  // the eye and the sphere, which keeps the sphere the only subject in frame.
+  const radius = 6.0 + ring * 1.6;
+  const y = ring === 0 ? -0.6 : 0.9;
   for (let i = 0; i < count; i++) {
     const a = (i / count) * Math.PI * 2;
     const mesh = new THREE.Mesh(bar, flat);
     mesh.position.set(Math.cos(a) * radius, y, Math.sin(a) * radius);
-    mesh.scale.y = 0.6 + (i % 3) * 0.7;
+    mesh.scale.y = 0.7 + ((i * 7) % 5) * 0.5;
     env.add(mesh);
   }
 }

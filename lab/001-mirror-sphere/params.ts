@@ -14,6 +14,7 @@ export type Params = {
   pullRelease: number;
   pullHoldSec: number;
   pullDepth: number;
+  minRadius: number;
   targetEase: number;
   cameraZ: number;
   backdropLow: number;
@@ -38,6 +39,7 @@ export const params: Params = {
   'pullRelease': 2.2,
   'pullHoldSec': 0.5,
   'pullDepth': 2,
+  'minRadius': 1.18,
   'targetEase': 5,
   'cameraZ': 5.4,
   'backdropLow': 0.02,

@@ -45,6 +45,7 @@ const ribbonUniforms = {
   'uWidth': { value: params.width },
   'uTwist': { value: params.twist },
   'uDepth': { value: params.pullDepth },
+  'uMinRadius': { value: params.minRadius },
 };
 
 const ribbons = new THREE.Mesh(
@@ -278,6 +279,7 @@ const update = (deltaTime: number) => {
   ribbonUniforms.uWidth.value = params.width;
   ribbonUniforms.uTwist.value = params.twist;
   ribbonUniforms.uDepth.value = params.pullDepth;
+  ribbonUniforms.uMinRadius.value = params.minRadius;
   backdropUniforms.uLow.value = params.backdropLow;
   backdropUniforms.uHigh.value = params.backdropHigh;
   (mirror.material as THREE.RawShaderMaterial).uniforms.uShowFaces.value = params.showFaces ? 1 : 0;

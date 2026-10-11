@@ -31,6 +31,9 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   pull.addBinding(params, 'pullRelease', { min: 0.2, max: 10, step: 0.1 });
   pull.addBinding(params, 'pullHoldSec', { min: 0.05, max: 3, step: 0.01 });
   pull.addBinding(params, 'pullDepth', { min: 0.3, max: 6, step: 0.1 });
+  // Sphere radius is 1, so anything above that keeps the ribbon clear of it; the slack covers the
+  // ribbon's own half width and the twist.
+  pull.addBinding(params, 'minRadius', { min: 1.0, max: 2.5, step: 0.01 });
   pull.addBinding(params, 'targetEase', { min: 0.5, max: 20, step: 0.1 });
 
   const scene = pane.addFolder({ title: 'scene' });

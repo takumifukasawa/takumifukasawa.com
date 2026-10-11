@@ -23,6 +23,7 @@ uniform vec3 uTarget;
 uniform float uWidth;
 uniform float uTwist;
 uniform float uDepth;
+uniform float uMinRadius;  // never let the ribbon get closer to the centre than this
 
 out float vS;
 
@@ -38,7 +39,32 @@ vec3 ribbonCenter(float s) {
   // Weighted by s: 1 at the head, 0 at the tail. The ribbon is not dragged rigidly — it is bent,
   // which is what makes the body look like it is catching up rather than being teleported.
   float k = uPull * aParams.w * pow(1.0 - s, uDepth);
-  return mix(orbit, uTarget, k);
+
+  // Blend on a shell rather than along a straight line. mix(orbit, uTarget, k) is a chord, and a
+  // chord between two points outside a sphere still cuts through it — which is exactly how the
+  // ribbons ended up inside the mirror while dragging. Interpolating the direction and the radius
+  // separately keeps the path going *around* the centre instead.
+  vec3 dirOrbit = normalize(orbit);
+
+  // uTarget starts at the origin, and normalize(vec3(0)) is NaN. mix() does not save you: 0 * NaN is
+  // still NaN, so even with k == 0 the NaN propagates and the whole ribbon disappears. Guard the
+  // length before normalizing, always.
+  float tLen = length(uTarget);
+  vec3 dirTarget = tLen > 1e-4 ? uTarget / tLen : dirOrbit;
+  float targetRadius = tLen > 1e-4 ? tLen : aParams.x;
+
+  vec3 m = mix(dirOrbit, dirTarget, k);
+  float ml = length(m);
+  // Nearly antipodal: the midpoint collapses to zero and the direction is undefined. Any choice is
+  // arbitrary there, so keep the one it came from.
+  vec3 dir = ml > 1e-3 ? m / ml : dirOrbit;
+  float blendedRadius = mix(aParams.x, targetRadius, k);
+
+  vec3 p = dir * blendedRadius;
+
+  // Safety net for whatever the blend above does not cover (uTarget inside the shell, say).
+  float len = max(length(p), 1e-4);
+  return p * max(1.0, uMinRadius / len);
 }
 
 void main() {

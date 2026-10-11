@@ -4,8 +4,10 @@
 // Scope is deliberately one step on the shading side: no roughness, no Fresnel, no BRDF
 // (those are 002 / 003 / 004).
 //
-// three.js is used as plumbing only (lab/AGENTS.md): BufferGeometry + RawShaderMaterial + own GLSL.
-// No MeshStandardMaterial, no CubeCamera, no SphereGeometry, no OrbitControls, no post processing.
+// three.js is used as plumbing here: BufferGeometry + RawShaderMaterial + own GLSL, and the cube
+// faces, the sphere and the bloom chain are written out rather than taken from MeshStandardMaterial
+// / CubeCamera / SphereGeometry / EffectComposer. That is a choice about what this sketch is for,
+// not a repository rule — the ready-made parts are allowed.
 //
 // Looping: everything is a function of `phase` (0..1 over params.loopSec), so the clip loops
 // exactly — except the pointer pull, which is the one piece of state here. Record without touching

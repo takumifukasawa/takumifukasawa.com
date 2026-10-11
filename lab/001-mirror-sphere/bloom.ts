@@ -1,5 +1,6 @@
-// Bloom, written out rather than taken from three's EffectComposer / UnrealBloomPass
-// (lab/AGENTS.md: three is plumbing, finished parts are not used).
+// Bloom, written out rather than taken from three's EffectComposer / UnrealBloomPass.
+// Not because the ready-made one is off limits — it is allowed — but because the chain below is the
+// part of this sketch worth understanding, and it is short enough to read in one sitting.
 //
 // The shape of it:
 //   scene -> half-float target        so colours can exceed 1.0 and the bright pass has something to find
@@ -99,7 +100,7 @@ export const createBloom = (width: number, height: number) => {
   const sceneTarget = makeTarget(width, height);
   sceneTarget.depthBuffer = true;
 
-  let levels = Array.from({ length: LEVELS }, (_, i) => makeTarget(width >> (i + 1), height >> (i + 1)));
+  const levels = Array.from({ length: LEVELS }, (_, i) => makeTarget(width >> (i + 1), height >> (i + 1)));
   const ping = Array.from({ length: LEVELS }, (_, i) => makeTarget(width >> (i + 1), height >> (i + 1)));
 
   const geometry = new THREE.BufferGeometry();

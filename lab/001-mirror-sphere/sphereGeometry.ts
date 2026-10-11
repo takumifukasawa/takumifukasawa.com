@@ -1,6 +1,6 @@
-// UV sphere, built by hand instead of THREE.SphereGeometry (see lab/AGENTS.md: three.js is plumbing,
-// not a source of finished parts). Provided — the interesting work in this sketch is the shader and
-// the cube faces, not this.
+// UV sphere, built by hand instead of THREE.SphereGeometry. Not a rule — it is here because the
+// winding and the pole behaviour matter to the reflection, and both are invisible when the geometry
+// arrives ready-made (the winding was in fact wrong at first, and that is what broke the mirror).
 //
 // Worth noting while reading it:
 // - For a unit sphere centred on the origin, the normal *is* the position. That is only true here.

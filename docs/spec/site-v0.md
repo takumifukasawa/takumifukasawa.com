@@ -46,18 +46,32 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 人に特定の作品を見せるリンクも `takumifukasawa.com/lab/...` になるので、**OGP は作品の `index.html` 雛形**に入れておく（自動で付く）。
 サイト側の OGP は `/` と `/about/` だけで足りる（X には動画を直接アップロードする方針なので、サイトの URL を貼らない）。
 
-### Cloudflare Pages の設定値（P0 で入れる）
+### Cloudflare Workers の設定値（P0 で入れる）
+
+**Pages ではなく Workers Static Assets を使う。** 2026-10-11 の時点で Cloudflare のダッシュボードに Pages の
+新規作成の入口が無く、決定 0001 が逃げ道として用意していた「同じ `dist/` を Workers Static Assets へ移す」が
+そのまま発動した。配信するものは変わらない（`astro build` の `dist/`）。
+
+配信側の設定の正本は **リポジトリの `wrangler.jsonc`**（assets のディレクトリ・末尾スラッシュ・404 の扱い）。
+ダッシュボードに入れるのは、リポジトリに書けないものだけ。
 
 | 項目 | 値 |
 |---|---|
-| Framework preset | なし（Astro を選ぶと余計な設定が入る） |
+| Project name | `takumifukasawa-com`（`wrangler.jsonc` の `name` と一致。**後から変えられない**） |
 | Build command | `pnpm build` |
-| Build output directory | `dist` |
-| Node version | `.node-version`（nodenv と共用）か環境変数 `NODE_VERSION` で固定する（Pages の既定は変わりうる） |
-| 環境変数 | `PUBLIC_MEDIA_BASE_URL=https://media.takumifukasawa.com` |
+| Deploy command | `npx wrangler deploy` |
+| Preview command | `npx wrangler versions upload`（`npx wrangler preview` は wrangler 4 に無い） |
+| Enable Preview builds | on（PR のプレビュー URL） |
+| Protect with Cloudflare Access | off（公開サイト） |
 | Production branch | `main` |
+| 環境変数 | `NODE_VERSION=24.21.0` / `PUBLIC_MEDIA_BASE_URL=https://media.takumifukasawa.com` |
+| Custom domain | `takumifukasawa.com`（apex のみ。ダッシュボードで割り当てる。DNS レコードは Cloudflare が自動で作る） |
+
+カスタムドメインを `wrangler.jsonc` の `routes` に書かないのは、CI の Workers Builds トークンに zone の
+編集権が無く、deploy が落ちるため（理由は `wrangler.jsonc` のコメントにも書いてある）。
 
 **`pnpm build` は作品をビルドしない**（Astro だけ。作品は `public/lab/` に成果物が入っている。決定 0001）。
+Worker スクリプトも置かない（assets だけの Worker）。全リクエストに Worker を通すのは決定 0004 が退けた形。
 
 ### P1 に入れる機能（ページ以外）
 

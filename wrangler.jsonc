@@ -1,0 +1,28 @@
+// Cloudflare Workers (static assets). Deploy config for takumifukasawa.com.
+//
+// Why Workers and not Pages: decision 0001 chose Cloudflare Pages and listed "move the same dist/ to
+// Workers Static Assets if Cloudflare stops accepting new Pages projects" as the planned fallback. On
+// 2026-10-11 the dashboard had no Pages creation entry left, so the fallback fired. Nothing about the
+// build changes: `pnpm build` still runs Astro only, and the sketches are already built into public/lab/.
+//
+// There is no Worker script. An assets-only Worker serves dist/ as static files, so `main` is absent on
+// purpose — adding one would put a script in front of every request (the Free request limit is exactly what
+// decision 0004 rejected).
+//
+// The custom domain (takumifukasawa.com) is attached in the dashboard, not here: creating it from CI needs
+// zone-edit rights that the Workers Builds token does not have, which would fail the deploy. If it ever
+// needs to be reproducible from the repo, it is:
+//   "routes": [{ "pattern": "takumifukasawa.com", "custom_domain": true }]
+{
+  "name": "takumifukasawa-com",
+  "compatibility_date": "2026-10-11",
+  "assets": {
+    "directory": "./dist",
+    // /lab/<slug> redirects to /lab/<slug>/ and serves index.html. The sketches are built with
+    // base: './' (relative asset paths), so opening one without the trailing slash would 404 every
+    // asset (decision 0004). This is the default, written out because the site depends on it.
+    "html_handling": "auto-trailing-slash",
+    // Serve dist/404.html for unknown paths. P0 has no pages, so this does nothing until P1 (1-1).
+    "not_found_handling": "404-page"
+  }
+}

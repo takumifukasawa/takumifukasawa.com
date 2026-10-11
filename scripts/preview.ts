@@ -1,7 +1,8 @@
 // pnpm preview [--https]
-// Build the site, then serve dist/ with `wrangler pages dev` so _headers / _redirects / trailing slashes behave
-// like production. --https listens on the LAN with the same mkcert certificate as `pnpm dev --https` /
-// `pnpm dev:lab --https`, so a phone that trusts the mkcert root CA once can open all three.
+// Build the site, then serve dist/ with `wrangler dev` (the assets-only Worker of wrangler.jsonc) so
+// _headers / _redirects / trailing slashes behave like production. --https listens on the LAN with the same
+// mkcert certificate as `pnpm dev --https` / `pnpm dev:lab --https`, so a phone that trusts the mkcert root
+// CA once can open all three.
 import { spawnSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -16,7 +17,8 @@ const run = (cmd: string, args: string[]) => {
 
 run('astro', ['build']);
 
-const wranglerArgs = ['pages', 'dev', 'dist'];
+// `wrangler dev` reads wrangler.jsonc, so the served directory comes from assets.directory (./dist).
+const wranglerArgs = ['dev'];
 if (https) {
   // Let vite-plugin-mkcert create / renew the certificate (it adds the current LAN IPs), then hand its files to wrangler.
   const { default: mkcert } = await import('vite-plugin-mkcert');

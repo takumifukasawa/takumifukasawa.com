@@ -3,11 +3,29 @@
 //
 // Per-ribbon constants go in per-vertex attributes rather than uniform arrays: it wastes a few
 // kilobytes and removes an entire class of indexing bugs.
+//
+// Anything here changes the vertex data, so the debug panel has to rebuild the geometry when it is
+// touched — unlike the uniforms, which are live.
 
 import * as THREE from 'three';
 
-const RIBBON_COUNT = 7;
 const SEGMENTS = 180;
+
+export type RibbonOptions = {
+  count: number;
+  radiusMin: number;
+  radiusMax: number;
+  tailMin: number;
+  tailMax: number;
+};
+
+export const defaultRibbonOptions: RibbonOptions = {
+  count: 7,
+  radiusMin: 1.35,
+  radiusMax: 2.05,
+  tailMin: 0.18,
+  tailMax: 0.44,
+};
 
 // Deterministic: the same ribbons on every run and every machine, so the recording is reproducible.
 const rand = (seed: number) => {
@@ -15,7 +33,7 @@ const rand = (seed: number) => {
   return x - Math.floor(x);
 };
 
-export const createRibbonGeometry = () => {
+export const createRibbonGeometry = (options: RibbonOptions) => {
   const aS: number[] = [];
   const aSide: number[] = [];
   const aU: number[] = [];
@@ -26,7 +44,7 @@ export const createRibbonGeometry = () => {
   const up = new THREE.Vector3(0, 1, 0);
   const alt = new THREE.Vector3(1, 0, 0);
 
-  for (let r = 0; r < RIBBON_COUNT; r++) {
+  for (let r = 0; r < options.count; r++) {
     // A tilted orbit plane, described by two orthonormal vectors lying in it.
     // acos(1 - 2t) rather than t * PI: that is what spreads the tilts evenly over the sphere
     // instead of bunching them at the poles.
@@ -42,9 +60,9 @@ export const createRibbonGeometry = () => {
       .normalize();
     const v = new THREE.Vector3().crossVectors(normal, u).normalize();
 
-    const radius = 1.35 + rand(r + 83) * 0.7; // outside the sphere, which has radius 1
+    const radius = options.radiusMin + rand(r + 83) * (options.radiusMax - options.radiusMin);
     const offset = rand(r + 127); // where this ribbon sits in the loop
-    const tail = 0.18 + rand(r + 211) * 0.26; // how much of a turn it spans
+    const tail = options.tailMin + rand(r + 211) * (options.tailMax - options.tailMin);
     const pullScale = 0.65 + rand(r + 307) * 0.35; // so they do not all react identically
 
     const base = aS.length;
@@ -73,6 +91,6 @@ export const createRibbonGeometry = () => {
   geometry.setIndex(index);
   // The vertex shader moves vertices far from wherever three would infer bounds from, so the
   // bounding sphere has to be stated. Without it the ribbons get frustum-culled at random angles.
-  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
+  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), options.radiusMax + 2);
   return geometry;
 };

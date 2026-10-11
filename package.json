@@ -24,6 +24,7 @@
     "sharp": "^0.35.5",
     "terser": "^5.51.2",
     "three": "^0.186.1",
+    "tweakpane": "^4.0.5",
     "vite": "^8.3.3",
     "vite-plugin-mkcert": "^2.1.0",
     "wrangler": "^4.148.0",

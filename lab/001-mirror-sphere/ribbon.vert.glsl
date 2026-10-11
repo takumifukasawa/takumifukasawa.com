@@ -20,12 +20,13 @@ uniform mat4 modelViewMatrix;
 uniform float uPhase;
 uniform float uPull;
 uniform vec3 uTarget;
+uniform float uWidth;
+uniform float uTwist;
+uniform float uDepth;
 
 out float vS;
 
 const float TAU = 6.283185307179586;
-const float HALF_WIDTH = 0.075;
-const float TWIST_TURNS = 1.25;
 // Step for the finite-difference tangent. Not tied to the segment count: it only has to be small
 // enough to approximate the derivative and large enough to stay out of float noise.
 const float DS = 0.004;
@@ -36,7 +37,7 @@ vec3 ribbonCenter(float s) {
 
   // Weighted by s: 1 at the head, 0 at the tail. The ribbon is not dragged rigidly — it is bent,
   // which is what makes the body look like it is catching up rather than being teleported.
-  float k = uPull * aParams.w * (1.0 - s) * (1.0 - s);
+  float k = uPull * aParams.w * pow(1.0 - s, uDepth);
   return mix(orbit, uTarget, k);
 }
 
@@ -58,11 +59,11 @@ void main() {
 
   // Rotating the width direction along the ribbon is what reads as "ribbon" rather than "tube".
   // The uPhase term is one whole turn per loop, so it survives the loop boundary intact.
-  float twist = TAU * (aS * TWIST_TURNS + uPhase);
+  float twist = TAU * (aS * uTwist + uPhase);
   vec3 width = n1 * cos(twist) + n2 * sin(twist);
 
   // Tapers to nothing at the tail, so the ribbon ends without a cut edge.
-  float w = HALF_WIDTH * (1.0 - aS) * (1.0 - aS);
+  float w = uWidth * (1.0 - aS) * (1.0 - aS);
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p + width * aSide * w, 1.0);
   vS = aS;

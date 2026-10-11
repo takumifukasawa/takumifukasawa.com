@@ -55,6 +55,10 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
 5. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 6. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
+7. **人間: Cosense を語彙の置き場として立ち上げる**（上の「解決済」で置き場を決めた。**まだ未導入**）。
+   プロジェクトを作る → `/plugin marketplace add worldnine/scrapbox-cosense-mcp` → `COSENSE_PROJECT_NAME` と
+   `COSENSE_SID`（`connect.sid` クッキー。private の読みと書き込みに要る）を `.claude/settings.local.json` へ。
+   入れたら `docs/setup.md` に行を足す（入れる前に書くと「要るもの」が嘘になる）。最初の 1 件は greeble。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -122,6 +126,12 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - 作品ページに計測を入れる手段 → `_shell.js` に載せる。作品は成果物をコミットする方式なので、直接足すと全件の再ビルドが要る
 - カスタムドメインを `wrangler.jsonc` の `routes` に書くか → 書かない。CI のトークンに zone の編集権が無く deploy が落ちる
 - トップページに説明文を置くか → 置かない（`AGENTS.md`）。sketch 0 件のときは名前だけが正しい状態
+- 語彙（手法の名前）の置き場 → **この repo には持たない。Cosense 側**。`docs/` は「このプロジェクトの永続事実」に絞る
+  （`greeble` のような語は世界の事実で、PaleGL / UE / Houdini と**複数 repo を跨ぐ**）。Markdown の表だと 20 行で連想が引けなくなる。
+  repo に残すのは AI が実行する作業の道具と罠だけ（`learnings.md` の 2026-10-11 の 3 件）。
+  AI からの読み書きは MCP で通る（`worldnine/scrapbox-cosense-mcp`。Claude Code plugin あり。**第三者製なので腐る前提**）
+- greeble を sketch 002 にするか → **しない**。002 は `lab:add` の本番初回検証を兼ねるので題材は軽い側に倒す
+  （重いと作品と配管のどちらが壊れたか切り分けられない）。greeble は語彙に残して 003 以降で見返す。「候補リスト」という別概念は作らない
 
 ## 確認したが意図的に更新しなかったもの（次のセッションが同じ確認を繰り返さないため）
 

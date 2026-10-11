@@ -129,7 +129,12 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - 語彙（手法の名前）の置き場 → **この repo には持たない。Cosense 側**。`docs/` は「このプロジェクトの永続事実」に絞る
   （`greeble` のような語は世界の事実で、PaleGL / UE / Houdini と**複数 repo を跨ぐ**）。Markdown の表だと 20 行で連想が引けなくなる。
   repo に残すのは AI が実行する作業の道具と罠だけ（`learnings.md` の 2026-10-11 の 3 件）。
-  AI からの読み書きは MCP で通る（`worldnine/scrapbox-cosense-mcp`。Claude Code plugin あり。**第三者製なので腐る前提**）
+  AI からの読み書きは MCP で通る（`worldnine/scrapbox-cosense-mcp`。Claude Code plugin あり）。
+  ただし**公式が「あくまで内部 API です。API は予告なく変更を行います」と明言**しているので、壊れる前提で使う。
+  壊れても失うのは「AI が自動で積む」部分だけ（読みは Web UI、書きは手で 30 秒に戻る）。
+  Obsidian は落選。連想（2 hop リンク）が手張り頼みで、張り忘れた語が死ぬ。フォルダがあるぶん分類で止まる。
+  **Settings → Page Data の Export / Import（JSON）があるので移行は取り返しがつく。**
+  語彙 20 件まで溜めた時点で「2 hop が実際に効いているか」を見て、効いていなければ Obsidian へ移す
 - greeble を sketch 002 にするか → **しない**。002 は `lab:add` の本番初回検証を兼ねるので題材は軽い側に倒す
   （重いと作品と配管のどちらが壊れたか切り分けられない）。greeble は語彙に残して 003 以降で見返す。「候補リスト」という別概念は作らない
 

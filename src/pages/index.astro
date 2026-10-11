@@ -5,6 +5,9 @@
 // PROVISIONAL. P0 originally had no pages at all; this exists so the domain is not a 404 and so the first
 // sketch has somewhere to appear. Fonts / colours / layout are decided in P1 (plan 1-1) once there are
 // 5-10 sketches to look at — do not polish this before then.
+//
+// No prose. Not a tagline, not an empty-state sentence, not a section intro (AGENTS.md). With no sketches
+// this page is the name and nothing else, and that is the intended state — the work is the content.
 import { getCollection } from 'astro:content';
 import { resolveMedia } from '../lib/media.ts';
 
@@ -42,14 +45,11 @@ const dateLabel = (d: Date) =>
   <body>
     <header>
       <h1>takumifukasawa</h1>
-      <p>graphics / realtime rendering. 手を動かした記録を置いていく場所。</p>
     </header>
 
     <main>
       {
-        sketches.length === 0 ? (
-          <p class="empty">まだ何も置いていない。</p>
-        ) : (
+        sketches.length > 0 && (
           <ul class="grid">
             {sketches.map((sketch) => {
               const poster = resolveMedia(sketch.data.poster);
@@ -112,15 +112,6 @@ const dateLabel = (d: Date) =>
     font-size: 1rem;
     font-weight: 500;
     letter-spacing: 0.04em;
-  }
-
-  header p {
-    margin: 0.4rem 0 0;
-    color: var(--dim);
-  }
-
-  .empty {
-    color: var(--dim);
   }
 
   .grid {

@@ -50,7 +50,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 2. 録画したら `pnpm lab:add 002-<slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
    **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
 3. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/002-<slug>`）を確かめる。下の実測表の残りもここで埋まる。
-4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。**GA にヒットが届くかを本番のリアルタイムで確認する**。
+4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
 5. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
@@ -76,8 +76,9 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - **`takumifukasawa.com` が応答するようになった。** 旧 A レコードを消してから向き先が無く NXDOMAIN だった状態の解消
 - CRLF で保存されていた 5 ファイルを LF に戻してからコミットした（直さないと差分が全書き換えに見える）
 - **tech-debt を 2 件とも返済した。** Always Use HTTPS を on（http が 301 で https へ）、`workers_dev: false` で本番 workers.dev を塞いだ（PR #1 で「プレビュー URL は生きたまま本番だけ塞がる」ことを実機確認してから merge）
-- **Google Analytics 4 を入れた**（`G-L3EDWSFJ82`）。トップは `index.astro` の head、作品は `_shell.js` 経由（再ビルド無しで全作品に行き渡る）。Cloudflare Web Analytics から変えた理由と代償は `spec/site-v0.md` の「計測」。**GA にヒットが届くことは本番のリアルタイムで未確認**
+- **Google Analytics 4 を入れた**（`G-L3EDWSFJ82`）。トップは `index.astro` の head、作品は `_shell.js` 経由（再ビルド無しで全作品に行き渡る）。Cloudflare Web Analytics から変えた理由と代償は `spec/site-v0.md` の「計測」。**本番のリアルタイムにヒットが届くことを確認済み**（開発機の Chrome はブロッカーで飛ばないので、確認は実機で）
 - **`/` に暫定のトップページを置いた**（`src/pages/index.astro` + `src/lib/media.ts`）。`spec/site-v0.md` の「P0 ではページを 1 枚も作らない」を緩めた。sketch が入れば自動で一覧になる
+- **「説明の文章を書かない」を `AGENTS.md` の規律にした。** トップのタグラインと空状態の一文を落とし、sketch 0 件のページは名前だけにした
 - **プレビュー URL の使い方が分かった**（`spec/site-v0.md`）。Branch Preview URL はブランチ名で安定するので、**スマホでの実機確認はこれが一番楽**。`X-Robots-Tag: noindex` も付く
 
 ### 2026-10-08 の 2 回目のセッションで直したもの

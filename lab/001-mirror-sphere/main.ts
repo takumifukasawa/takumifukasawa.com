@@ -139,7 +139,7 @@ const mirror = new THREE.Mesh(
     glslVersion: THREE.GLSL3,
     vertexShader: mirrorVert,
     fragmentShader: mirrorFrag,
-    uniforms: { 'envMap': { value: cubeTarget.texture } },
+    uniforms: { 'envMap': { value: cubeTarget.texture }, 'uShowFaces': { value: 0 } },
   }),
 );
 scene.add(mirror);
@@ -256,6 +256,7 @@ const update = (deltaTime: number) => {
   ribbonUniforms.uDepth.value = params.pullDepth;
   backdropUniforms.uLow.value = params.backdropLow;
   backdropUniforms.uHigh.value = params.backdropHigh;
+  (mirror.material as THREE.RawShaderMaterial).uniforms.uShowFaces.value = params.showFaces ? 1 : 0;
   if (camera.position.z !== params.cameraZ) {
     camera.position.set(0, 0, params.cameraZ);
     camera.lookAt(0, 0, 0);

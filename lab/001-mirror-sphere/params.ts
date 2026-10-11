@@ -21,6 +21,7 @@ export type Params = {
   loopSec: number;
   cubeSize: number;
   cubeMipmaps: boolean;
+  showFaces: boolean;
 };
 
 export const params: Params = {
@@ -42,4 +43,5 @@ export const params: Params = {
   'loopSec': 10,
   'cubeSize': 1024,
   'cubeMipmaps': false,
+  'showFaces': true,
 };

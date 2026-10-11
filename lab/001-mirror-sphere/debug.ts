@@ -44,6 +44,8 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   // Mip chains on a cube map are built per face, so at coarse levels each face averages only its own
   // pixels and the six of them stop agreeing — which reads as visible face boundaries on a mirror.
   scene.addBinding(params, 'cubeMipmaps').on('change', onResizeCube);
+  // Tints the reflection by which cube face it samples. A seam is a hard edge where two tints meet.
+  scene.addBinding(params, 'showFaces');
 
   return pane;
 };

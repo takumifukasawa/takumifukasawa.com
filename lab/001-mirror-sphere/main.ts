@@ -109,18 +109,23 @@ backdrop.visible = false;
 scene.add(backdrop);
 
 // --- the subject --------------------------------------------------------------------------------
-// Mipmaps are on, which is not about roughness (that is 002) but about aliasing: a mirror sphere
-// minifies the environment hard near its silhouette, and without a mip chain thin ribbons break up
-// into stair-steps there. texture() on a samplerCube picks the level from the reflection vector's
-// derivatives on its own, so this costs nothing to use.
+// Antialiasing a cube map is awkward, and both of the obvious routes are closed:
 //
-// No `samples` here: three does not implement MSAA for *cube* render targets, and asking for it
-// throws inside updateMultisampleRenderTarget on the first frame (bindFramebuffer gets undefined).
-// Resolution plus the mip chain is what is available.
+// - MSAA is not available. three does not implement it for *cube* render targets; passing `samples`
+//   throws inside updateMultisampleRenderTarget on the first frame (bindFramebuffer gets undefined).
+// - Mipmaps make it worse, not better. A cube mip chain is built **per face**, so at coarse levels
+//   each face averages only its own pixels and the six stop agreeing. A mirror sphere reaches those
+//   levels near its silhouette, where the reflection vector's derivatives blow up — and the result
+//   reads as visible face boundaries, exactly the thing a cube map is supposed to hide. WebGL2's
+//   seamless filtering fixes the bilinear lookup across an edge; it does not make the mip *content*
+//   agree. (Prefiltering that is seam-aware is what PMREM is for, and that belongs with roughness
+//   in 002.)
+//
+// So: resolution, and no mips. Both are on the debug panel to A/B.
 const makeCubeTarget = (size: number) =>
   new THREE.WebGLCubeRenderTarget(size, {
-    generateMipmaps: true,
-    minFilter: THREE.LinearMipmapLinearFilter,
+    generateMipmaps: params.cubeMipmaps,
+    minFilter: params.cubeMipmaps ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter,
     magFilter: THREE.LinearFilter,
   });
 

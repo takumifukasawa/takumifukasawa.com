@@ -39,8 +39,11 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   scene.addBinding(params, 'backdropHigh', { min: 0, max: 1, step: 0.005 });
   scene.addBinding(params, 'loopSec', { min: 2, max: 30, step: 0.5 });
   scene
-    .addBinding(params, 'cubeSize', { options: { '256': 256, '512': 512, '1024': 1024 } })
+    .addBinding(params, 'cubeSize', { options: { '256': 256, '512': 512, '1024': 1024, '2048': 2048 } })
     .on('change', onResizeCube);
+  // Mip chains on a cube map are built per face, so at coarse levels each face averages only its own
+  // pixels and the six of them stop agreeing — which reads as visible face boundaries on a mirror.
+  scene.addBinding(params, 'cubeMipmaps').on('change', onResizeCube);
 
   return pane;
 };

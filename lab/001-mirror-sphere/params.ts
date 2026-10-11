@@ -20,6 +20,7 @@ export type Params = {
   backdropHigh: number;
   loopSec: number;
   cubeSize: number;
+  cubeMipmaps: boolean;
 };
 
 export const params: Params = {
@@ -39,5 +40,6 @@ export const params: Params = {
   'backdropLow': 0.02,
   'backdropHigh': 0.3,
   'loopSec': 10,
-  'cubeSize': 512,
+  'cubeSize': 1024,
+  'cubeMipmaps': false,
 };

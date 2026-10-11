@@ -42,3 +42,8 @@ lab/.build-tmp/
 
 # --- 秘密情報。R2 の API トークン（pnpm lab:add が読む）。マシンごとに .env.example から作る（docs/setup.md） ---
 .env
+
+# --- 秘密情報。Cosense の COSENSE_SID（connect.sid クッキー）が入る。
+#     Claude Code 自身も既定でこのファイルを無視するが、それはマシンのグローバル設定（~/.config/git/ignore）に
+#     依存するので、別マシンで効かず SID を commit しうる。repo 側でも押さえる（docs/setup.md） ---
+.claude/settings.local.json

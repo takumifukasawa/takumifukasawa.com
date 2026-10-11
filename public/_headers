@@ -1,4 +1,4 @@
-# Cloudflare Pages headers. https://developers.cloudflare.com/pages/configuration/headers/
+# Headers for the static assets. https://developers.cloudflare.com/workers/static-assets/headers/
 
 # The site-side shell changes over time and is loaded by every sketch, so it must not be cached as immutable (decision 0004).
 /_shell.js

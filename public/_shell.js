@@ -1,8 +1,42 @@
-// /_shell.js — link back to the site, shown on every sketch page (/lab/<slug>/).
+// /_shell.js — link back to the site + analytics, loaded by every sketch page (/lab/<slug>/).
 // Every sketch embeds `<script src="/_shell.js" defer></script>`; everything else lives here, so changing
 // this one file updates all sketches without rebuilding them. Contract: docs/decisions/0004-lab-shell.md.
 //
 // P0 version: a plain text link in the corner. The look is decided in P1.
+
+// Measured separately from the link below: the link is a visual affordance that a sketch can turn off,
+// while "how many people opened this sketch" should be counted either way. The only skip is an iframe,
+// where the host page is the thing being viewed and does its own counting (decision 0004).
+//
+// Kept inside the IIFE: this file is a classic script, so a top-level `const` would sit in the global
+// lexical scope and could collide with the sketch's own variables.
+(() => {
+  try {
+    if (window.top !== window) return;
+    if (window.gtag) return;
+
+    // Google Analytics 4. Public (it ships in the HTML), so it is not a secret. The same id is written in
+    // src/pages/index.astro for the site itself — change both together.
+    const GA_ID = 'G-L3EDWSFJ82';
+
+    const tag = document.createElement('script');
+    tag.async = true;
+    tag.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+    document.head.appendChild(tag);
+
+    window.dataLayer = window.dataLayer || [];
+    // gtag reads `arguments`, so it cannot be an arrow function.
+    function gtag() {
+      window.dataLayer.push(arguments);
+    }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+  } catch {
+    // ignore
+  }
+})();
+
 (() => {
   // Never break the sketch: any failure here is swallowed.
   try {

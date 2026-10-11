@@ -35,7 +35,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 決定 0001〜0006 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005 / 0006 は 2026-10-11） | `decisions/`, `spec/` |
 | 検査 | 8 件 pass（テスト 30 件 + lab 系 5 件 + docs / doctor）。すべて pre-commit で走る | `bash .harness/bin/harness check`、`.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
-| `/_shell.js` | 配信まで確認。**ブラウザでの見た目・`h` キー・`?clean` は未確認** | 計画 0-6、決定 0004 |
+| `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版（sketch 0 件なので「まだ何も置いていない」が出る。1 件入れば自動でグリッドになることを捨てデータで確認済み） | 計画 0-9 / 1-1 |
 | `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（sketch 002）で commit / push まで通すのが残り** | 計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
@@ -50,7 +50,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 2. 録画したら `pnpm lab:add 002-<slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
    **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
 3. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/002-<slug>`）を確かめる。下の実測表の残りもここで埋まる。
-4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の見た目・`h`・`?clean`）。
+4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。**GA にヒットが届くかを本番のリアルタイムで確認する**。
 5. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
@@ -76,6 +76,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - **`takumifukasawa.com` が応答するようになった。** 旧 A レコードを消してから向き先が無く NXDOMAIN だった状態の解消
 - CRLF で保存されていた 5 ファイルを LF に戻してからコミットした（直さないと差分が全書き換えに見える）
 - **tech-debt を 2 件とも返済した。** Always Use HTTPS を on（http が 301 で https へ）、`workers_dev: false` で本番 workers.dev を塞いだ（PR #1 で「プレビュー URL は生きたまま本番だけ塞がる」ことを実機確認してから merge）
+- **Google Analytics 4 を入れた**（`G-L3EDWSFJ82`）。トップは `index.astro` の head、作品は `_shell.js` 経由（再ビルド無しで全作品に行き渡る）。Cloudflare Web Analytics から変えた理由と代償は `spec/site-v0.md` の「計測」。**GA にヒットが届くことは本番のリアルタイムで未確認**
 - **`/` に暫定のトップページを置いた**（`src/pages/index.astro` + `src/lib/media.ts`）。`spec/site-v0.md` の「P0 ではページを 1 枚も作らない」を緩めた。sketch が入れば自動で一覧になる
 - **プレビュー URL の使い方が分かった**（`spec/site-v0.md`）。Branch Preview URL はブランチ名で安定するので、**スマホでの実機確認はこれが一番楽**。`X-Robots-Tag: noindex` も付く
 

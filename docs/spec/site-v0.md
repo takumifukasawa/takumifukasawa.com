@@ -77,6 +77,29 @@ P0 は**サイトのページを `/` の 1 枚だけに留める**（残りは `
 カスタムドメインを `wrangler.jsonc` の `routes` に書かないのは、CI の Workers Builds トークンに zone の
 編集権が無く、deploy が落ちるため（理由は `wrangler.jsonc` のコメントにも書いてある）。
 
+### 計測 — Google Analytics 4（2026-10-11 に Cloudflare Web Analytics から変更）
+
+測定 ID `G-L3EDWSFJ82`。**秘密ではない**（HTML に出る）ので repo に直接書く。
+
+入れる場所が 2 つあるのは、**性質の違う HTML が 2 種類ある**ため。
+
+| | 実体 | 入れ方 |
+|---|---|---|
+| `/` | Astro が生成 | `src/pages/index.astro` の `<head>` に gtag スニペット |
+| `/lab/<slug>/` | 作品のビルド成果物（コミット済み。再ビルドしないと変わらない） | **`public/_shell.js` から読み込む**（決定 0004 の追記） |
+
+作品側を `_shell.js` に載せるのは、**再ビルド無しで全作品に行き渡る**から。発火条件（`?clean` でも計測する等）は
+決定 0004 の表が正。**測定 ID は 2 か所に書いてある**ので、変えるときは両方直す（互いにコメントで参照している）。
+
+Cloudflare Web Analytics から変えた理由は、見たい数字（流入元・リアルタイム・イベント）が GA の方が揃っていること。
+**代わりに払うもの**: GA は Cookie を使うので、EU からのアクセスを気にするなら同意バナーが要る側に倒れる。
+`googletagmanager.com` への third-party リクエストも作品ページごとに 1 本増える。落選案: Cloudflare Web Analytics の
+まま（Cookie なし・1 行で軽いが、流入元の粒度が粗い）、両方入れる（いつでも足せるので、必要になってからでよい）。
+
+**未確認**: GA に実際にヒットが届くかは本番で `リアルタイム` を見て確かめる。ローカルでの確認では
+`gtag/js` の取得（200）と `gtag('config')` の実行までは見えたが、**collect のリクエストはブラウザ拡張に
+ブロックされていた**（計測ブロッカーを入れている閲覧者には届かない、という当たり前のことでもある）。
+
 ### プレビュー URL（実機確認に使う）
 
 PR を出すと Workers Builds が **2 種類**の URL を払い出す（PR にコメントで貼られる）。どちらも
@@ -100,7 +123,7 @@ Worker スクリプトも置かない（assets だけの Worker）。全リク�
 ### P1 に入れる機能（ページ以外）
 
 - sitemap.xml
-- **Cloudflare Web Analytics**（script 1 行、無料、Cookie なし）。バズった時に数字が見られない状態を作らない
+- ~~Cloudflare Web Analytics~~ → **Google Analytics 4**（`G-L3EDWSFJ82`）。**2026-10-11 に P0 で入れた**（下記）
 - OGP（`astro.config` の `site` 設定 + `poster` を `og:image` に使う）
 - 作品ページの導線（`public/_shell.js`）の見た目を決める。P0 の間は左上のテキストリンク 1 つ（決定 0004）
 

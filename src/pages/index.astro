@@ -27,6 +27,17 @@ const dateLabel = (d: Date) =>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>takumifukasawa</title>
     <meta name="description" content="Takumi Fukasawa — graphics / realtime rendering. sketches and experiments." />
+    <!-- Google Analytics 4. The sketches are separate HTML files that this page does not generate, so they
+         load the same id through public/_shell.js — change both together. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L3EDWSFJ82"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-L3EDWSFJ82');
+    </script>
   </head>
   <body>
     <header>

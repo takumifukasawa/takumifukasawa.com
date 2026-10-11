@@ -11,7 +11,7 @@
 repo は 1 つ。サイト・作品・カードが同じ repo に揃い、**メディアだけが外**にある（決定 `decisions/0001-overall-architecture.md`）。
 
 ```
-takumifukasawa.com  (1 repo / Astro static / Cloudflare Pages)
+takumifukasawa.com  (1 repo / Astro static / Cloudflare Workers Static Assets)
   ├─ src/                        Astro（サイト本体）
   ├─ src/content/lab/            カード = metadata の正本（Markdown）
   ├─ lab/<NNN-slug>/             作品のソース（Vite / npm / TS / GLSL 自由）
@@ -51,7 +51,7 @@ scripts/            公開フローの CLI（Astro に依存しない）
 
 | 不変条件 | 強制手段 | 状態 |
 |---|---|---|
-| frontmatter は schema を満たす | `src/content.config.ts` の schema。`astro build`（Pages の `pnpm build`）が違反で落ちる。`.harness/checks.sh` への登録は P1（1-5） | 一部強制（deploy 時のみ） |
+| frontmatter は schema を満たす | `src/content.config.ts` の schema。`astro build`（Workers Builds の `pnpm build`）が違反で落ちる。`.harness/checks.sh` への登録は P1（1-5） | 一部強制（deploy 時のみ） |
 | frontmatter の mediaKey は `media/manifest.json` に実在する | `.harness/checks.sh` の `media keys resolve`（md の `poster` / `video` を manifest と照合。ネットワークに触らない） | 強制（pre-commit） |
 | `tags` に既知語の表記ゆれが無い（未知語は通す） | `.harness/checks.sh` の `tag normalization` | 未強制（実装前） |
 | メディアのホスト名が `src/lib/` 以外に出てこない | `.harness/checks.sh` の grep 検査 | 未強制（実装前） |

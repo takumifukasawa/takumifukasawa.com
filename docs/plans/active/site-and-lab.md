@@ -38,12 +38,12 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 0-4b | `pnpm dev:lab <slug>`: 作品 1 件を Vite で起動（HMR）。`/_shell.js` も配信して導線込みで見る。`--https`（mkcert）で LAN 内の実機から HTTPS で開ける（iOS のカメラ・ジャイロは HTTPS 必須） | AI | 一部済 | `scripts/dev-lab.ts`。HMR と `/_shell.js` の配信は確認済み。`--https` は未確認（mkcert のルート証明書の登録に sudo が要るため、初回は人間が実行する） |
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 済 | 一時ディレクトリに出し、成功時だけ差し替える。md からの `<head>` 書き直しは 0-8 で足す | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 済 | 決定 0004。見た目は P1 で決める |
-| 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、Pages project 作成（設定値は `spec/site-v0.md` の表） | **人間** | 未着手 | `wrangler login` もここ。AI は手順書を出す。Pages のビルドが `packageManager` の pnpm 11 を使うか（使わなければ環境変数 `PNPM_VERSION`）を確かめる |
+| 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、**Workers project 作成**（設定値は `spec/site-v0.md` の表） | **人間** | 済 | 2026-10-11 完了。Pages ではなく Workers Static Assets（新規作成の入口が無かった）。`takumifukasawa.com` が応答する。pnpm 11 / Node 24 は環境変数なしで検出されたので `PNPM_VERSION` は不要だった |
 | 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 一部済 | `scripts/lab-add.ts`。`--dry-run` で ffmpeg / sharp / md / manifest まで確認済み。**R2 への実 put・commit・push は未確認**（`.env` が埋まってから、sketch 001 で初回実行して確かめる） |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 済 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ）。`astro.config.ts` / `scripts/preview.ts`。http で確認済み、`--https` は 0-4b と同じく未確認 |
 | 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 済 | `tests green (>0)` / `lab build in sync` / `lab shell embedded` / `no large files` / `lab head in sync` / `media keys resolve`（すべて pre-commit で走る）。`astro check` / `astro build` と `src/` の grep は P1（1-5） |
-| 0-11 | **sketch 001 を作る** | **人間** | 未着手 | 技術的コアは自分で書く |
-| 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・Pages の差分アップロード・R2 Class B） | AI + 人間 | 未着手 | 結果は `../../handoff.md` の表の書き戻し先へ |
+| 0-11 | **sketch を 1 件作って公開まで通す** | **人間** | 着手中 | 001-mirror-sphere を作ったが**出さないと決めて `lab-archives/` へ棚上げ**した（決定 0006）。番号は返さないので次は 002。技術的コアは自分で書く |
+| 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・**差分アップロード**・R2 Class B） | AI + 人間 | 一部済 | 2026-10-11: 差分アップロードは**される**、ビルド 48 秒、`_headers` は Workers でも効く（`../../references/cloudflare-limits.md`）。残りは sketch を 1 件公開しないと測れない |
 | 0-13 | **sketch を 5〜10 件積み**、schema を実データで直す | **人間** | 未着手 | 架空の 1 件で設計を固めない |
 | 1-1 | Astro のページ: `/`（グリッド・年別）、`/about/`、`/404`、`/lab/` → `/` の 301 | AI → 確認 | 未着手 | フォント・配色・レイアウトはここで人間が決める |
 | 1-2 | `_shell.js` の見た目を決める | 人間 + AI | 未着手 | sketch 数件を見ながら |
@@ -59,6 +59,10 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 作品のコードは **class を使わない**（状態はプレーンなオブジェクト + 関数。tree-shaking のため）。`time/` の 2 ファイルも関数に書き直した。ビルドは **terser でプロパティ名まで mangle**（`keep_quoted`。PaleGL と同じ方針）し、modulePreload の polyfill を切る（雛形のバンドル 1565 → 895 バイト）。コードの書き方の規約は `docs/coding.md` に置き、`lab/AGENTS.md` からはそこを読むように指示するだけにした。落選案: Vite 既定の minifier（Oxc）のまま（PaleGL と同じ terser の設定と挙動を使い回せない）、プロパティを `_` 接頭辞だけ mangle（class 前提の方式で、関数ベースでは効きが小さい）。
 - 2026-10-08: P0 に最小の Astro（0-9）を入れる。Pages のビルドコマンド `pnpm build` を P0 から通すため。ページは作らない。落選案: P0 では Pages のビルドを「`public/` をそのまま出す」設定にする（P1 で設定を変えることになり、P0 で実測した Pages の挙動が P1 と変わる）。
 
+- 2026-10-11: 配信を Cloudflare Pages ではなく **Workers Static Assets** にする。ダッシュボードから Pages の新規作成の入口が消えていたため、決定 0001 の逃げ道 2 をそのまま発動した。要ったのは `wrangler.jsonc` 1 枚と `pnpm preview` の 1 行で、ビルドも URL も成果物も変わらない。**静的アセットのリクエストは無料・無制限**（Worker スクリプトを持たない構成なので Workers Free の 10 万リクエスト/日 に掛からない）ことを出典で確認し、「バズっても構造的に $0」が維持されることを確かめてから採った。落選案: Pages の既存 project を別経路で作れないか探す（入口が無い以上、見つかっても将来の受付停止を先送りするだけ）、`wrangler deploy` を手元から叩いて git 連携を使わない（push ごとの自動 deploy を失う）。
+- 2026-10-11: カスタムドメインは `wrangler.jsonc` の `routes` に書かず、ダッシュボードで割り当てる。CI（Workers Builds）のトークンに zone の編集権が無く、`routes` に `custom_domain: true` を書くと deploy が落ちるため。落選案: `routes` に書いて再現性を取る（初回 deploy が失敗する側に倒れる）。
+- 2026-10-11: `www` は作らない（apex のみ）。sketch の URL を短く保つ方針（決定 0002）と揃える。必要になったらリダイレクトで足せる。
+
 ## 進捗ログ（セッションごとに 1〜3 行）
 
 - 2026-10-08: 計画を作成。0-1 / 0-2 を実施（`package.json` / `.nvmrc` / `.gitignore` / `media/manifest.json`）。依存はまだ入れていない（0-4 で Vite、0-9 で Astro）。
@@ -70,6 +74,9 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 0-8 の大半と 0-10 の残り。`lab:add`（aws4fetch で R2 の S3 API に署名、yaml、sharp）、`src/content.config.ts`（content-model の lab だけ。生成した md が `astro build` を通り、壊れた md で落ちることを確認）、`.env.example` と `docs/setup.md`（`.env` はマシンごとに要る、を 3 か所に書いた: `.env.example` の冒頭・setup.md・`lab:add` のエラー文）。`lab:build` も最後に md から `<head>` を書き直す。テスト 25 件
 - 2026-10-08: `.env` を人間が記入。`lab:add` と同じ関数で R2 の `_test/` に put → `media.takumifukasawa.com` から 200（`Cache-Control: immutable`、CORS `*`）→ DELETE まで通ることを確認し、テスト用ファイルは消した。`.webp` は CDN にキャッシュされる（MISS → HIT）。`.txt` はされない（`../../learnings.md`）
 
+- 2026-10-11: sketch 001-mirror-sphere を制作したが**出さないと決め**、`lab-archives/` へ棚上げ（決定 0006）。あわせて決定 0005（AI にどこまで書かせるか）を記録。`numberOwner()` で `pnpm new` が棚上げ済みの番号を再利用しないようにした
+- 2026-10-11: 0-7 完了。**Pages ではなく Workers Static Assets** で公開（上の決定ログ）。`takumifukasawa.com` が応答するようになった（それまでは旧 A レコード削除後、向き先が無く NXDOMAIN だった）。`/_shell.js` は 200 + `max-age=300`、`/` は 404（P0 はページ 0 枚なので正常）。初回ビルド 48 秒、差分アップロードは**される**。残った宿題 2 件は `../../tech-debt.md`（workers.dev の本番 URL を塞ぐ / Always Use HTTPS）
+
 ## 未確定事項（人間の判断待ち）
 
-- sketch 001 の題材（0-11）
+- sketch 002 の題材（0-11。001 は棚上げ済み）

@@ -21,7 +21,7 @@
 | ビルド成果物 | `public/lab/<NNN-slug>/` | 手元で `pnpm lab:build` した出力（Vite の `outDir` が直接ここへ） | **する**（これが配信される） |
 | カード | `src/content/lab/<NNN-slug>.md` | frontmatter（`date` / `title` / `medium` / `poster` / `tags` …） | する |
 
-**成果物をコミットするのが設計の核**。Cloudflare Pages のビルドは Astro だけを走らせ、
+**成果物をコミットするのが設計の核**。Cloudflare 側のビルド（Workers Builds）は Astro だけを走らせ、
 `public/` はコピーするだけなので、**サイトのビルドは作品のコードに触らない**。
 だから作品のビルドが壊れてもサイトは出るし、依存を上げても既存作品の bundle は変わらない（決定 0001）。
 

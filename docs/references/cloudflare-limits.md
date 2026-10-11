@@ -1,21 +1,50 @@
-# 配信基盤の制限と料金（Cloudflare Pages / R2 / GitHub）
+# 配信基盤の制限と料金（Cloudflare Workers Static Assets / R2 / GitHub）
 
-- 取得日: 2026-10-07
-- 出典: `https://developers.cloudflare.com/pages/platform/limits/`, `https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits`, `https://docs.github.com/en/billing/concepts/product-billing/git-lfs`, `https://developers.cloudflare.com/r2/pricing/`, `https://developers.cloudflare.com/r2/buckets/public-buckets/`
-- 関連: `../decisions/0001-overall-architecture.md`
+- 取得日: 2026-10-07（Pages / R2 / GitHub）、2026-10-11（Workers Static Assets）
+- 出典: `https://developers.cloudflare.com/workers/platform/limits/`, `https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/`, `https://developers.cloudflare.com/pages/platform/limits/`, `https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits`, `https://docs.github.com/en/billing/concepts/product-billing/git-lfs`, `https://developers.cloudflare.com/r2/pricing/`, `https://developers.cloudflare.com/r2/buckets/public-buckets/`
+- 関連: `../decisions/0001-overall-architecture.md`, `../spec/site-v0.md`
+
+**2026-10-11 に Pages から Workers Static Assets に移った**（`../spec/site-v0.md`。ダッシュボードから Pages の
+新規作成の入口が消えていたため、決定 0001 の逃げ道 2 がそのまま発動した）。下の Pages の節は、
+**この移行の判断材料として残してある**（Pages 時代の数値。もう使っていない）。
 
 料金と制限は変わる。**この doc の数値は上記の取得日時点のもの**。判断を変える前に出典を引き直す。
 
 ## 製品の役割分担
 
-| | Pages | R2 |
+| | Workers Static Assets | R2 |
 |---|---|---|
-| 何か | 静的サイトのホスティング + git 連携の自動ビルド | オブジェクトストレージ（S3 互換） |
+| 何か | 静的サイトのホスティング + git 連携の自動ビルド（Workers Builds） | オブジェクトストレージ（S3 互換） |
 | 置くもの | ビルド成果物（HTML / CSS / JS） | ビルドに含めたくないファイル（mp4 / webm / 大きい画像） |
 | 更新 | git push → 自動ビルド → デプロイ | wrangler / S3 API で put |
 | 境界 | **git に入れるもの** | **git に入れないもの** |
 
-## Pages（無料プラン）
+## Workers Static Assets（無料プラン。2026-10-11 取得）
+
+**いま使っているのはこれ。**
+
+| 項目 | 無料 | 有料 |
+|---|---|---|
+| 1 バージョンのファイル数 | **20,000** | 100,000 |
+| 1 ファイルの最大サイズ | 25 MiB | 25 MiB |
+| custom domain | 100/zone | 同 |
+| route | 1,000/zone | 同 |
+| アセットの保管 | **追加費用なし** | 同 |
+
+### 静的アセットのリクエストは無料・無制限（ここが一番効く）
+
+> Requests to static assets are free and unlimited.
+> Requests to the Worker script (for example, in the case of SSR content) are billed according to Workers pricing.
+
+**Workers Free の「10 万リクエスト/日」は Worker スクリプトの実行に対する上限であって、
+アセットの配信には掛からない。** このプロジェクトの Worker は**スクリプトを持たない**（`wrangler.jsonc` に
+`main` が無い）ので、全リクエストがアセット配信に落ちる。つまり Pages 時代と同じく**バズっても構造的に $0**。
+
+決定 0004 が「Worker で配信時に HTML を書き換える案」を 10 万リクエスト/日 を理由に落としたのは、
+いまも有効。**スクリプトを足した瞬間にこの上限が復活する。** `run_worker_first` も同じ理由で使わない
+（無料枠を超えると 429 を返し、アセットへフォールバックしない）。
+
+## Pages（無料プラン。2026-10-07 取得。**もう使っていない**）
 
 | 項目 | 無料 | 有料 |
 |---|---|---|
@@ -52,11 +81,22 @@ CNAME を `r2.dev` に向けるのは非サポート。**必ず custom domain �
 | R2 ストレージ | 500 ×（poster 150KB + mp4 5MB）≈ **2.6 GB**（1080p60 / 10 秒、mp4 のみ。`../spec/publish-pipeline.md`） | 10 GB の 26%。2 年通して無料枠内 |
 | R2 Class A | 2 年で put 1,500 回 | 無視できる |
 | R2 Class B | `/lab/` 1 表示で poster 24 枚 → **月 41 万 PV 相当**まで無料枠内 | 十分 |
-| Pages ファイル数 | HTML 600 + JS/CSS で数千 | 20,000 の天井に対して余裕 |
-| Pages ビルド | 1 日 2 push × 2 project × 30 日 = 120/月 | 500/月 に対して余裕 |
+| アセットのファイル数 | HTML 600 + JS/CSS で数千 | 20,000 の天井に対して余裕 |
+| アセットのリクエスト数 | 上限なし | — |
 
-**最初に当たる天井は Pages のファイル数 20,000。** これは件数ではなくページ生成の設計で決まる
-（1 件ごとに OG 画像を静的生成し始めると件数 × 2 になる）。動的 OGP を入れるときにここを再計算する。
+**最初に当たる天井はアセットのファイル数 20,000**（Pages 時代と同じ値）。これは件数ではなく
+ページ生成の設計で決まる（1 件ごとに OG 画像を静的生成し始めると件数 × 2 になる）。
+動的 OGP を入れるときにここを再計算する。
+
+## 実測（2026-10-11、初回デプロイ）
+
+| 測ったもの | 結果 |
+|---|---|
+| **差分アップロード** | **される。** `wrangler deploy` が `Read 2 files` → `Found 1 new or modified static asset to upload` → `Uploaded 1 of 1`。コンテンツハッシュで比較し、変更分だけ送る。**500 件でもデプロイ時間は変更分にしか比例しない** |
+| ビルド全体 | **48 秒**（`pnpm install --frozen-lockfile` 14.2s / `astro build` 1.11s / `wrangler deploy` 3.8s / 残りは環境構築とキャッシュ） |
+| Node / pnpm の検出 | 環境変数なしで `nodejs@24.21.0, pnpm@11.28.5`。`.node-version` と `packageManager` が両方読まれる。`PNPM_VERSION` は不要 |
+| `public/_headers` | **効く。** `/_shell.js` に `Cache-Control: public, max-age=300`。`_headers` 自体はアセットとして上がらず設定として消費される |
+| 末尾スラッシュ | `wrangler dev` では `/lab/<slug>` → **307** → `/lab/<slug>/`（Pages は 308 だった）。**本番での実測は sketch を 1 件公開してから**（計画 0-12） |
 
 アクセス数が伸びて壊れる箇所・請求が跳ねる箇所は無い。Pages の静的配信は帯域制限の記載が無く、
 R2 は egress が構造的に $0。ストレージが 100 GB まで膨らんでも月 $1.5。

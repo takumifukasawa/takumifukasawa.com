@@ -186,4 +186,8 @@ GitHub Pages の利点（GitHub だけで完結する／ビルドが Actions で
 - **やり直す条件**:
   1. working tree が 300 MB を超えたら、**Three.js を external にして共有コピー 1 本にする**（上の「逃げ道」。URL も制作体験も変わらない）。それでも足りなければ成果物を R2 に移し `/lab/*` を Worker でプロキシする方式を検討する。
   2. Cloudflare が Pages を新規受付停止したら、同じ静的成果物を Workers Static Assets へ移す（成果物が `dist/` の静的ファイルなので移行は deploy 設定だけで済む。この独立性は意図的）。
+     → **2026-10-11 に発動した。** ダッシュボードに Pages の新規作成の入口が無かったため、最初から Workers Static Assets で公開した。
+     実際に要ったのは `wrangler.jsonc` 1 枚と `pnpm preview` の 1 行で、ビルドも URL も成果物も変わっていない。
+     設定値は `../spec/site-v0.md`、制限と実測は `../references/cloudflare-limits.md`。
+     **静的アセットのリクエストは無料・無制限**（Worker スクリプトを持たないため）なので、「バズっても構造的に $0」も維持されている。
   3. 1 日の公開手数が 3 コマンドを超えて恒常的に摩擦になったら、落選案 B（作品ディレクトリ側を metadata の正本に）へ移る。

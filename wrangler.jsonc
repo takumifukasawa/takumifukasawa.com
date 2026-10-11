@@ -16,6 +16,12 @@
 {
   "name": "takumifukasawa-com",
   "compatibility_date": "2026-10-11",
+  // The site is served from takumifukasawa.com only. Without this, the same content is also reachable at
+  // takumifukasawa-com.<subdomain>.workers.dev, which search engines can pick up as a duplicate.
+  "workers_dev": false,
+  // Preview URLs live on the same workers.dev subdomain, so turning workers_dev off would take them with it
+  // unless they are asked for explicitly. Keep them: every PR gets its own URL to open on a phone.
+  "preview_urls": true,
   "assets": {
     "directory": "./dist",
     // /lab/<slug> redirects to /lab/<slug>/ and serves index.html. The sketches are built with

@@ -5,6 +5,19 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-11 [harness候補] JSR のパッケージに依存した npm install は `@jsr` スコープの設定が無いと 404 で落ちる
+
+- 症状: `/plugin install` や `npm install` が
+  `npm error 404 Not Found - GET https://registry.npmjs.org/@jsr%2f<scope>__<name>` で落ちる。
+  パッケージ名が実在しないように見えるので、プラグインや依存の指定が壊れていると誤診する。
+- 原因: JSR（jsr.io）のパッケージは npm から使うとき `@jsr/<scope>__<name>` という名前になり、
+  **npmjs.org には存在しない**。JSR の npm 互換レジストリ `https://npm.jsr.io` にしか無い。
+  `@jsr` スコープの向き先が未設定だと npm が npmjs.org を見て 404 になる。
+- 対処 / 再発したら: `npm config set @jsr:registry https://npm.jsr.io`（`~/.npmrc` に 1 行。
+  戻すのは `npm config delete @jsr:registry`）。**先に `npm view @jsr/<scope>__<name> version --registry https://npm.jsr.io`
+  で実在と版を確かめる**と、設定を変える前に原因が確定する。
+  404 のパッケージ名が `@jsr/` で始まっていたらこれ（2026-10-11、Cosense の MCP プラグインで踏んだ）。
+
 ## 2026-10-11 [harness候補] 映像を見る前に推定で分析の枠組みを作ると、枠組みごと捨てることになる
 
 - 症状: 他人の作品（Unity 6 の起動画面）の手法を特定する作業で、映像を入手する前に

@@ -1,28 +1,31 @@
 // 001-mirror-sphere — Mirror sphere
 //
-// A perfect mirror sphere reflecting a monochrome environment, via a cube map rendered every frame.
-// Scope is deliberately one step: no roughness, no Fresnel, no BRDF (those are 002 / 003 / 004).
+// A perfect mirror sphere with ribbons orbiting it, reflected via a cube map rendered every frame.
+// Scope is deliberately one step on the shading side: no roughness, no Fresnel, no BRDF
+// (those are 002 / 003 / 004).
 //
 // three.js is used as plumbing only (lab/AGENTS.md): BufferGeometry + RawShaderMaterial + own GLSL.
 // No MeshStandardMaterial, no CubeCamera, no SphereGeometry, no OrbitControls, no post processing.
 //
-// Unfinished on purpose — see the TODO(you) blocks:
-//   mirror.vert.glsl  world-space position / normal
-//   mirror.frag.glsl  view direction, reflect, cube sample
-//   cubeFaces.ts      the 6 camera orientations
-// The sketch runs without them and is visibly wrong, which is the point: each one you fill in
-// makes it visibly less wrong.
+// Looping: everything is a function of `phase` (0..1 over LOOP_SEC), so the clip loops exactly —
+// except the pointer pull, which is the one piece of state here. Record without touching the
+// pointer and the loop is intact.
+//
+// Every uniform name below is quoted. terser mangles property names, and three looks uniforms up by
+// the string that appears in the GLSL, so an unquoted name breaks in the built output only
+// (docs/coding.md).
 
 import * as THREE from 'three';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 import { CUBE_FACE_COUNT, cubeFaceMatrix } from './cubeFaces.ts';
 import { createSphereGeometry } from './sphereGeometry.ts';
+import { createRibbonGeometry } from './ribbons.ts';
 import mirrorVert from './mirror.vert.glsl?raw';
 import mirrorFrag from './mirror.frag.glsl?raw';
+import ribbonVert from './ribbon.vert.glsl?raw';
+import ribbonFrag from './ribbon.frag.glsl?raw';
 
-// Recording loops for this long (docs/spec/publish-pipeline.md). Drive every animation from `phase`
-// below, never from raw time, or the clip will not loop.
 const LOOP_SEC = 10;
 const CUBE_SIZE = 256;
 
@@ -33,49 +36,66 @@ renderer.setClearColor(0x000000, 1);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-camera.position.set(0, 0, 3.6);
+camera.position.set(0, 0, 5.4);
 camera.lookAt(0, 0, 0);
 
-// --- the environment that gets reflected -------------------------------------------------------
-// Scaffolding, provided. Monochrome, and nothing but the sphere is the subject (the visual
-// constraint in AGENTS.md). BoxGeometry is fine here: the "write it yourself" rule is about the
-// subject of the sketch, not about the backdrop.
-const flat = new THREE.RawShaderMaterial({
-  glslVersion: THREE.GLSL3,
-  vertexShader: `
-    in vec3 position;
-    uniform mat4 projectionMatrix;
-    uniform mat4 modelViewMatrix;
-    void main() { gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-  `,
-  fragmentShader: `
-    precision highp float;
-    uniform float brightness;
-    out vec4 outColor;
-    void main() { outColor = vec4(vec3(brightness), 1.0); }
-  `,
-  uniforms: { brightness: { value: 1 } },
-});
+// --- ribbons: the environment, and the thing the pointer moves ----------------------------------
+const ribbonUniforms = {
+  'uPhase': { value: 0 },
+  'uPull': { value: 0 },
+  'uTarget': { value: new THREE.Vector3() },
+};
 
-const env = new THREE.Group();
-const bar = new THREE.BoxGeometry(0.12, 2.4, 0.12);
-for (let ring = 0; ring < 2; ring++) {
-  const count = 24;
-  // Far enough out that the near side of the ring sits behind the camera: nothing comes between
-  // the eye and the sphere, which keeps the sphere the only subject in frame.
-  const radius = 6.0 + ring * 1.6;
-  const y = ring === 0 ? -0.6 : 0.9;
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2;
-    const mesh = new THREE.Mesh(bar, flat);
-    mesh.position.set(Math.cos(a) * radius, y, Math.sin(a) * radius);
-    mesh.scale.y = 0.7 + ((i * 7) % 5) * 0.5;
-    env.add(mesh);
-  }
-}
-scene.add(env);
+const ribbons = new THREE.Mesh(
+  createRibbonGeometry(),
+  new THREE.RawShaderMaterial({
+    glslVersion: THREE.GLSL3,
+    vertexShader: ribbonVert,
+    fragmentShader: ribbonFrag,
+    uniforms: ribbonUniforms,
+    side: THREE.DoubleSide, // they twist, so both faces are seen
+  }),
+);
+scene.add(ribbons);
 
-// --- the subject -------------------------------------------------------------------------------
+// --- backdrop: exists only inside the cube map ---------------------------------------------------
+// A perfect mirror is invisible in an empty room: with nothing to reflect it returns black, and the
+// sphere disappears except where a ribbon happens to cross it. Physically right, visually dead.
+//
+// So there is a room — but it is switched off for the on-screen pass, so the page stays black while
+// the sphere still has something to show. The world the cube map sees does not have to be the world
+// the camera sees, and that is a lever worth knowing about rather than a cheat to feel bad about.
+const backdrop = new THREE.Mesh(
+  createSphereGeometry(30, 32, 24),
+  new THREE.RawShaderMaterial({
+    glslVersion: THREE.GLSL3,
+    side: THREE.BackSide, // seen from inside
+    vertexShader: `
+      in vec3 position;
+      uniform mat4 projectionMatrix;
+      uniform mat4 modelViewMatrix;
+      out vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      precision highp float;
+      in vec3 vDir;
+      out vec4 outColor;
+      void main() {
+        // Dark, and brighter overhead: enough of a gradient to give the sphere a readable body
+        // without lifting the blacks.
+        outColor = vec4(vec3(mix(0.02, 0.30, smoothstep(-0.8, 1.0, vDir.y))), 1.0);
+      }
+    `,
+  }),
+);
+backdrop.visible = false;
+scene.add(backdrop);
+
+// --- the subject --------------------------------------------------------------------------------
 const cubeTarget = new THREE.WebGLCubeRenderTarget(CUBE_SIZE, {
   // No mipmaps: a perfect mirror samples one direction at full resolution. Roughness is what needs
   // a mip chain, and that is 002.
@@ -85,27 +105,76 @@ const cubeTarget = new THREE.WebGLCubeRenderTarget(CUBE_SIZE, {
 });
 
 const mirror = new THREE.Mesh(
-  // Kept at the origin with no rotation or scale, so the placeholder world-space maths in
-  // mirror.vert.glsl happens to be correct. It stops being correct the moment you move it.
+  // Kept at the origin with no rotation or scale, which is what makes mat3(modelMatrix) in
+  // mirror.vert.glsl exactly right rather than merely close.
   createSphereGeometry(1, 96, 64),
   new THREE.RawShaderMaterial({
     glslVersion: THREE.GLSL3,
     vertexShader: mirrorVert,
     fragmentShader: mirrorFrag,
-    uniforms: { envMap: { value: cubeTarget.texture } },
+    uniforms: { 'envMap': { value: cubeTarget.texture } },
   }),
 );
 scene.add(mirror);
 
-// --- cube map rendering ------------------------------------------------------------------------
+// --- pointer --------------------------------------------------------------------------------------
+// The target lands on a shell around the sphere rather than on a flat plane: the ribbons live on
+// that shell, so the head arrives among them instead of sliding through the middle of the mirror.
+const TARGET_MIN = 1.5;
+const TARGET_MAX = 2.6;
+const unprojected = new THREE.Vector3();
+const rayDir = new THREE.Vector3();
+const hit = new THREE.Vector3();
+let pointerDown = false;
+let pullHold = 0; // decays once the pointer is up; what the smoothing below chases
+
+const setTargetFromPointer = (clientX: number, clientY: number) => {
+  unprojected
+    .set((clientX / window.innerWidth) * 2 - 1, -(clientY / window.innerHeight) * 2 + 1, 0.5)
+    .unproject(camera);
+  rayDir.copy(unprojected).sub(camera.position).normalize();
+
+  // Point on the ray closest to the origin. The ray generally misses the shell entirely, and this
+  // is the well-defined answer whether it hits or not — no intersection test, no special case.
+  hit.copy(rayDir).multiplyScalar(-camera.position.dot(rayDir)).add(camera.position);
+
+  const len = hit.length();
+  if (len < 1e-3) {
+    // Dead centre: the ray passes through the origin, so there is no direction left to keep.
+    hit.copy(camera.position).normalize().multiplyScalar(TARGET_MIN);
+  } else {
+    hit.multiplyScalar(THREE.MathUtils.clamp(len, TARGET_MIN, TARGET_MAX) / len);
+  }
+  ribbonUniforms.uTarget.value.copy(hit);
+};
+
+canvas.addEventListener('pointerdown', (e) => {
+  pointerDown = true;
+  canvas.setPointerCapture(e.pointerId);
+  setTargetFromPointer(e.clientX, e.clientY);
+  pullHold = 1;
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!pointerDown) return;
+  setTargetFromPointer(e.clientX, e.clientY);
+  pullHold = 1;
+});
+const release = () => {
+  pointerDown = false;
+};
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
+
+// --- cube map rendering ---------------------------------------------------------------------------
 // 90 degrees and a square aspect: that is what makes 6 images tile into a seamless cube.
 const faceCamera = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
 faceCamera.matrixAutoUpdate = false;
 
 const renderCubeMap = () => {
-  // The sphere must not appear in its own reflection. One line, and the reason is worth sitting with:
-  // a cube map is a snapshot of "everything except me", taken from where I am.
+  // The sphere must not appear in its own reflection. One line, and the reason is worth sitting
+  // with: a cube map is a snapshot of "everything except me", taken from where I am.
   mirror.visible = false;
+  backdrop.visible = true;
   for (let face = 0; face < CUBE_FACE_COUNT; face++) {
     faceCamera.matrix.copy(cubeFaceMatrix(face, mirror.position));
     faceCamera.matrixWorldNeedsUpdate = true;
@@ -113,17 +182,25 @@ const renderCubeMap = () => {
     renderer.render(scene, faceCamera);
   }
   renderer.setRenderTarget(null);
+  backdrop.visible = false;
   mirror.visible = true;
 };
 
-// --- loop --------------------------------------------------------------------------------------
+// --- loop -------------------------------------------------------------------------------------------
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
-const update = (_phase: number) => {};
+const update = (deltaTime: number) => {
+  // The hold decays while the pointer is up, so a tap is a nudge rather than a mode.
+  if (!pointerDown) pullHold *= Math.exp(-deltaTime / 0.5);
+
+  // Asymmetric: quick to reach, slow to let go. Symmetric damping reads as elastic; this reads as
+  // the head darting over and then drifting back into its orbit.
+  const rate = pullHold > ribbonUniforms.uPull.value ? 16 : 2.5;
+  ribbonUniforms.uPull.value += (pullHold - ribbonUniforms.uPull.value) * (1 - Math.exp(-deltaTime * rate));
+};
 
 const render = (phase: number) => {
-  // phase is 0..1 over LOOP_SEC. Everything animated is a function of it, so the clip loops exactly.
-  env.rotation.y = phase * Math.PI * 2;
+  ribbonUniforms.uPhase.value = phase;
   renderCubeMap();
   renderer.render(scene, camera);
 };
@@ -141,10 +218,9 @@ const startTime = getCurrentRealTime();
 const phaseOf = (time: number) => ((time - startTime) % LOOP_SEC) / LOOP_SEC;
 
 const fixedTimer = createTimeAccumulator(60, fixedUpdate);
-const frameTimer = createTimeSkipper(60, (time) => {
-  const phase = phaseOf(time);
-  update(phase);
-  render(phase);
+const frameTimer = createTimeSkipper(60, (time, deltaTime) => {
+  update(deltaTime);
+  render(phaseOf(time));
 });
 
 const tick = () => {

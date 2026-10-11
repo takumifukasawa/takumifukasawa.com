@@ -1,9 +1,16 @@
 // pnpm lab:build <NNN-slug>     build one sketch into public/lab/<slug>/
 // pnpm lab:rebuild --all         rebuild every web sketch; failures are skipped and keep their old output
 //
-// Each sketch is built into a temporary directory first and swapped into public/lab/<slug>/ only on success,
+// Each sketch is built into a temporary directory first and copied into public/lab/<slug>/ only on success,
 // so a broken build never deletes the published output (docs/spec/publish-pipeline.md「再ビルド」).
-import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+//
+// The swap copies rather than renames. On Windows a directory that any watcher has open cannot be
+// renamed (EPERM), and `pnpm dev` / `pnpm dev:lab` watch this tree — so renaming failed *after*
+// rmSync had already removed the published output, which is exactly the case the two-step build is
+// meant to prevent. Copying is not atomic, but nothing reads public/lab/ while the build runs, and
+// the guarantee that matters (a failed build leaves the old output alone) is kept: the build throws
+// before anything here touches `out`.
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'vite';
 import { applyHeadFromMd } from './lib/content.ts';
@@ -22,7 +29,8 @@ const buildOne = async (slug: string): Promise<void> => {
   const out = join(publicLabDir, slug);
   mkdirSync(publicLabDir, { recursive: true });
   rmSync(out, { recursive: true, force: true });
-  renameSync(tmpOut, out);
+  cpSync(tmpOut, out, { recursive: true });
+  rmSync(tmpOut, { recursive: true, force: true });
 
   // The md is the source of truth for <title> / OGP once lab:add has created it (decision 0004).
   applyHeadFromMd(slug);

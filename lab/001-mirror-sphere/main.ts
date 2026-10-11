@@ -125,6 +125,7 @@ const TARGET_MAX = 2.6;
 const unprojected = new THREE.Vector3();
 const rayDir = new THREE.Vector3();
 const hit = new THREE.Vector3();
+const targetGoal = new THREE.Vector3(); // where the pointer asked for; uTarget eases toward it
 let pointerDown = false;
 let pullHold = 0; // decays once the pointer is up; what the smoothing below chases
 
@@ -145,7 +146,11 @@ const setTargetFromPointer = (clientX: number, clientY: number) => {
   } else {
     hit.multiplyScalar(THREE.MathUtils.clamp(len, TARGET_MIN, TARGET_MAX) / len);
   }
-  ribbonUniforms.uTarget.value.copy(hit);
+  targetGoal.copy(hit);
+
+  // Nothing is pulled yet, so there is no motion to be smooth about: start from the new point rather
+  // than easing out of a stale one left over from the last click.
+  if (ribbonUniforms.uPull.value < 0.02) ribbonUniforms.uTarget.value.copy(hit);
 };
 
 canvas.addEventListener('pointerdown', (e) => {
@@ -189,14 +194,27 @@ const renderCubeMap = () => {
 // --- loop -------------------------------------------------------------------------------------------
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
+// Exponential smoothing with a frame-rate independent step: the 1 - exp(-dt * rate) form keeps the
+// same feel whether a frame took 16 ms or 50 ms, which a plain `x += (goal - x) * 0.1` does not.
+// `rate` is 1 / time-constant, so 4 reaches about 63% of the way in 0.25 s.
+const approach = (current: number, goal: number, rate: number, deltaTime: number) =>
+  current + (goal - current) * (1 - Math.exp(-deltaTime * rate));
+
 const update = (deltaTime: number) => {
   // The hold decays while the pointer is up, so a tap is a nudge rather than a mode.
   if (!pointerDown) pullHold *= Math.exp(-deltaTime / 0.5);
 
-  // Asymmetric: quick to reach, slow to let go. Symmetric damping reads as elastic; this reads as
-  // the head darting over and then drifting back into its orbit.
-  const rate = pullHold > ribbonUniforms.uPull.value ? 16 : 2.5;
-  ribbonUniforms.uPull.value += (pullHold - ribbonUniforms.uPull.value) * (1 - Math.exp(-deltaTime * rate));
+  // Two separate things are eased, and both have to be or the motion snaps:
+  //   uPull   — how much the ribbons are pulled at all
+  //   uTarget — where they are pulled to
+  // Easing only the first still teleports the heads whenever the pointer moves, because the
+  // destination itself jumps.
+  ribbonUniforms.uTarget.value.lerp(targetGoal, 1 - Math.exp(-deltaTime * 5));
+
+  // Asymmetric: quicker to reach than to let go. Symmetric damping reads as elastic; this reads as
+  // the head drifting over and then falling back into its orbit.
+  const rate = pullHold > ribbonUniforms.uPull.value ? 4.5 : 2.2;
+  ribbonUniforms.uPull.value = approach(ribbonUniforms.uPull.value, pullHold, rate, deltaTime);
 };
 
 const render = (phase: number) => {

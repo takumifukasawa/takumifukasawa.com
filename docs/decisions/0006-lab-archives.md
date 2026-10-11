@@ -1,0 +1,85 @@
+# 0006: 没にした sketch の置き場 — `lab/` と並列の `lab-archives/`。ビルドも配信もしない
+
+- 日付: 2026-10-11
+- 状態: 採用
+- 関連: `0002-naming-lab-sketch.md`, `0003-code-placement.md`, `../spec/publish-pipeline.md`
+
+## 背景
+
+2 年で sketch 300〜500 を作る以上、**没は例外ではなく常態**になる。
+ところが今の選択肢は「完成させて `lab:add` で出す」か「`git rm` する」の 2 つしかない。
+
+これだと没の瞬間に摩擦が生まれる。捨てるのは惜しい、でも出すほどではない → 判断を先送りする →
+半端な sketch が `lab/` に居座り、`lab build in sync` 検査を落とし続ける。
+**摩擦を減らすことがこのプロジェクトの最優先**（`../../AGENTS.md`）なので、ここに置き場が要る。
+
+## 採用案: `lab-archives/<NNN-slug>/`
+
+`lab/` と並列のディレクトリ。**ソースだけ**を置く。
+
+| | `lab/` | `lab-archives/` |
+|---|---|---|
+| ビルドする（`public/lab/` に出る） | する | **しない** |
+| Cloudflare に配信される | される | **されない** |
+| content collection のエントリを持つ | 持つ | **持たない** |
+| `pnpm dev:lab` で動く | 動く | 動かない（戻せば動く） |
+| 番号を占有する | する | **する** |
+
+### 価値は「保存」ではなく「一覧で見えること」
+
+git history は消しても残すので、**保存だけが目的なら `lab-archives/` は要らない**。
+違うのは、history から引き出すには「それが在ること」を先に知っている必要がある点。
+`lab-archives/` は**見える一覧**で、そこだけが差。だから「取っておく」ではなく「ときどき見返す棚」として扱う。
+
+### 配信されないことに設定は要らない
+
+Cloudflare が配るのは `astro build` の出力。`lab-archives/` は `src/` でも `public/` でもないので、そもそも入らない。
+**唯一の実作業は `public/lab/<slug>/` を `git rm` すること**で、これは忘れようがない —
+`lab build in sync` 検査が「対応する `lab/<slug>/index.html` が無い」孤児として必ず落とす（`scripts/lib/checks.ts`）。
+
+### 番号は返さない
+
+`lab-archives/` に移しても番号は空かない。移して番号が空くと、git history に **001 が 2 つ**できるし、
+棚から戻したときに衝突する。`lab-archives/<NNN-slug>/` というディレクトリ名**そのものが番号台帳**で、
+`pnpm new` は `lab/` と `lab-archives/` の両方を見る（`numberOwner()` / `scripts/lib/lab.ts`）。
+
+払い出した番号が公開数より先に進むのは正しい。**試行回数が出るだけ**で、公開数は content collection から出る。
+
+### 名前の基準
+
+**この名前に URL は無い**（配信しないので）。読者は外部ではなく自分だけで、URL に残る `lab` を慎重に選んだ
+決定 0002 とは事情が違う。だから英語として正しいことより、**自分が見て一瞬で分かること**を優先する。
+
+その上で外したのが、中身を美化する名前。`archive` 単体は「価値があるから保管する」含みを持つが、
+ここに入るのは「出さないと決めたもの」。名前が中身を美化すると**放り込んで二度と見ない置き場**になり、
+下の「やり直す条件」と正面からぶつかる。`lab-` のスコープが付くことで、保管庫ではなく
+**`lab/` の裏側**という読みになり、そこが落ち着いた。
+
+### 手順
+
+```
+git mv lab/<NNN-slug> lab-archives/<NNN-slug>
+git rm -r public/lab/<NNN-slug> lab/.build-meta/<NNN-slug>.json
+```
+`harness check` が通れば終わり。戻すときは `git mv` を逆にして `pnpm lab:build <NNN-slug>`。
+
+## 落選案と落選理由
+
+| 案 | 落選理由 |
+|---|---|
+| そのまま `git rm`（history に任せる） | 保存はされるが**見えない**。在ることを知らないものは引き出せない。没の摩擦も消えない |
+| `lab/` に残して `draft: true` で非公開 | ビルドと検査の対象に残り続ける。`draft` は「まだ出さない完成予定のもの」で、没とは別の状態（`../spec/content-model.md`） |
+| `archives/lab/`（階層を掘る） | 棚が要るのは `lab/` だけ。notes は markdown で `draft: true` が既にあり、works も同じ問題を持たない。`archives/notes/` は来ない見込みで、先に階層を掘るのは先回り |
+| `archive/` / `archives/`（スコープ無し） | 個人サイトで「過去の公開作品一覧」と読める。`lab-` が付けば隣の `lab/` との対比で生き死にが一目で分かる |
+| `attic/` | 屋根裏。英語の慣用で、日本語話者の直観に乗らない |
+| `shelf/` | 棚上げの棚。語感は正確だが「没」の強さが出ない |
+| `graveyard/` | 戻さない含みが強い。実際には戻すことを想定している |
+| `drafts/` | 未完成 ≠ 没。`draft` フラグと紛らわしい |
+| 別 repo に逃がす | 没のために repo を増やすのは重い。昇格の条件（`0003-code-placement.md`）を満たしていない |
+| 番号を再利用して詰める | 密な番号に価値が無い。history と会話が曖昧になる方が高くつく |
+
+## 影響・やり直す条件
+
+- `scripts/lib/lab.ts` に `labArchivesDir` と `numberOwner()`。`scripts/new.ts` が後者を使う。テストは `scripts/lib/lab.test.ts`
+- **P1 で `astro check` / 型検査を足すとき、`lab-archives/` を対象から外す**。棚上げしたコードは壊れたままのことがあり、検査を落とす
+- やり直す条件: **`lab-archives/` を一度も見返していないなら、それは遅い `git rm` でしかない。** 半年見ていなければこの決定を捨てて削除に戻す

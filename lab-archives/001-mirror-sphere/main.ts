@@ -28,7 +28,10 @@ import { createCubeDebug } from './cubeDebug.ts';
 import { createBloom } from './bloom.ts';
 import mirrorVert from './mirror.vert.glsl?raw';
 import mirrorFrag from './mirror.frag.glsl?raw';
+import emitterChunk from './emitter.glsl?raw';
 import ribbonVert from './ribbon.vert.glsl?raw';
+import pointVert from './point.vert.glsl?raw';
+import pointFrag from './point.frag.glsl?raw';
 import ribbonFrag from './ribbon.frag.glsl?raw';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#c')!;
@@ -41,14 +44,23 @@ const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
 camera.lookAt(0, 0, 0);
 
 // --- ribbons: the environment, and the thing the pointer moves ----------------------------------
-const ribbonUniforms = {
+// Shared by the ribbons and by the dot that marks the emitter, as the same uniform objects: the two
+// read the same emitterAt() and must never disagree about where the point is.
+const emitterUniforms = {
   'uPhase': { value: 0 },
+  'uEmitterRadius': { value: params.emitterRadius },
+  'uDrift': { value: params.drift },
   'uPull': { value: 0 },
   'uTarget': { value: new THREE.Vector3() },
+  'uMinRadius': { value: params.minRadius },
+};
+
+const ribbonUniforms = {
+  ...emitterUniforms,
+  'uSpread': { value: params.spread },
   'uWidth': { value: params.width },
   'uTwist': { value: params.twist },
   'uDepth': { value: params.pullDepth },
-  'uMinRadius': { value: params.minRadius },
   'uColorHead': { value: new THREE.Color(params.colorHead) },
   'uColorTail': { value: new THREE.Color(params.colorTail) },
   'uHueSpread': { value: params.hueSpread },
@@ -59,13 +71,31 @@ const ribbons = new THREE.Mesh(
   createRibbonGeometry(params),
   new THREE.RawShaderMaterial({
     glslVersion: THREE.GLSL3,
-    vertexShader: ribbonVert,
+    vertexShader: emitterChunk + ribbonVert,
     fragmentShader: ribbonFrag,
     uniforms: ribbonUniforms,
     side: THREE.DoubleSide, // they twist, so both faces are seen
   }),
 );
 scene.add(ribbons);
+
+// The emitter itself. Small sphere, same path, so there is something to read as "the point".
+const emitterPoint = new THREE.Mesh(
+  createSphereGeometry(1, 24, 16),
+  new THREE.RawShaderMaterial({
+    glslVersion: THREE.GLSL3,
+    vertexShader: emitterChunk + pointVert,
+    fragmentShader: pointFrag,
+    uniforms: {
+      ...emitterUniforms,
+      'uPointSize': { value: params.pointSize },
+      'uColorHead': ribbonUniforms.uColorHead,
+      'uIntensity': ribbonUniforms.uIntensity,
+    },
+  }),
+);
+emitterPoint.frustumCulled = false; // the vertex shader relocates it; three cannot infer the bounds
+scene.add(emitterPoint);
 
 const rebuildRibbons = () => {
   ribbons.geometry.dispose();
@@ -286,7 +316,11 @@ const update = (deltaTime: number) => {
   ribbonUniforms.uWidth.value = params.width;
   ribbonUniforms.uTwist.value = params.twist;
   ribbonUniforms.uDepth.value = params.pullDepth;
-  ribbonUniforms.uMinRadius.value = params.minRadius;
+  emitterUniforms.uMinRadius.value = params.minRadius;
+  emitterUniforms.uEmitterRadius.value = params.emitterRadius;
+  emitterUniforms.uDrift.value = params.drift;
+  ribbonUniforms.uSpread.value = params.spread;
+  (emitterPoint.material as THREE.RawShaderMaterial).uniforms.uPointSize.value = params.pointSize;
   ribbonUniforms.uColorHead.value.set(params.colorHead);
   ribbonUniforms.uColorTail.value.set(params.colorTail);
   ribbonUniforms.uHueSpread.value = params.hueSpread;
@@ -306,7 +340,7 @@ const drawing = renderer.getDrawingBufferSize(new THREE.Vector2());
 const bloom = createBloom(drawing.x, drawing.y);
 
 const render = (phase: number) => {
-  ribbonUniforms.uPhase.value = phase;
+  emitterUniforms.uPhase.value = phase;
   renderCubeMap();
   if (params.showCubeCross) {
     // Takes over the frame: the cube map is what is being looked at, not the sphere.

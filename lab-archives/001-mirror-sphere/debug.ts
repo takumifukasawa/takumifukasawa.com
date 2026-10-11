@@ -12,7 +12,7 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   const pane = new Pane({ title: '001-mirror-sphere' });
 
   const look = pane.addFolder({ title: 'ribbon (live)' });
-  look.addBinding(params, 'width', { min: 0.01, max: 0.3, step: 0.001 });
+  look.addBinding(params, 'width', { min: 0.002, max: 0.3, step: 0.001 });
   look.addBinding(params, 'twist', { min: 0, max: 6, step: 0.01 });
   look.addBinding(params, 'colorHead');
   look.addBinding(params, 'colorTail');
@@ -23,11 +23,10 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
 
   const shape = pane.addFolder({ title: 'ribbon (rebuilds geometry)' });
   for (const [key, opts] of [
-    ['count', { min: 1, max: 40, step: 1 }],
-    ['radiusMin', { min: 1.05, max: 4, step: 0.01 }],
-    ['radiusMax', { min: 1.05, max: 4, step: 0.01 }],
-    ['tailMin', { min: 0.02, max: 1, step: 0.01 }],
-    ['tailMax', { min: 0.02, max: 1, step: 0.01 }],
+    ['count', { min: 1, max: 3000, step: 1 }],
+    ['emitWindow', { min: 0.01, max: 1, step: 0.005 }],
+    ['tailMin', { min: 0.005, max: 0.5, step: 0.005 }],
+    ['tailMax', { min: 0.005, max: 0.5, step: 0.005 }],
   ] as const) {
     shape.addBinding(params, key, opts).on('change', onRebuildRibbons);
   }
@@ -46,6 +45,12 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   bloom.addBinding(params, 'bloomThreshold', { min: 0, max: 3, step: 0.01 });
   bloom.addBinding(params, 'bloomSoft', { min: 0.01, max: 1, step: 0.01 });
   bloom.addBinding(params, 'bloomStrength', { min: 0, max: 4, step: 0.01 });
+
+  const emitter = pane.addFolder({ title: 'emitter' });
+  emitter.addBinding(params, 'emitterRadius', { min: 1.2, max: 4, step: 0.01 });
+  emitter.addBinding(params, 'drift', { min: 0, max: 1.5, step: 0.01 });
+  emitter.addBinding(params, 'spread', { min: 0, max: 3, step: 0.01 });
+  emitter.addBinding(params, 'pointSize', { min: 0.005, max: 0.3, step: 0.005 });
 
   const scene = pane.addFolder({ title: 'scene' });
   scene.addBinding(params, 'cameraZ', { min: 2, max: 14, step: 0.05 });

@@ -1,8 +1,8 @@
 // pnpm new <NNN-slug> "<title>"
 // Scaffold lab/<NNN-slug>/ from scripts/templates/sketch/ (docs/spec/publish-pipeline.md).
-import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { labDir, SLUG_PATTERN } from './lib/lab.ts';
+import { labDir, numberOwner, SLUG_PATTERN } from './lib/lab.ts';
 
 const templateDir = join(import.meta.dirname, 'templates', 'sketch');
 
@@ -19,12 +19,9 @@ if (!SLUG_PATTERN.test(slug)) {
   fail(`slug must look like 001-flow-field (3 digits, then lowercase words joined by "-"): ${slug}`);
 }
 
-const number = slug.slice(0, 3);
-const existing = existsSync(labDir) ? readdirSync(labDir) : [];
-const sameSlug = existing.find((name) => name === slug);
-if (sameSlug) fail(`lab/${slug}/ already exists`);
-const sameNumber = existing.find((name) => name.startsWith(`${number}-`));
-if (sameNumber) fail(`number ${number} is already used by lab/${sameNumber}/. Pick the next free number.`);
+// Checks lab-archives/ as well as lab/: an archived sketch keeps its number forever (decision 0006).
+const owner = numberOwner(slug.slice(0, 3));
+if (owner) fail(`number is already used by ${owner}/. Pick the next free number (numbers are never reused).`);
 
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

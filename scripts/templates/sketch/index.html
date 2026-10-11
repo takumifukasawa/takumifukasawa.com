@@ -15,8 +15,10 @@
          Opt out: <html data-shell="none">. Position: <html data-shell-position="top-right">. Hide for recording: ?clean -->
     <script src="/_shell.js" defer></script>
     <style>
-      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-      canvas { display: block; width: 100%; height: 100%; }
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; }
+      /* touch-action: none — without it a drag on a phone becomes a browser gesture (pan / pinch /
+         pull-to-refresh) and pointermove never arrives. overflow:hidden does not cover that. */
+      canvas { display: block; width: 100%; height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; }
     </style>
   </head>
   <body>

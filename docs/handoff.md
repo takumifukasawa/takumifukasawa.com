@@ -8,8 +8,8 @@
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-sketch 001 は作ったが出さないと決めて `lab-archives/` へ棚上げした（決定 0006）。**次は人間が sketch 002 を作り、`lab:add` で公開まで 1 本通す番**（0-11）。
-未検証の一本道はそこだけ。
+sketch 001 は作ったが出さないと決めて `lab-archives/` へ棚上げした（決定 0006）。**いま `lab/greeble/` を作っている最中**で、
+同時に **slug から連番を外すリファクタが未コミットで進行中**（下の「進行中の作業」）。`lab:add` の本番初回はまだ通っていない。
 
 ## 別の PC で再開するとき（最初にやること）
 
@@ -33,7 +33,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 項目 | 状態 | 出典 |
 |---|---|---|
 | 決定 0001〜0006 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005 / 0006 は 2026-10-11） | `decisions/`, `spec/` |
-| 検査 | 全件 pass（2026-10-11 時点）。すべて pre-commit で走る。**件数は叩いて確かめる**（ここに書くと腐る） | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
+| 検査 | **`lab build in sync` が落ちている**（`lab/greeble/` が未ビルド。作業中なら正常）。他は pass。すべて pre-commit で走る。**件数は叩いて確かめる**（ここに書くと腐る） | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
@@ -43,24 +43,36 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | **sketch 0 件。** 001-mirror-sphere は `lab-archives/` に棚上げ（番号は返さないので次は 002） | 決定 0006 |
+| `lab/` の中身 | `lab/greeble/`（**未追跡・作業中**）。001-mirror-sphere は `lab-archives/mirror-sphere/` へ棚上げ。番号の扱いは決定 0006 を改訂中 | `git status --short`、決定 0006 |
+| 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **人間: sketch 002 を作る（計画 0-11）。** `pnpm new 002-<slug> "<title>"` → `pnpm dev:lab 002-<slug>`。技術的コアは自分で書く（決定 0005）。
-2. 録画したら `pnpm lab:add 002-<slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
+1. **進行中のリファクタを畳む**（下の「進行中の作業」）。`lab build in sync` が通るところまで。順序制約: **これを先にしないと、以降の失敗が作品側かリファクタ側か切り分けられない。**
+2. **人間: `lab/greeble/` を仕上げる。** 技術的コアは自分で書く（決定 0005）。
+3. 録画したら `pnpm lab:add <slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
    **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
-3. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/002-<slug>`）を確かめる。下の実測表の残りもここで埋まる。
-4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
-5. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
-6. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
-7. **人間: Cosense の公式 CLI にログインする**（置き場は「解決済」で決定。プロジェクトは既にある）。
-   `https://scrapbox.io/poc-input`（**public**。既に「サッカード現象」「Sunny 16 rule」の 2 ページ）。
-   `/plugin marketplace add helpfeel/cosense-cli` → `/plugin install cosense-cli@cosense-cli` →
-   `npm install -g @helpfeel/cosense-cli` → **`cosense login https://scrapbox.io/poc-input`**（PAT を貼る。
-   **TTY が要るので普通の端末で**。保存先は `~/.cosense/settings.json` で 0600、repo の外）。
-   済んだら `docs/setup.md` に行を足す（入れる前に書くと「要るもの」が嘘になる）。最初の 1 件は greeble。
+4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/<slug>`）を確かめる。下の実測表の残りもここで埋まる。
+5. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
+6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
+7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
+
+## 進行中の作業（2026-10-11 時点で未コミット。AI が書いたものではない）
+
+**slug から連番を外すリファクタ。** `git status --short` で見える。畳むまで検査は赤いままになる。
+
+| | |
+|---|---|
+| 変更済み | docs 13 本 + `scripts/`（`new.ts` / `lab.ts` / テスト 3 本）+ `src/content.config.ts` / `src/lib/media.ts` + `lab/AGENTS.md` |
+| ステージ済み | `lab-archives/001-mirror-sphere/` → `lab-archives/mirror-sphere/` のリネーム |
+| 未追跡 | `lab/greeble/`（`index.html` / `main.ts` / `vite.config.ts` / `time/`） |
+| 検査 | `lab build in sync` が fail（`public/lab/greeble/` が未ビルド） |
+
+**揃っていないように見える点**（次のセッションはここから確かめる）: 改訂後の決定 0006 は
+「番号を持つのは `lab/` だけ」「`001-greeble` があれば `001-something-else` も弾く」と書いているが、
+`docs/coding.md` は `lab/<slug>/` に書き換わっていて、実際のディレクトリも `lab/greeble/` で番号が無い。
+**0006 の本文と実装のどちらが正か**は人間に聞く（下の「未確定事項」）。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -74,7 +86,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 ## 未確定事項（人間の判断待ち）
 
-- sketch 002 の題材（001 は棚上げ済み）
+- **連番の設計**: 改訂中の決定 0006 の本文と、`coding.md` / 実際のディレクトリ名が食い違っている（上の「進行中の作業」）。どちらが正か
 - 「説明の文章を書かない」を agent-harness へ昇格させるか（2026-10-11 保留）。いまはこの repo の `AGENTS.md` のみ。昇格させるなら断定形ではなく条件つき（成果物が「説明の要るもの」か「現物が語るもの」かを先に確認する形）に書き換える
 - フォント・配色・レイアウトの方向性（P1 着手時に決める）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
 
@@ -140,8 +152,11 @@ cp .env.example .env                    # R2 のトークンをパスワード�
   **公式が「あくまで内部 API です。API は予告なく変更を行います」と明言**しているもの。
   公式 CLI には `list2hopLinks` / `browseRelatedPages` があるので、**2 hop は人間だけでなく AI 側からも引ける**
   （Cosense を選んだ理由がそのまま AI にも効く）。`previewEdit` → `submitEdit` の dry-run 二段は `lab:add` と同じ流儀
-- greeble を sketch 002 にするか → **しない**。002 は `lab:add` の本番初回検証を兼ねるので題材は軽い側に倒す
-  （重いと作品と配管のどちらが壊れたか切り分けられない）。greeble は語彙に残して 003 以降で見返す。「候補リスト」という別概念は作らない
+- greeble を次の sketch にするか → **する**（人間の決定、2026-10-11）。AI 側は「`lab:add` の本番初回検証と重い題材を
+  同時に走らせると、壊れたとき作品側か配管側か切り分けられない」として軽い題材を勧めたが、採らなかった。
+  **懸念自体は残る** — 公開で詰まったら、まず配管（`--dry-run`）と作品を分けて切り分ける
+- Cosense の立ち上げ → 済（2026-10-11）。public の `poc-input`、公式 plugin + CLI、login 済み。
+  **`docs/setup.md` には書かない** — `cosense` は takumifukasawa.com のビルドにも検査にも要らない（語彙は別の箱）
 
 ## 確認したが意図的に更新しなかったもの（次のセッションが同じ確認を繰り返さないため）
 

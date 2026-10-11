@@ -33,14 +33,16 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 項目 | 状態 | 出典 |
 |---|---|---|
 | 決定 0001〜0006 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005 / 0006 は 2026-10-11） | `decisions/`, `spec/` |
-| 検査 | 8 件 pass（テスト 30 件 + lab 系 5 件 + docs / doctor）。すべて pre-commit で走る | `bash .harness/bin/harness check`、`.harness/checks.sh` |
+| 検査 | 全件 pass（2026-10-11 時点）。すべて pre-commit で走る。**件数は叩いて確かめる**（ここに書くと腐る） | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
-| Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版（sketch 0 件なので「まだ何も置いていない」が出る。1 件入れば自動でグリッドになることを捨てデータで確認済み） | 計画 0-9 / 1-1 |
+| Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
 | `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（sketch 002）で commit / push まで通すのが残り** | 計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
 | R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
-| 配信（**Workers Static Assets**） | 稼働。`takumifukasawa.com` が応答し、`/_shell.js` が 200 + `max-age=300`。`/` は 404（P0 はページ 0 枚なので正常）。Pages は新規作成の入口が消えていたため使っていない | 計画 0-7、`spec/site-v0.md`、`references/cloudflare-limits.md` |
+| 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
+| デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
+| 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
 | `lab/` の中身 | **sketch 0 件。** 001-mirror-sphere は `lab-archives/` に棚上げ（番号は返さないので次は 002） | 決定 0006 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
@@ -51,7 +53,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
    **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
 3. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/002-<slug>`）を確かめる。下の実測表の残りもここで埋まる。
 4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
-5. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
+5. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
+6. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -69,18 +72,18 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - 「説明の文章を書かない」を agent-harness へ昇格させるか（2026-10-11 保留）。いまはこの repo の `AGENTS.md` のみ。昇格させるなら断定形ではなく条件つき（成果物が「説明の要るもの」か「現物が語るもの」かを先に確認する形）に書き換える
 - フォント・配色・レイアウトの方向性（P1 着手時に決める）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
 
-### 2026-10-11 のセッションでやったこと
+### 2026-10-11 に決めたことの置き場（本文はそれぞれの doc にある）
 
-- **sketch 001 を棚上げした。** 出さないと決めたので `lab-archives/001-mirror-sphere/` へ移し、成果物（`public/lab/` と `.build-meta`）を消した。決定 0006 で置き場を定義し、`numberOwner()` で番号の再利用を防いだ（001 は永久に埋まる）
-- **決定 0005**（AI にどこまで書かせるか）を記録。線は「ライブラリか自作か」ではなく**「道具か主題か」**。`PaleGL/CLAUDE.md` に AI 利用範囲を書くのは**未着手**
-- **配信を Pages から Workers Static Assets に変えた。** ダッシュボードに Pages の新規作成の入口が無く、決定 0001 の逃げ道 2 がそのまま発動。`wrangler.jsonc` 1 枚と `pnpm preview` の 1 行で済んだ。**静的アセットのリクエストは無料・無制限**なので「バズっても構造的に $0」は維持（`references/cloudflare-limits.md`）
-- **`takumifukasawa.com` が応答するようになった。** 旧 A レコードを消してから向き先が無く NXDOMAIN だった状態の解消
-- CRLF で保存されていた 5 ファイルを LF に戻してからコミットした（直さないと差分が全書き換えに見える）
-- **tech-debt を 2 件とも返済した。** Always Use HTTPS を on（http が 301 で https へ）、`workers_dev: false` で本番 workers.dev を塞いだ（PR #1 で「プレビュー URL は生きたまま本番だけ塞がる」ことを実機確認してから merge）
-- **Google Analytics 4 を入れた**（`G-L3EDWSFJ82`）。トップは `index.astro` の head、作品は `_shell.js` 経由（再ビルド無しで全作品に行き渡る）。Cloudflare Web Analytics から変えた理由と代償は `spec/site-v0.md` の「計測」。**本番のリアルタイムにヒットが届くことを確認済み**（開発機の Chrome はブロッカーで飛ばないので、確認は実機で）
-- **`/` に暫定のトップページを置いた**（`src/pages/index.astro` + `src/lib/media.ts`）。`spec/site-v0.md` の「P0 ではページを 1 枚も作らない」を緩めた。sketch が入れば自動で一覧になる
-- **「説明の文章を書かない」を `AGENTS.md` の規律にした。** トップのタグラインと空状態の一文を落とし、sketch 0 件のページは名前だけにした
-- **プレビュー URL の使い方が分かった**（`spec/site-v0.md`）。Branch Preview URL はブランチ名で安定するので、**スマホでの実機確認はこれが一番楽**。`X-Robots-Tag: noindex` も付く
+| 決めたこと | どこに書いたか |
+|---|---|
+| 没 sketch の置き場（`lab-archives/`。番号は返さない） | `decisions/0006` |
+| AI にどこまで書かせるか（線は「道具か主題か」） | `decisions/0005` |
+| 配信を Pages → Workers Static Assets | `decisions/0001` の「やり直す条件 2」に発動を追記。設定値は `spec/site-v0.md`、制限と実測は `references/cloudflare-limits.md` |
+| `_shell.js` が計測も載せる（発火条件は導線の表示条件と別） | `decisions/0004` の 2026-10-11 の追記 |
+| 計測を GA4 に（P1 → P0 に前倒し） | `spec/site-v0.md` の「計測」 |
+| P0 でも `/` の 1 枚は作る | `spec/site-v0.md`（理由と落選案つき） |
+| 説明の文章を書かない | `AGENTS.md` の「やらないこと」 |
+| プレビュー URL の使い分け（Branch / Commit） | `spec/site-v0.md` の「プレビュー URL」 |
 
 ### 2026-10-08 の 2 回目のセッションで直したもの
 
@@ -114,9 +117,17 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - 録画の既定 → 横 1920×1080 / 縦 1080×1920 / 60fps / 8〜12 秒ループ / 音なし / mp4
 - モバイル対応 → 基本はモバイルで動くように作る。専用フィールドは持たない
 - `themes` の語彙 → 固定しない。検査は既知語の表記ゆれだけで未知語は通す
+- Cloudflare Pages → **使えない**。2026-10-11 時点でダッシュボードに新規作成の入口が無い。Workers Static Assets を使う（決定 0001 の逃げ道 2）
+- 計測を Cloudflare Web Analytics にするか → GA4 にした（2026-10-11）。Cookie と third-party リクエストを払って、流入元とリアルタイムを取る（`spec/site-v0.md` の「計測」）
+- 作品ページに計測を入れる手段 → `_shell.js` に載せる。作品は成果物をコミットする方式なので、直接足すと全件の再ビルドが要る
+- カスタムドメインを `wrangler.jsonc` の `routes` に書くか → 書かない。CI のトークンに zone の編集権が無く deploy が落ちる
+- トップページに説明文を置くか → 置かない（`AGENTS.md`）。sketch 0 件のときは名前だけが正しい状態
 
-## このセッションで触らなかったが確認したもの
+## 確認したが意図的に更新しなかったもの（次のセッションが同じ確認を繰り返さないため）
 
-- `docs/tech-debt.md` は 2 件とも返済済（行は残してある）
-- `docs/roles/` は harness の seed のまま。`task-orchestrate` を回す段階になったら読む
-- `docs/rules/README.md` に `lab/AGENTS.md` と `lab/core/AGENTS.md`（3 回ルール）を登録済み
+- `docs/tech-debt.md` — 2 件とも返済済。行は残してある（新規の負債は無い）
+- `docs/roles/` — harness の seed のまま。`task-orchestrate` を回す段階になったら読む
+- `docs/rules/README.md` — `lab/AGENTS.md` と `lab/core/AGENTS.md` を登録済み。`lab-archives/` に `AGENTS.md` は置いていない（棚上げしたソースに規律は要らない）
+- `docs/architecture.md` / `docs/glossary.md` — Pages → Workers の表記だけ直した。構造は変わっていない
+- `.harness/state/` — 使っていない（`task-orchestrate` を回していないため）
+- `harness status` — managed の drift 0、`harness diff` も差分なし。`doctor` の WARN 2 件は既知（Codex の deny hook が未信頼、`.harness/source.local` 由来）

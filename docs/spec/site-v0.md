@@ -70,6 +70,23 @@ P0 は**サイトのページを 1 枚も作らない**（`lab/` と公開フロ
 カスタムドメインを `wrangler.jsonc` の `routes` に書かないのは、CI の Workers Builds トークンに zone の
 編集権が無く、deploy が落ちるため（理由は `wrangler.jsonc` のコメントにも書いてある）。
 
+### プレビュー URL（実機確認に使う）
+
+PR を出すと Workers Builds が **2 種類**の URL を払い出す（PR にコメントで貼られる）。どちらも
+`X-Robots-Tag: noindex` が付くので、検索エンジンには拾われない。
+
+| | 形 | 性質 |
+|---|---|---|
+| Branch Preview | `<branch>-takumifukasawa-com.<subdomain>.workers.dev` | **ブランチ名で安定。push するたび中身が入れ替わる** |
+| Commit Preview | `<hash>-takumifukasawa-com.<subdomain>.workers.dev` | コミットごとに固有。その時点の中身が残る |
+
+**スマホでの確認は Branch Preview を使う。** URL が変わらないので、一度開いておけば push するたびに
+リロードするだけで済む（mkcert と `--https` を使う `pnpm dev:lab --https` の代わりに、LAN の外からでも見られる）。
+
+本番の `takumifukasawa-com.<subdomain>.workers.dev` は `wrangler.jsonc` の `"workers_dev": false` で塞いである
+（`takumifukasawa.com` と同じ中身を返す 2 つ目の URL を作らないため）。プレビューが道連れにならないよう、
+`"preview_urls": true` を同時に明示している。**片方だけ消すと実機確認の手段を失う。**
+
 **`pnpm build` は作品をビルドしない**（Astro だけ。作品は `public/lab/` に成果物が入っている。決定 0001）。
 Worker スクリプトも置かない（assets だけの Worker）。全リクエストに Worker を通すのは決定 0004 が退けた形。
 

@@ -51,8 +51,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
    **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
 3. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/002-<slug>`）を確かめる。下の実測表の残りもここで埋まる。
 4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の見た目・`h`・`?clean`）。
-5. `tech-debt.md` の 2 件（workers.dev の本番 URL を塞ぐ / Always Use HTTPS）。**どちらも P1 で `/` に中身が載る前に返す。**
-6. **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md`）。sketch を 5〜10 件積んでから P1 に入る。
+5. **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md`）。sketch を 5〜10 件積んでから P1 に入る。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -76,6 +75,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - **配信を Pages から Workers Static Assets に変えた。** ダッシュボードに Pages の新規作成の入口が無く、決定 0001 の逃げ道 2 がそのまま発動。`wrangler.jsonc` 1 枚と `pnpm preview` の 1 行で済んだ。**静的アセットのリクエストは無料・無制限**なので「バズっても構造的に $0」は維持（`references/cloudflare-limits.md`）
 - **`takumifukasawa.com` が応答するようになった。** 旧 A レコードを消してから向き先が無く NXDOMAIN だった状態の解消
 - CRLF で保存されていた 5 ファイルを LF に戻してからコミットした（直さないと差分が全書き換えに見える）
+- **tech-debt を 2 件とも返済した。** Always Use HTTPS を on（http が 301 で https へ）、`workers_dev: false` で本番 workers.dev を塞いだ（PR #1 で「プレビュー URL は生きたまま本番だけ塞がる」ことを実機確認してから merge）
+- **プレビュー URL の使い方が分かった**（`spec/site-v0.md`）。Branch Preview URL はブランチ名で安定するので、**スマホでの実機確認はこれが一番楽**。`X-Robots-Tag: noindex` も付く
 
 ### 2026-10-08 の 2 回目のセッションで直したもの
 
@@ -112,6 +113,6 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 ## このセッションで触らなかったが確認したもの
 
-- `docs/tech-debt.md` に 2 件（workers.dev の本番 URL / Always Use HTTPS）。どちらも P1 前に返す
+- `docs/tech-debt.md` は 2 件とも返済済（行は残してある）
 - `docs/roles/` は harness の seed のまま。`task-orchestrate` を回す段階になったら読む
 - `docs/rules/README.md` に `lab/AGENTS.md` と `lab/core/AGENTS.md`（3 回ルール）を登録済み

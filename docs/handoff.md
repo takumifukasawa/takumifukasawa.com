@@ -55,10 +55,12 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 4. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
 5. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 6. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
-7. **人間: Cosense を語彙の置き場として立ち上げる**（上の「解決済」で置き場を決めた。**まだ未導入**）。
-   プロジェクトを作る → `/plugin marketplace add worldnine/scrapbox-cosense-mcp` → `COSENSE_PROJECT_NAME` と
-   `COSENSE_SID`（`connect.sid` クッキー。private の読みと書き込みに要る）を `.claude/settings.local.json` へ。
-   入れたら `docs/setup.md` に行を足す（入れる前に書くと「要るもの」が嘘になる）。最初の 1 件は greeble。
+7. **人間: Cosense の公式 CLI にログインする**（置き場は「解決済」で決定。プロジェクトは既にある）。
+   `https://scrapbox.io/poc-input`（**public**。既に「サッカード現象」「Sunny 16 rule」の 2 ページ）。
+   `/plugin marketplace add helpfeel/cosense-cli` → `/plugin install cosense-cli@cosense-cli` →
+   `npm install -g @helpfeel/cosense-cli` → **`cosense login https://scrapbox.io/poc-input`**（PAT を貼る。
+   **TTY が要るので普通の端末で**。保存先は `~/.cosense/settings.json` で 0600、repo の外）。
+   済んだら `docs/setup.md` に行を足す（入れる前に書くと「要るもの」が嘘になる）。最初の 1 件は greeble。
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -129,12 +131,15 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - 語彙（手法の名前）の置き場 → **この repo には持たない。Cosense 側**。`docs/` は「このプロジェクトの永続事実」に絞る
   （`greeble` のような語は世界の事実で、PaleGL / UE / Houdini と**複数 repo を跨ぐ**）。Markdown の表だと 20 行で連想が引けなくなる。
   repo に残すのは AI が実行する作業の道具と罠だけ（`learnings.md` の 2026-10-11 の 3 件）。
-  AI からの読み書きは MCP で通る（`worldnine/scrapbox-cosense-mcp`。Claude Code plugin あり）。
-  ただし**公式が「あくまで内部 API です。API は予告なく変更を行います」と明言**しているので、壊れる前提で使う。
-  壊れても失うのは「AI が自動で積む」部分だけ（読みは Web UI、書きは手で 30 秒に戻る）。
   Obsidian は落選。連想（2 hop リンク）が手張り頼みで、張り忘れた語が死ぬ。フォルダがあるぶん分類で止まる。
   **Settings → Page Data の Export / Import（JSON）があるので移行は取り返しがつく。**
   語彙 20 件まで溜めた時点で「2 hop が実際に効いているか」を見て、効いていなければ Obsidian へ移す
+- Cosense を AI から触る手段 → **公式の `cosense` CLI + Agent Skill**（`helpfeel/cosense-cli`。PAT 認証で
+  `connect.sid` を使わない）。第三者製 MCP（`worldnine/scrapbox-cosense-mcp`）は落選: 認証が
+  `connect.sid`（ログインセッションそのもの。scope も revoke も無い）で、土台の API も
+  **公式が「あくまで内部 API です。API は予告なく変更を行います」と明言**しているもの。
+  公式 CLI には `list2hopLinks` / `browseRelatedPages` があるので、**2 hop は人間だけでなく AI 側からも引ける**
+  （Cosense を選んだ理由がそのまま AI にも効く）。`previewEdit` → `submitEdit` の dry-run 二段は `lab:add` と同じ流儀
 - greeble を sketch 002 にするか → **しない**。002 は `lab:add` の本番初回検証を兼ねるので題材は軽い側に倒す
   （重いと作品と配管のどちらが壊れたか切り分けられない）。greeble は語彙に残して 003 以降で見返す。「候補リスト」という別概念は作らない
 

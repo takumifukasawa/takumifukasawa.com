@@ -46,6 +46,12 @@ export const createDebugPane = (params: Params, onRebuildRibbons: () => void, on
   scene.addBinding(params, 'cubeMipmaps').on('change', onResizeCube);
   // Tints the reflection by which cube face it samples. A seam is a hard edge where two tints meet.
   scene.addBinding(params, 'showFaces');
+  // A/B against three's own CubeCamera. If the seams vanish with this on, the hand-written face
+  // orientations in cubeFaces.ts are wrong; if they stay, the cause is elsewhere.
+  scene.addBinding(params, 'useThreeCubeCamera').on('change', onResizeCube);
+  // The cube map itself, laid out as a cross: faces that share an edge are drawn next to each other,
+  // so a mismatch shows as a step along that border instead of having to be inferred from the sphere.
+  scene.addBinding(params, 'showCubeCross');
 
   return pane;
 };

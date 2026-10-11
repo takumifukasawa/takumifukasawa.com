@@ -22,6 +22,7 @@ import { CUBE_FACE_COUNT, cubeFaceMatrix } from './cubeFaces.ts';
 import { createSphereGeometry } from './sphereGeometry.ts';
 import { createRibbonGeometry } from './ribbons.ts';
 import { params } from './params.ts';
+import { createCubeDebug } from './cubeDebug.ts';
 import mirrorVert from './mirror.vert.glsl?raw';
 import mirrorFrag from './mirror.frag.glsl?raw';
 import ribbonVert from './ribbon.vert.glsl?raw';
@@ -87,7 +88,10 @@ const backdrop = new THREE.Mesh(
       uniform mat4 modelViewMatrix;
       out vec3 vDir;
       void main() {
-        vDir = normalize(position);
+        // Not normalized here: normalizing per vertex and interpolating bends the direction inside each
+        // triangle, and a mirror shows that as straight-edged facets. Interpolate the position and
+        // normalize per fragment instead — then the gradient is exact whatever the tessellation.
+        vDir = position;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
@@ -100,7 +104,7 @@ const backdrop = new THREE.Mesh(
       void main() {
         // Dark, and brighter overhead: enough of a gradient to give the sphere a readable body
         // without lifting the blacks.
-        outColor = vec4(vec3(mix(uLow, uHigh, smoothstep(-0.8, 1.0, vDir.y))), 1.0);
+        outColor = vec4(vec3(mix(uLow, uHigh, smoothstep(-0.8, 1.0, normalize(vDir).y))), 1.0);
       }
     `,
   }),
@@ -144,10 +148,15 @@ const mirror = new THREE.Mesh(
 );
 scene.add(mirror);
 
+// Reference implementation to A/B against: three's own CubeCamera, which owns the face orientations
+// internally. Recreated with the target because it holds a reference to it.
+let threeCubeCamera = new THREE.CubeCamera(0.1, 100, cubeTarget);
+
 const resizeCube = () => {
   cubeTarget.dispose();
   cubeTarget = makeCubeTarget(params.cubeSize);
   (mirror.material as THREE.RawShaderMaterial).uniforms.envMap.value = cubeTarget.texture;
+  threeCubeCamera = new THREE.CubeCamera(0.1, 100, cubeTarget);
 };
 
 // --- pointer --------------------------------------------------------------------------------------
@@ -205,15 +214,30 @@ canvas.addEventListener('pointercancel', release);
 
 // --- cube map rendering ---------------------------------------------------------------------------
 // 90 degrees and a square aspect: that is what makes 6 images tile into a seamless cube.
-const faceCamera = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
-faceCamera.matrixAutoUpdate = false;
+// One camera per face, like three's CubeCamera. Reusing a single camera object for all six is the
+// obvious thing to write and is what produced the seams: the renderer caches per-camera state and
+// skips work when the camera object is identical to the last one it saw.
+const faceCameras = Array.from({ length: CUBE_FACE_COUNT }, () => {
+  const c = new THREE.PerspectiveCamera(90, 1, 0.1, 100);
+  c.matrixAutoUpdate = false;
+  return c;
+});
 
 const renderCubeMap = () => {
   // The sphere must not appear in its own reflection. One line, and the reason is worth sitting
   // with: a cube map is a snapshot of "everything except me", taken from where I am.
   mirror.visible = false;
   backdrop.visible = true;
+
+  if (params.useThreeCubeCamera) {
+    threeCubeCamera.update(renderer, scene);
+    backdrop.visible = false;
+    mirror.visible = true;
+    return;
+  }
+
   for (let face = 0; face < CUBE_FACE_COUNT; face++) {
+    const faceCamera = faceCameras[face];
     faceCamera.matrix.copy(cubeFaceMatrix(face, mirror.position));
     faceCamera.matrixWorldNeedsUpdate = true;
     renderer.setRenderTarget(cubeTarget, face);
@@ -263,9 +287,16 @@ const update = (deltaTime: number) => {
   }
 };
 
+const cubeDebug = createCubeDebug();
+
 const render = (phase: number) => {
   ribbonUniforms.uPhase.value = phase;
   renderCubeMap();
+  if (params.showCubeCross) {
+    // Takes over the frame: the cube map is what is being looked at, not the sphere.
+    cubeDebug.render(renderer, cubeTarget.texture);
+    return;
+  }
   renderer.render(scene, camera);
 };
 

@@ -37,8 +37,11 @@ export const createSphereGeometry = (radius: number, segmentsX: number, segments
       const b = a + 1;
       const c = a + stride;
       const d = c + 1;
-      // Counter-clockwise when seen from outside, so the default front-face winding keeps them.
-      index.push(a, c, b, b, c, d);
+      // Wound so the geometric normal points outward, which is what makes FrontSide show the outside
+      // and BackSide show the inside. Getting this backwards is quiet and nasty: the sphere still
+      // draws (you are seeing its far hemisphere through the culled near one), so it looks fine
+      // until something depends on the normal — here the reflection, which came out scrambled.
+      index.push(a, b, c, b, d, c);
     }
   }
 

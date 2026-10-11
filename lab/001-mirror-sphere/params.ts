@@ -22,6 +22,8 @@ export type Params = {
   cubeSize: number;
   cubeMipmaps: boolean;
   showFaces: boolean;
+  useThreeCubeCamera: boolean;
+  showCubeCross: boolean;
 };
 
 export const params: Params = {
@@ -43,5 +45,7 @@ export const params: Params = {
   'loopSec': 10,
   'cubeSize': 1024,
   'cubeMipmaps': false,
-  'showFaces': true,
+  'showFaces': false,
+  'useThreeCubeCamera': true,
+  'showCubeCross': false,
 };

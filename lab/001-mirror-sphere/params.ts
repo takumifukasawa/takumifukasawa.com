@@ -5,6 +5,10 @@ import { defaultRibbonOptions } from './ribbons.ts';
 export type Params = {
   width: number;
   twist: number;
+  colorHead: string;
+  colorTail: string;
+  hueSpread: number;
+  intensity: number;
   count: number;
   radiusMin: number;
   radiusMax: number;
@@ -17,8 +21,11 @@ export type Params = {
   minRadius: number;
   targetEase: number;
   cameraZ: number;
-  backdropLow: number;
-  backdropHigh: number;
+  backdropLow: string;
+  backdropHigh: string;
+  bloomThreshold: number;
+  bloomSoft: number;
+  bloomStrength: number;
   loopSec: number;
   cubeSize: number;
   cubeMipmaps: boolean;
@@ -30,6 +37,10 @@ export type Params = {
 export const params: Params = {
   'width': 0.075,
   'twist': 1.25,
+  'colorHead': '#eafaff',
+  'colorTail': '#17c8ff',
+  'hueSpread': 0.08,
+  'intensity': 2.6,
   'count': defaultRibbonOptions.count,
   'radiusMin': defaultRibbonOptions.radiusMin,
   'radiusMax': defaultRibbonOptions.radiusMax,
@@ -42,8 +53,11 @@ export const params: Params = {
   'minRadius': 1.18,
   'targetEase': 5,
   'cameraZ': 5.4,
-  'backdropLow': 0.02,
-  'backdropHigh': 0.3,
+  'backdropLow': '#070a16',
+  'backdropHigh': '#2e7596',
+  'bloomThreshold': 0.75,
+  'bloomSoft': 0.35,
+  'bloomStrength': 1.1,
   'loopSec': 10,
   'cubeSize': 1024,
   'cubeMipmaps': false,

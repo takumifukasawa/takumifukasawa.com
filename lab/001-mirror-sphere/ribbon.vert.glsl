@@ -26,6 +26,7 @@ uniform float uDepth;
 uniform float uMinRadius;  // never let the ribbon get closer to the centre than this
 
 out float vS;
+out float vSeed;
 
 const float TAU = 6.283185307179586;
 // Step for the finite-difference tangent. Not tied to the segment count: it only has to be small
@@ -93,4 +94,5 @@ void main() {
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(p + width * aSide * w, 1.0);
   vS = aS;
+  vSeed = aParams.y; // the ribbon's phase offset doubles as a stable per-ribbon seed
 }

@@ -23,6 +23,7 @@ import { createSphereGeometry } from './sphereGeometry.ts';
 import { createRibbonGeometry } from './ribbons.ts';
 import { params } from './params.ts';
 import { createCubeDebug } from './cubeDebug.ts';
+import { createBloom } from './bloom.ts';
 import mirrorVert from './mirror.vert.glsl?raw';
 import mirrorFrag from './mirror.frag.glsl?raw';
 import ribbonVert from './ribbon.vert.glsl?raw';
@@ -46,6 +47,10 @@ const ribbonUniforms = {
   'uTwist': { value: params.twist },
   'uDepth': { value: params.pullDepth },
   'uMinRadius': { value: params.minRadius },
+  'uColorHead': { value: new THREE.Color(params.colorHead) },
+  'uColorTail': { value: new THREE.Color(params.colorTail) },
+  'uHueSpread': { value: params.hueSpread },
+  'uIntensity': { value: params.intensity },
 };
 
 const ribbons = new THREE.Mesh(
@@ -73,8 +78,8 @@ const rebuildRibbons = () => {
 // the sphere still has something to show. The world the cube map sees does not have to be the world
 // the camera sees, and that is a lever worth knowing about rather than a cheat to feel bad about.
 const backdropUniforms = {
-  'uLow': { value: params.backdropLow },
-  'uHigh': { value: params.backdropHigh },
+  'uLow': { value: new THREE.Color(params.backdropLow) },
+  'uHigh': { value: new THREE.Color(params.backdropHigh) },
 };
 
 const backdrop = new THREE.Mesh(
@@ -98,14 +103,14 @@ const backdrop = new THREE.Mesh(
     `,
     fragmentShader: `
       precision highp float;
-      uniform float uLow;
-      uniform float uHigh;
+      uniform vec3 uLow;
+      uniform vec3 uHigh;
       in vec3 vDir;
       out vec4 outColor;
       void main() {
         // Dark, and brighter overhead: enough of a gradient to give the sphere a readable body
         // without lifting the blacks.
-        outColor = vec4(vec3(mix(uLow, uHigh, smoothstep(-0.8, 1.0, normalize(vDir).y))), 1.0);
+        outColor = vec4(mix(uLow, uHigh, smoothstep(-0.8, 1.0, normalize(vDir).y)), 1.0);
       }
     `,
   }),
@@ -280,8 +285,12 @@ const update = (deltaTime: number) => {
   ribbonUniforms.uTwist.value = params.twist;
   ribbonUniforms.uDepth.value = params.pullDepth;
   ribbonUniforms.uMinRadius.value = params.minRadius;
-  backdropUniforms.uLow.value = params.backdropLow;
-  backdropUniforms.uHigh.value = params.backdropHigh;
+  ribbonUniforms.uColorHead.value.set(params.colorHead);
+  ribbonUniforms.uColorTail.value.set(params.colorTail);
+  ribbonUniforms.uHueSpread.value = params.hueSpread;
+  ribbonUniforms.uIntensity.value = params.intensity;
+  backdropUniforms.uLow.value.set(params.backdropLow);
+  backdropUniforms.uHigh.value.set(params.backdropHigh);
   (mirror.material as THREE.RawShaderMaterial).uniforms.uShowFaces.value = params.showFaces ? 1 : 0;
   if (camera.position.z !== params.cameraZ) {
     camera.position.set(0, 0, params.cameraZ);
@@ -291,6 +300,9 @@ const update = (deltaTime: number) => {
 
 const cubeDebug = createCubeDebug();
 
+const drawing = renderer.getDrawingBufferSize(new THREE.Vector2());
+const bloom = createBloom(drawing.x, drawing.y);
+
 const render = (phase: number) => {
   ribbonUniforms.uPhase.value = phase;
   renderCubeMap();
@@ -299,7 +311,12 @@ const render = (phase: number) => {
     cubeDebug.render(renderer, cubeTarget.texture);
     return;
   }
+  // The scene goes into a half-float target so the ribbons' over-bright heads survive to the bright
+  // pass; the bloom chain writes the final image to the screen.
+  renderer.setRenderTarget(bloom.sceneTarget);
+  renderer.clear();
   renderer.render(scene, camera);
+  bloom.render(renderer, params.bloomThreshold, params.bloomSoft, params.bloomStrength);
 };
 
 const setSize = () => {
@@ -308,6 +325,8 @@ const setSize = () => {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+  bloom.setSize(size.x, size.y);
 };
 
 const getCurrentRealTime = () => performance.now() / 1000;

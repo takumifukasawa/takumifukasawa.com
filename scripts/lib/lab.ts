@@ -9,28 +9,14 @@ export const repoRoot = join(import.meta.dirname, '..', '..');
 export const labDir = join(repoRoot, 'lab');
 export const buildMetaDir = join(labDir, '.build-meta');
 export const publicLabDir = join(repoRoot, 'public', 'lab');
-// Archived sketches (decision 0006). Source only: never built, never deployed, never a content entry.
-export const labArchivesDir = join(repoRoot, 'lab-archives');
 
-export const SLUG_PATTERN = /^\d{3}-[a-z0-9]+(-[a-z0-9]+)*$/;
-
-// Which directory, if any, has already taken a 3-digit number. Returns e.g. "lab-archives/001-mirror-sphere".
+// A sketch slug: lowercase words joined by "-", no number prefix (decision 0007). It is the directory name,
+// the content entry id, the R2 key prefix and the URL, all at once (decision 0002).
 //
-// Numbers are allocated once and never reused, including by shelved sketches (decision 0006). The
-// lab-archives directory name *is* the ledger of that: moving lab/001-x/ to lab-archives/ must not free 001, or
-// git history ends up with two different things called 001 and reviving the shelved one collides.
-export const numberOwner = (number: string, root = repoRoot): string | undefined => {
-  for (const place of ['lab', 'lab-archives']) {
-    const dir = join(root, place);
-    if (!existsSync(dir)) continue;
-    const hit = readdirSync(dir)
-      .filter((name) => SLUG_PATTERN.test(name))
-      .sort()
-      .find((name) => name.startsWith(`${number}-`));
-    if (hit) return `${place}/${hit}`;
-  }
-  return undefined;
-};
+// Also used to tell sketches apart from the other entries of lab/ (core/, AGENTS.md, .build-meta/). Note that
+// `core` matches this pattern, so a caller that must not pick it up has to exclude it another way -- the
+// builders do it by requiring index.html, and `pnpm new` by refusing a directory that already exists.
+export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 // Sketch slugs that have a web build (index.html). Directories without index.html
 // (Houdini VEX, Python tools, ...) are valid sketches but are never built (decision 0003).

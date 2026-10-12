@@ -6,7 +6,7 @@
 
 ## 目的（何ができれば完了か）
 
-- **P0**: sketch 001 が `takumifukasawa.com/lab/001-<slug>/` で動き、poster / mp4 が R2 から配信され、X に投稿できる。sketch を 5〜10 件積み、schema を実データで直し終えている。
+- **P0**: 最初の sketch が `takumifukasawa.com/lab/<slug>/` で動き、poster / mp4 が R2 から配信され、X に投稿できる。sketch を 5〜10 件積み、schema を実データで直し終えている。
 - **P1**: sketch 5〜10 件が載ったサイト（`/` と `/about/`）が `takumifukasawa.com` で公開されている。
 
 **P0 ではサイトのページを 1 枚も作らない**（`spec/site-v0.md` のフェーズ表）。順序を逆にすると「サイトを作り込む」ほうに時間が流れる。
@@ -39,10 +39,10 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 0-5 | `pnpm lab:build <slug>` / `pnpm lab:rebuild --all`（失敗はスキップして古い成果物を残す）、`lab/.build-meta/<slug>.json` | AI | 済 | 一時ディレクトリに出し、成功時だけ差し替える。md からの `<head>` 書き直しは 0-8 で足す | |
 | 0-6 | `public/_shell.js`（左上のテキストリンク 1 つ。約束 6 項目）と `public/_headers`（`/_shell.js` は短い max-age） | AI | 済 | 決定 0004。見た目は P1 で決める |
 | 0-7 | **Cloudflare**: `takumifukasawa.com` を Cloudflare DNS へ、R2 bucket 作成、custom domain `media.takumifukasawa.com`、**Workers project 作成**（設定値は `spec/site-v0.md` の表） | **人間** | 済 | 2026-10-11 完了。Pages ではなく Workers Static Assets（新規作成の入口が無かった）。`takumifukasawa.com` が応答する。pnpm 11 / Node 24 は環境変数なしで検出されたので `PNPM_VERSION` は不要だった |
-| 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 一部済 | `scripts/lab-add.ts`。`--dry-run` で ffmpeg / sharp / md / manifest まで確認済み。**R2 への実 put・commit・push は未確認**（`.env` が埋まってから、sketch 001 で初回実行して確かめる） |
+| 0-8 | `pnpm lab:add <slug> --video/--poster`: ffmpeg / sharp → R2 put（既存 key はスキップ）→ manifest 追記 → md 生成 → 成果物の `<head>` を md から書き直す → commit / push。`--dry-run` / `--no-push` | AI | 一部済 | `scripts/lab-add.ts`。`--dry-run` で ffmpeg / sharp / md / manifest まで確認済み。**R2 への実 put・commit・push は未確認**（`.env` が埋まってから、`lab/greeble/` で初回実行して確かめる） |
 | 0-9 | P0 時点で最小の Astro を置く（`pnpm build` が通り `dist/` に `public/` が出るだけ。ページは作らない） | AI | 済 | Pages のビルドコマンド `pnpm build` を満たすため。**ページを作らない**原則は守る。あわせて `pnpm dev`（Astro の dev。`public/lab/` の成果物と `_shell.js` も見える）と `pnpm preview`（`pnpm build` → `wrangler pages dev dist`。`_headers` / `_redirects` / 末尾スラッシュまで本番に近い）を用意する。**どちらも `--https` で LAN 内の実機から開ける**（0-4b と同じ mkcert の証明書を使う。iPhone にルート証明書を入れるのは 1 回だけ）。`astro.config.ts` / `scripts/preview.ts`。http で確認済み、`--https` は 0-4b と同じく未確認 |
 | 0-10 | `.harness/checks.sh` に P0 の検査を登録 | AI | 済 | `tests green (>0)` / `lab build in sync` / `lab shell embedded` / `no large files` / `lab head in sync` / `media keys resolve`（すべて pre-commit で走る）。`astro check` / `astro build` と `src/` の grep は P1（1-5） |
-| 0-11 | **sketch を 1 件作って公開まで通す** | **人間** | 着手中 | 001-mirror-sphere を作ったが**出さないと決めて `lab-archives/` へ棚上げ**した（決定 0006）。番号は返さないので次は 002。技術的コアは自分で書く |
+| 0-11 | **sketch を 1 件作って公開まで通す** | **人間** | 着手中 | 1 本目（mirror-sphere）は**出さないと決めて `lab-archives/` へ棚上げ**した（決定 0006）。いまは `lab/greeble/`（題材は greeble。人間の決定）。技術的コアは自分で書く（決定 0005） |
 | 0-12 | P0 の実測（末尾スラッシュ・`_shell.js` の書き換え・`base: './'`・repo サイズ・**差分アップロード**・R2 Class B） | AI + 人間 | 一部済 | 2026-10-11: 差分アップロードは**される**、ビルド 48 秒、`_headers` は Workers でも効く（`../../references/cloudflare-limits.md`）。残りは sketch を 1 件公開しないと測れない |
 | 0-13 | **sketch を 5〜10 件積み**、schema を実データで直す | **人間** | 未着手 | 架空の 1 件で設計を固めない |
 | 1-1 | Astro のページ: `/`（グリッド・年別）、`/about/`、`/404`、`/lab/` → `/` の 301 | AI → 確認 | 一部済 | **`/` の暫定版は P0 で置いた**（2026-10-11）。残りは年別セクション・カードのフォールバック表・`/about/`・`/404`・301。フォント・配色・レイアウトはここで人間が決める |
@@ -78,9 +78,9 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-08: 0-8 の大半と 0-10 の残り。`lab:add`（aws4fetch で R2 の S3 API に署名、yaml、sharp）、`src/content.config.ts`（content-model の lab だけ。生成した md が `astro build` を通り、壊れた md で落ちることを確認）、`.env.example` と `docs/setup.md`（`.env` はマシンごとに要る、を 3 か所に書いた: `.env.example` の冒頭・setup.md・`lab:add` のエラー文）。`lab:build` も最後に md から `<head>` を書き直す。テスト 25 件
 - 2026-10-08: `.env` を人間が記入。`lab:add` と同じ関数で R2 の `_test/` に put → `media.takumifukasawa.com` から 200（`Cache-Control: immutable`、CORS `*`）→ DELETE まで通ることを確認し、テスト用ファイルは消した。`.webp` は CDN にキャッシュされる（MISS → HIT）。`.txt` はされない（`../../learnings.md`）
 
-- 2026-10-11: sketch 001-mirror-sphere を制作したが**出さないと決め**、`lab-archives/` へ棚上げ（決定 0006）。あわせて決定 0005（AI にどこまで書かせるか）を記録。`numberOwner()` で `pnpm new` が棚上げ済みの番号を再利用しないようにした
+- 2026-10-11: sketch mirror-sphere を制作したが**出さないと決め**、`lab-archives/` へ棚上げ（決定 0006）。あわせて決定 0005（AI にどこまで書かせるか）を記録
+- 2026-10-11: **sketch の識別子から連番を外した**（決定 0007）。`lab/<slug>/`。きっかけは 0006 で「棚上げした sketch が番号を持ち続けるか」の判断が同じ日に 2 回変わったこと。前提に戻ると、索引の並びは `date`、一意性はディレクトリ名で、番号はどちらも担っていなかった。公開済み sketch が 0 件＝ URL を変えられる最後の地点だったので、ここで決めた。`numberOwner()` は削除
 - 2026-10-11: 0-7 完了。**Pages ではなく Workers Static Assets** で公開（上の決定ログ）。`takumifukasawa.com` が応答するようになった（それまでは旧 A レコード削除後、向き先が無く NXDOMAIN だった）。`/_shell.js` は 200 + `max-age=300`、`/` は 404（P0 はページ 0 枚なので正常）。初回ビルド 48 秒、差分アップロードは**される**。残った宿題 2 件は `../../tech-debt.md`（workers.dev の本番 URL を塞ぐ / Always Use HTTPS）
 
 ## 未確定事項（人間の判断待ち）
 
-- sketch 002 の題材（0-11。001 は棚上げ済み）

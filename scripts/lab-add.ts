@@ -1,4 +1,4 @@
-// pnpm lab:add <NNN-slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]
+// pnpm lab:add <slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]
 //
 // Publishes one sketch (docs/spec/publish-pipeline.md「定常フロー」):
 //   1. build lab/<slug>/ into public/lab/<slug>/ (only if it has index.html)
@@ -39,9 +39,9 @@ const { values, positionals } = parseArgs({
 const slug = positionals[0];
 const dryRun = values['dry-run'];
 if (!slug || positionals.length > 1) {
-  fail('usage: pnpm lab:add <NNN-slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]');
+  fail('usage: pnpm lab:add <slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]');
 }
-if (!SLUG_PATTERN.test(slug)) fail(`slug must look like 001-flow-field: ${slug}`);
+if (!SLUG_PATTERN.test(slug)) fail(`slug must look like flow-field: ${slug}`);
 if (!values.video && !values.poster) fail('give --video <mp4> (poster is taken from it) or --poster <image>, or both');
 for (const path of [values.video, values.poster]) if (path && !existsSync(path)) fail(`file not found: ${path}`);
 

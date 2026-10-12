@@ -4,7 +4,7 @@ import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
-// R2 key from media/manifest.json, e.g. "lab/001-flow-field/poster.webp". Never a URL (decision 0001).
+// R2 key from media/manifest.json, e.g. "lab/flow-field/poster.webp". Never a URL (decision 0001).
 const mediaKey = z.string().regex(/^[a-z0-9][a-z0-9/_.-]*$/);
 
 const lab = defineCollection({

@@ -13,24 +13,24 @@ sketch 1 件の公開を **2 コマンド + 1 push** に収める。ここが重
 repo は 1 つ。push も 1 回（決定 0001）。
 
 ```bash
-pnpm new 001-flow-field "Flow field with curl noise"
-#   lab/001-flow-field/ に雛形（OGP 入り index.html / main.ts / shader.glsl）
+pnpm new flow-field "Flow field with curl noise"
+#   lab/flow-field/ に雛形（OGP 入り index.html / main.ts / shader.glsl）
 
-pnpm dev:lab 001-flow-field           # 制作。Vite / npm / TS / GLSL を自由に。HMR あり。--https で実機（iPhone）からも開ける
+pnpm dev:lab flow-field           # 制作。Vite / npm / TS / GLSL を自由に。HMR あり。--https で実機（iPhone）からも開ける
 pnpm dev [--https]                    # サイト全体（Astro dev）。public/lab/ のビルド済み作品と _shell.js も開ける
 pnpm preview [--https]                # pnpm build → wrangler pages dev dist。_headers / 末尾スラッシュまで本番と同じ挙動
 
 # 録画（横 1920×1080 or 縦 1080×1920 / 60fps / 8〜12 秒ループ / 音なし）
 
-pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
-#   1. 作品をビルド → public/lab/001-flow-field/（★ これをコミットする）
+pnpm lab:add flow-field --video ~/captures/clip.mp4
+#   1. 作品をビルド → public/lab/flow-field/（★ これをコミットする）
 #   2. ffmpeg で mp4 を再エンコード + poster.webp を生成
 #   3. R2 に put（Cache-Control: immutable）、media/manifest.json に追記
-#   4. src/content/lab/001-flow-field.md を生成（title は pnpm new の引数から引き継ぐ）
+#   4. src/content/lab/flow-field.md を生成（title は pnpm new の引数から引き継ぐ）
 #      → 成果物の index.html の <head>（<title> / OGP）を md から書き直す（決定 0004）
 #   5. commit + push（--no-push で止められる）
 
-# X に投稿（動画を直接アップロード + takumifukasawa.com/lab/001-flow-field/ のリンク）
+# X に投稿（動画を直接アップロード + takumifukasawa.com/lab/flow-field/ のリンク）
 ```
 
 **人間が書くのは `pnpm new` のタイトル 1 つだけ。** frontmatter を手で触る必要はない。
@@ -49,8 +49,8 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 
 | | コミット | 理由 |
 |---|---|---|
-| `lab/<NNN-slug>/`（ソース） | **する** | 再生成できない。`repo` フィールドの誘導先になり、**低レイヤーの技術力を示す資産として読まれる**。テキストなので数十 KB |
-| `public/lab/<NNN-slug>/`（成果物） | **する** | **配信される**。再生成できるが、これが設計の核（決定 0001） |
+| `lab/<slug>/`（ソース） | **する** | 再生成できない。`repo` フィールドの誘導先になり、**低レイヤーの技術力を示す資産として読まれる**。テキストなので数十 KB |
+| `public/lab/<slug>/`（成果物） | **する** | **配信される**。再生成できるが、これが設計の核（決定 0001） |
 | `src/content/lab/*.md`（カード） | する | 再生成できない |
 | `media/manifest.json` | する | 生成物だが、key の実在をオフラインで検査するのに必要 |
 | `node_modules/` `.astro/` `dist/` | しない | 再生成できる |
@@ -67,35 +67,35 @@ pnpm lab:add 001-flow-field --video ~/captures/clip.mp4
 例外が必要になる作品は許可リストに 1 行書く。
 
 作品で大きいテクスチャやモデルを使う場合は、**それも R2 に置いて作品から絶対 URL で読む**
-（`media.takumifukasawa.com/lab/<NNN-slug>/model.glb`）。repo が軽く保たれ、immutable キャッシュにも乗る。
+（`media.takumifukasawa.com/lab/<slug>/model.glb`）。repo が軽く保たれ、immutable キャッシュにも乗る。
 
 ## Vite の設定は `pnpm new` が書く
 
 作品ごとの `vite.config.ts` に次の 2 つを入れる。どちらも機械的に決まるので人間は触らない。
 
 ```ts
-// lab/001-flow-field/vite.config.ts
+// lab/flow-field/vite.config.ts
 export default {
   base: './',                                  // 相対パスでビルドする（配信先のパスを焼き込まない）
   build: {
-    outDir: '../../public/lab/001-flow-field', // 中間の dist/ を作らず直接ここへ
+    outDir: '../../public/lab/flow-field', // 中間の dist/ を作らず直接ここへ
     emptyOutDir: true,
   },
 };
 ```
 
-- **`base`** を設定しないとアセットのパスが `/assets/...` になって 404 する（作品はサブパス `/lab/<NNN-slug>/` で配信されるため。決定 0001）。
-  `'/lab/<NNN-slug>/'` ではなく `'./'` にするのは、成果物を別の場所へ動かしても動くようにするため
+- **`base`** を設定しないとアセットのパスが `/assets/...` になって 404 する（作品はサブパス `/lab/<slug>/` で配信されるため。決定 0001）。
+  `'/lab/<slug>/'` ではなく `'./'` にするのは、成果物を別の場所へ動かしても動くようにするため
   （作品を iframe で包む構成へ乗り換える時に `git mv` だけで済む。決定 0004）。
   代わりに**作品のコードで `/` から始まる絶対パスを書かない**（相対パスか `import.meta.env.BASE_URL`）。雛形のコメントにそう書く。
-- **`outDir`** を `public/lab/<NNN-slug>/` に直接向けるので、中間ディレクトリもコピー手順も生まれない。
+- **`outDir`** を `public/lab/<slug>/` に直接向けるので、中間ディレクトリもコピー手順も生まれない。
 - **minify は terser**で、プロパティ名まで mangle する（`keep_quoted`。PaleGL と同じ方針）。文字列で参照されるプロパティはクォートする規律と、破損の確かめ方は `../coding.md`。
   雛形の `vite.config.ts` は作品ごとのコピーなので、守れない作品はその作品だけ `mangleProperties = false` にできる。
 
 ## 再ビルド
 
 ```bash
-pnpm lab:build 001-flow-field     # 1 件
+pnpm lab:build flow-field     # 1 件
 pnpm lab:rebuild --all            # 全件（共通の変更を入れた時など）
 ```
 
@@ -127,10 +127,10 @@ pnpm lab:rebuild --all            # 全件（共通の変更を入れた時な�
 この設計で新しく生まれる唯一の摩擦が、**ソースを直したのに再ビルドし忘れること**。
 放置すると公開されているものと手元が静かに食い違う。
 
-`pnpm lab:build <slug>` が `lab/.build-meta/<NNN-slug>.json` に次を書く（**`public/` の中には置かない** — `public/` 配下はそのまま配信されるので内部メタデータが公開されてしまうし、`emptyOutDir: true` が書き込み順次第で消す）。
+`pnpm lab:build <slug>` が `lab/.build-meta/<slug>.json` に次を書く（**`public/` の中には置かない** — `public/` 配下はそのまま配信されるので内部メタデータが公開されてしまうし、`emptyOutDir: true` が書き込み順次第で消す）。
 
 ```json
-{ "sourceHash": "<lab/<NNN-slug>/ の全ファイルの内容ハッシュ>", "builtAt": "2026-10-20T12:34:56Z" }
+{ "sourceHash": "<lab/<slug>/ の全ファイルの内容ハッシュ>", "builtAt": "2026-10-20T12:34:56Z" }
 ```
 
 `harness check` の `lab build in sync` が現在のソースからハッシュを再計算して比べ、違えば落とす
@@ -141,28 +141,28 @@ pnpm lab:rebuild --all            # 全件（共通の変更を入れた時な�
 | ステップ | 約束 |
 |---|---|
 | 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」（ループは html-game-template と同じ構造: fixedUpdate 60Hz 固定 + update / render 60fps 上限。`time/` の 2 ファイルは作品ごとにコピー）+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは `?clean` で出さない、を雛形のコメントに書く（録画用。決定 0004）。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
-| R2 の key | `lab/<NNN-slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
-| ビルド成果物 | Vite の `outDir` が直接 `public/lab/<NNN-slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
+| R2 の key | `lab/<slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
+| ビルド成果物 | Vite の `outDir` が直接 `public/lab/<slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため）。**P0 の最初に空の `{}` をコミットしておく**（1 件目を追加する前は存在しないので、無いと初回ビルドが落ちる） |
 | frontmatter | **人間が書くのは `title` だけ。** 必須 5 項目のうち 4 つは script が埋める: `date`（今日）/ `medium`（`--video` だけなら `video`、`index.html` があれば `runtime`）/ `poster`（動画の 1 フレーム）/ `tags`（作品のソースから推定: 依存、`.glsl` / `.wgsl` の有無、import 文）。`video` / `repo` も埋める（実物へのリンクは `public/lab/<slug>/index.html` の有無から導出するのでフィールドを持たない）。`medium` は明示フィールドなので推測が違えば直す。`description` は任意で空のままでよい |
 | 失敗したとき | script は冪等。同じ `slug` で再実行したら、既存 key は put をスキップし manifest と md を更新する |
 
 ## 作品のページで OGP を出す
 
-sketch を人に見せるリンクは `takumifukasawa.com/lab/<NNN-slug>/` になるので、**OGP は作品の `index.html` に置く**
+sketch を人に見せるリンクは `takumifukasawa.com/lab/<slug>/` になるので、**OGP は作品の `index.html` に置く**
 （サイトのページ側は `/` と `/about/` だけで足りる。`site-v0.md`）。
 
 問題は `og:image`。録画は制作の後なので `pnpm new` の時点で poster はまだ存在しない。
-しかし **R2 の key を `lab/<NNN-slug>/poster.webp` に固定してある**ので（決定 0001）、
+しかし **R2 の key を `lab/<slug>/poster.webp` に固定してある**ので（決定 0001）、
 slug だけから **URL が最初から予測できる**（key に年を入れない理由。`../learnings.md`）。だから `pnpm new` が全部書ける。
 
 ```html
-<!-- pnpm new 001-flow-field "Flow field with curl noise" が生成する -->
+<!-- pnpm new flow-field "Flow field with curl noise" が生成する -->
 <title>Flow field with curl noise — takumifukasawa</title>
 <meta property="og:title" content="Flow field with curl noise">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://takumifukasawa.com/lab/001-flow-field/">
-<meta property="og:image" content="https://media.takumifukasawa.com/lab/001-flow-field/poster.webp">
+<meta property="og:url" content="https://takumifukasawa.com/lab/flow-field/">
+<meta property="og:image" content="https://media.takumifukasawa.com/lab/flow-field/poster.webp">
 <meta name="twitter:card" content="summary_large_image">
 <script src="/_shell.js" defer></script>  <!-- トップへの導線。中身はサイト側の 1 ファイル（決定 0004） -->
 ```
@@ -170,13 +170,13 @@ slug だけから **URL が最初から予測できる**（key に年を入れ�
 **人間は後から触らない。** 録画して `lab:add` した時点で画像が実在するようになり、OGP が有効になる。
 
 **title と OGP の正本は md の frontmatter。** `pnpm new` の時点では md が無いので引数の title で書くが、
-md ができた後は `pnpm lab:add` と `pnpm lab:build` の最後に、成果物（`public/lab/<NNN-slug>/index.html`）の `<head>` を md から書き直す（JS は触らない）。
+md ができた後は `pnpm lab:add` と `pnpm lab:build` の最後に、成果物（`public/lab/<slug>/index.html`）の `<head>` を md から書き直す（JS は触らない）。
 md の title を直したら `pnpm lab:build <slug>` で反映する。食い違いは `harness check` の `lab head in sync` で落とす（決定 0004）。
 `index.html` が無い sketch（Houdini のレンダリングなど）は OGP ページも存在しない（リンク先が画像・動画そのものなので不要）。
 
 ### いつ貼るか
 
-貼る URL は `takumifukasawa.com/lab/<NNN-slug>/` 1 つだけ（決定 0001）。
+貼る URL は `takumifukasawa.com/lab/<slug>/` 1 つだけ（決定 0001）。
 
 X では**動画を添付するとリンクカードが表示されない**（URL はテキストとして残る）。
 リーチを考えると動画添付が強いので、その投稿ではカードは出ない。
@@ -210,7 +210,7 @@ Card Validator が廃止されているので強制更新もできない。`pnpm
 
 > `core/` に何かを追加してよいのは、**同じコードを 3 つ以上の sketch で書いた後**だけ。
 > 2 件以下なら sketch 側にコピーで置く。将来使うかもしれない抽象を `core/` に置かない。
-> `core/` から `lab/<NNN-slug>/` への import は禁止（依存の向きは sketch → core の一方向）。
+> `core/` から `lab/<slug>/` への import は禁止（依存の向きは sketch → core の一方向）。
 
 これは AI にコードを書かせるときに最も効く規律（指示が無いと共通化を先回りしてやりがちなため）。
 

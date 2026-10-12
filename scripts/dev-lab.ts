@@ -1,4 +1,4 @@
-// pnpm dev:lab <NNN-slug> [--https]
+// pnpm dev:lab <slug> [--https]
 // Start the Vite dev server for one sketch. Also serves /_shell.js from public/ so the link back to the site
 // shows up while developing (decision 0004). --https uses mkcert and listens on the LAN so a phone can open it
 // (iOS camera / motion sensors need a secure context).
@@ -12,7 +12,7 @@ const https = args.includes('--https');
 const slug = args.find((a) => !a.startsWith('--'));
 
 if (!slug) {
-  console.error('pnpm dev:lab: usage: pnpm dev:lab <NNN-slug> [--https]');
+  console.error('pnpm dev:lab: usage: pnpm dev:lab <slug> [--https]');
   process.exit(1);
 }
 const configFile = join(root, 'lab', slug, 'vite.config.ts');

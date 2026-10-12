@@ -1,4 +1,4 @@
-// pnpm lab:build <NNN-slug>     build one sketch into public/lab/<slug>/
+// pnpm lab:build <slug>     build one sketch into public/lab/<slug>/
 // pnpm lab:rebuild --all         rebuild every web sketch; failures are skipped and keep their old output
 //
 // Each sketch is built into a temporary directory first and copied into public/lab/<slug>/ only on success,
@@ -75,6 +75,6 @@ if (mode === '--all') {
   }
   console.log(`built lab/${slug}/ -> public/lab/${slug}/`);
 } else {
-  console.error('usage: pnpm lab:build <NNN-slug>  |  pnpm lab:rebuild --all');
+  console.error('usage: pnpm lab:build <slug>  |  pnpm lab:rebuild --all');
   process.exit(1);
 }

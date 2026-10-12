@@ -1,8 +1,8 @@
 # 0006: 没にした sketch の置き場 — `lab/` と並列の `lab-archives/`。ビルドも配信もしない
 
 - 日付: 2026-10-11
-- 状態: 採用
-- 関連: `0002-naming-lab-sketch.md`, `0003-code-placement.md`, `../spec/publish-pipeline.md`
+- 状態: 採用（「番号は返さない」の節は **0007 で廃止**）
+- 関連: `0002-naming-lab-sketch.md`, `0003-code-placement.md`, `0007-no-sketch-numbering.md`, `../spec/publish-pipeline.md`
 
 ## 背景
 
@@ -13,7 +13,7 @@
 半端な sketch が `lab/` に居座り、`lab build in sync` 検査を落とし続ける。
 **摩擦を減らすことがこのプロジェクトの最優先**（`../../AGENTS.md`）なので、ここに置き場が要る。
 
-## 採用案: `lab-archives/<NNN-slug>/`
+## 採用案: `lab-archives/<slug>/`
 
 `lab/` と並列のディレクトリ。**ソースだけ**を置く。
 
@@ -23,7 +23,6 @@
 | Cloudflare に配信される | される | **されない** |
 | content collection のエントリを持つ | 持つ | **持たない** |
 | `pnpm dev:lab` で動く | 動く | 動かない（戻せば動く） |
-| 番号を占有する | する | **する** |
 
 ### 価値は「保存」ではなく「一覧で見えること」
 
@@ -37,7 +36,10 @@ Cloudflare が配るのは `astro build` の出力。`lab-archives/` は `src/` 
 **唯一の実作業は `public/lab/<slug>/` を `git rm` すること**で、これは忘れようがない —
 `lab build in sync` 検査が「対応する `lab/<slug>/index.html` が無い」孤児として必ず落とす（`scripts/lib/checks.ts`）。
 
-### 番号は返さない
+### 番号は返さない（0007 で廃止）
+
+**この節は決定 0007 で廃止。** sketch に連番を持たせること自体をやめたので、「番号を誰が持つか」という問題が消えた。
+以下は当時の記録（この節のためにコードとテストを書いたので、同じ話が再浮上したときに読む）。
 
 `lab-archives/` に移しても番号は空かない。移して番号が空くと、git history に **001 が 2 つ**できるし、
 棚から戻したときに衝突する。`lab-archives/<NNN-slug>/` というディレクトリ名**そのものが番号台帳**で、
@@ -58,10 +60,14 @@ Cloudflare が配るのは `astro build` の出力。`lab-archives/` は `src/` 
 ### 手順
 
 ```
-git mv lab/<NNN-slug> lab-archives/<NNN-slug>
-git rm -r public/lab/<NNN-slug> lab/.build-meta/<NNN-slug>.json
+git mv lab/<slug> lab-archives/<slug>
+git rm -r public/lab/<slug> lab/.build-meta/<slug>.json
 ```
-`harness check` が通れば終わり。戻すときは `git mv` を逆にして `pnpm lab:build <NNN-slug>`。
+`harness check` が通れば終わり。戻すときは `git mv` を逆にして `pnpm lab:build <slug>`。
+
+棚上げしても**名前は予約しない**（`pnpm new` は `lab/` だけを見る）。`lab-archives/greeble` がある状態で
+`lab/greeble` を作れてしまうが、検査は足していない — パスが恒久的に違うので両方がツリーに見えていて、
+取り違える前に気付く。実際に取り違えたら、そのとき検査を足す（3 回ルール）。
 
 ## 落選案と落選理由
 
@@ -80,6 +86,6 @@ git rm -r public/lab/<NNN-slug> lab/.build-meta/<NNN-slug>.json
 
 ## 影響・やり直す条件
 
-- `scripts/lib/lab.ts` に `labArchivesDir` と `numberOwner()`。`scripts/new.ts` が後者を使う。テストは `scripts/lib/lab.test.ts`
+- ~~`scripts/lib/lab.ts` に `labArchivesDir` と `numberOwner()`~~ → **0007 で両方削除**。`pnpm new` は `lab/<slug>/` の存在だけを見る
 - **P1 で `astro check` / 型検査を足すとき、`lab-archives/` を対象から外す**。棚上げしたコードは壊れたままのことがあり、検査を落とす
 - やり直す条件: **`lab-archives/` を一度も見返していないなら、それは遅い `git rm` でしかない。** 半年見ていなければこの決定を捨てて削除に戻す

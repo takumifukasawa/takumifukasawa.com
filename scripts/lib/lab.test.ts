@@ -1,44 +1,21 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, test } from 'node:test';
-import { numberOwner } from './lab.ts';
+import { describe, test } from 'node:test';
+import { SLUG_PATTERN } from './lab.ts';
 
-let root: string;
-const sketch = (path: string) => mkdirSync(join(root, path), { recursive: true });
+// SLUG_PATTERN is the only guard on the slug a human types into `pnpm new` / `pnpm lab:add`, and the slug
+// becomes the directory name, the content entry id, the R2 key and the URL at once (decision 0002), so a
+// character that slips through here is permanent. There is no number prefix any more (decision 0007).
+describe('SLUG_PATTERN', () => {
+  for (const slug of ['greeble', 'curl-noise-ribbons', 'sdf2', 'a']) {
+    test(`accepts ${slug}`, () => assert.equal(SLUG_PATTERN.test(slug), true));
+  }
 
-beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'lab-test-'));
-});
-afterEach(() => rmSync(root, { recursive: true, force: true }));
+  // Uppercase and "_" would survive on Windows/macOS but break the URL or differ from a Linux checkout;
+  // the rest would produce "lab//x" or a hidden directory.
+  for (const slug of ['Greeble', 'has_underscore', 'has space', '-leading', 'trailing-', 'double--dash', '.hidden', 'a/b', '']) {
+    test(`rejects ${JSON.stringify(slug)}`, () => assert.equal(SLUG_PATTERN.test(slug), false));
+  }
 
-describe('numberOwner', () => {
-  test('is undefined when nothing has taken the number', () => {
-    sketch('lab/001-a');
-    assert.equal(numberOwner('002', root), undefined);
-  });
-
-  test('finds a number taken in lab/', () => {
-    sketch('lab/001-a');
-    assert.equal(numberOwner('001', root), 'lab/001-a');
-  });
-
-  // The point of decision 0006: archiving must not free the number.
-  test('finds a number taken in lab-archives/', () => {
-    sketch('lab-archives/001-mirror-sphere');
-    assert.equal(numberOwner('001', root), 'lab-archives/001-mirror-sphere');
-  });
-
-  test('works when lab-archives/ does not exist', () => {
-    sketch('lab/001-a');
-    assert.equal(numberOwner('001', root), 'lab/001-a');
-    assert.equal(numberOwner('003', root), undefined);
-  });
-
-  test('ignores directories that are not sketches', () => {
-    sketch('lab/.build-meta');
-    sketch('lab/core');
-    assert.equal(numberOwner('001', root), undefined);
-  });
+  // A left-over numbered slug is still a legal name -- the number is just not meaningful any more.
+  test('still accepts an old-style numbered slug', () => assert.equal(SLUG_PATTERN.test('001-greeble'), true));
 });

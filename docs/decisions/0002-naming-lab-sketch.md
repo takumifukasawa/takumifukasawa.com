@@ -2,14 +2,14 @@
 
 - 日付: 2026-10-08
 - 状態: 採用（2026-10-08）
-- 関連: `0001-overall-architecture.md`
+- 関連: `0001-overall-architecture.md`, `0007-no-sketch-numbering.md`（識別子から連番を外した）
 
 ## 背景
 
 当初案では tier 1（日々の制作）を `daily` と呼び、repo を `daily-experiments`、実行環境のサブドメインを `lab.` としていた。
 2 つの問題がある。
 
-1. **`daily` は頻度を約束する。** URL（`/daily/001-...`）は X の投稿から恒久的に参照されるので後から変えられない。週 3 になった時点で名前のほうが先に嘘になり、構造が制作のブレーキになる。目的（制作量の最大化）と逆。
+1. **`daily` は頻度を約束する。** URL（`/daily/<slug>/`）は X の投稿から恒久的に参照されるので後から変えられない。週 3 になった時点で名前のほうが先に嘘になり、構造が制作のブレーキになる。目的（制作量の最大化）と逆。
 2. **同じものに名前が 3 つある。** `daily`（URL）/ `daily-experiments`（repo）/ `lab`（サブドメイン）。1 件公開するたびに頭の中で対応を取り直すのは、毎日踏む摩擦になる。
 
 ## 採用案
@@ -20,9 +20,9 @@
 |---|---|
 | サイトの索引 | `takumifukasawa.com/`（`/lab/` の独立した索引は P2。sketch の詳細ページは作らない） |
 | Astro の collection | `lab`（`src/content/lab/*.md`） |
-| 作品のソース | `lab/<NNN-slug>/`（サイトと同じ repo） |
-| 作品の URL | `takumifukasawa.com/lab/<NNN-slug>/` |
-| R2 の key prefix | `lab/<NNN-slug>/...` |
+| 作品のソース | `lab/<slug>/`（サイトと同じ repo） |
+| 作品の URL | `takumifukasawa.com/lab/<slug>/` |
+| R2 の key prefix | `lab/<slug>/...` |
 | 公開 CLI | `pnpm lab:add <slug>` |
 
 **1 件の呼び方は `sketch` / スケッチ。** 文章・UI 文言・X の投稿でだけ使い、URL と識別子には出さないので、後からいつでも変えられる。
@@ -64,4 +64,5 @@ tier ごとに collection を作らない。**2 collection + リンク 1 本**�
 
 - `/lab/` の URL は X から恒久参照されるので、**最初の X 投稿より前に確定させる**（= P0 着手前）。それ以降は変えない。
 - sketch という呼称は URL に出ないので、いつでも変えてよい（この決定を覆す必要はない）。
+- 識別子の形は当初 `<NNN-slug>`（連番 + スラグ）だったが、**連番は決定 0007 で外した**。この表の `<slug>` はスラグのみ。
 - **やり直す条件**: tier 1 の性質が「実験」から大きく外れた場合（例: 完成作品のみを出す運用に変わった場合）。その場合は新しい決定を足し、旧 URL は 301 で維持する。

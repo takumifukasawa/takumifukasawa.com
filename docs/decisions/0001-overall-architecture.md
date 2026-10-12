@@ -22,7 +22,7 @@ repo は 1 つ。分けるのは**ビルドのタイミング**と**メディア
 | 層 | 置き場 | 配信 | ビルドされるタイミング |
 |---|---|---|---|
 | ハブ（sketch のグリッド / About） | `takumifukasawa.com` repo の `src/`（Astro, static） | Cloudflare Pages → `takumifukasawa.com` | push ごと |
-| 作品（Three.js / WebGPU など） | 同 repo の `lab/<NNN-slug>/`（Vite / npm / TS / GLSL を自由に） | 同 Pages（`public/lab/` 経由） | **手元で作った時に 1 回だけ** |
+| 作品（Three.js / WebGPU など） | 同 repo の `lab/<slug>/`（Vite / npm / TS / GLSL を自由に） | 同 Pages（`public/lab/` 経由） | **手元で作った時に 1 回だけ** |
 | メディア（mp4 / poster 画像） | Cloudflare R2 bucket | custom domain → `media.takumifukasawa.com` | — |
 
 **サイトは作品の実行環境ではなく、作品を束ねるハブ**という方針は維持する。
@@ -35,14 +35,14 @@ sketch 1 件 = 3 つのものが同じ repo に揃う。
 
 | | パス |
 |---|---|
-| ソース | `lab/<NNN-slug>/` |
-| ビルド成果物 | `public/lab/<NNN-slug>/`（コミットする） |
-| カード（metadata） | `src/content/lab/<NNN-slug>.md` |
+| ソース | `lab/<slug>/` |
+| ビルド成果物 | `public/lab/<slug>/`（コミットする） |
+| カード（metadata） | `src/content/lab/<slug>.md` |
 
 ### メディアは R2、frontmatter は key だけを持つ
 
 - `media/manifest.json`（サイト repo、生成物をコミット）が `key → { url 相対, width, height, bytes, durationSec }` を持つ。
-- frontmatter は `poster: lab/001-flow-field/poster.webp` のような **key のみ**。ホスト名を書かない。
+- frontmatter は `poster: lab/flow-field/poster.webp` のような **key のみ**。ホスト名を書かない。
 - アップロード script が ffmpeg / sharp で最適化 → R2 に put → manifest に追記、までを 1 コマンドでやる。
 - 一度置いた key は上書きしない（immutable、`Cache-Control: public, max-age=31536000, immutable`）。差し替えは新 key。
 
@@ -60,7 +60,7 @@ v0 ではサイト内に `<iframe>` を置かない。実物へは**別タブで
 薄く始められること以上に、副作用が良い方向に効く。
 
 - クリックロード機構、GPU を食う作品が一覧に影響する問題、モバイルの出し分けが v0 から全部消える
-- `takumifukasawa.com/lab/<NNN-slug>/` が主役になり、**作品の URL が独立して流通する**（X から直リンクが張れる）
+- `takumifukasawa.com/lab/<slug>/` が主役になり、**作品の URL が独立して流通する**（X から直リンクが張れる）
 
 将来サイト内で完結させるときは、**URL が変わらないのでリンクを iframe に差し替えるだけ**で移行できる。
 その時点では以下を守る（v0 で捨てた判断ではなく、embed を入れる時に適用する）。
@@ -68,7 +68,7 @@ v0 ではサイト内に `<iframe>` を置かない。実物へは**別タブで
 > `<iframe>` は最初から DOM に置かない。poster 画像 + 再生ボタンを出し、**クリックで初めて iframe を挿入**する。
 > `loading="lazy"` や IntersectionObserver による自動ロードは採らない（WebGPU / Three.js の作品が複数同時に走ると、一覧ページで GPU とメモリを食い潰す）。
 
-### 作品も同じドメインに置く。URL は `takumifukasawa.com/lab/<NNN-slug>/`
+### 作品も同じドメインに置く。URL は `takumifukasawa.com/lab/<slug>/`
 
 サブドメイン（`lab.takumifukasawa.com`）は採らない。**URL を削ってトップへ行こうとする人は必ずいる**し、
 2 つのドメインを行き来する構成は、貼る URL・OGP・キャッシュのすべてで 2 系統を考えることになる。
@@ -76,9 +76,9 @@ v0 ではサイト内に `<iframe>` を置かない。実物へは**別タブで
 ```
 takumifukasawa.com/
 ├── src/                          Astro（サイト）
-├── lab/<NNN-slug>/               作品のソース（Vite / npm / TS / GLSL を自由に使う）
-├── public/lab/<NNN-slug>/        作品のビルド成果物（★ コミットする）
-└── src/content/lab/<NNN-slug>.md  カード（frontmatter）
+├── lab/<slug>/               作品のソース（Vite / npm / TS / GLSL を自由に使う）
+├── public/lab/<slug>/        作品のビルド成果物（★ コミットする）
+└── src/content/lab/<slug>.md  カード（frontmatter）
 ```
 
 ### 鍵は「作品をビルドするタイミング」

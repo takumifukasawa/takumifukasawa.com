@@ -51,20 +51,20 @@ describe('md', () => {
   test('existing values win on merge (hand edits survive a re-run)', () => {
     const merged = mergeFrontmatter(
       { title: 'Edited', tags: ['density'], medium: 'video' },
-      { title: 'Generated', tags: ['canvas2d'], medium: 'runtime', poster: 'lab/001-a/poster.webp' },
+      { title: 'Generated', tags: ['canvas2d'], medium: 'runtime', poster: 'lab/alpha/poster.webp' },
     );
-    assert.deepEqual(merged, { title: 'Edited', tags: ['density'], medium: 'video', poster: 'lab/001-a/poster.webp' });
+    assert.deepEqual(merged, { title: 'Edited', tags: ['density'], medium: 'video', poster: 'lab/alpha/poster.webp' });
   });
 
   test('formats in content-model order and round-trips through YAML', () => {
-    const md = formatLabMd({ tags: ['glsl'], title: 'A: "quoted"', date: '2026-10-08', medium: 'runtime', poster: 'lab/001-a/poster.webp' });
+    const md = formatLabMd({ tags: ['glsl'], title: 'A: "quoted"', date: '2026-10-08', medium: 'runtime', poster: 'lab/alpha/poster.webp' });
     assert.match(md, /^---\ndate: 2026-10-08\ntitle: /);
     const root = mkdtempSync(join(tmpdir(), 'content-test-'));
     try {
       mkdirSync(join(root, 'src/content/lab'), { recursive: true });
-      writeFileSync(join(root, 'src/content/lab/001-a.md'), md);
-      assert.equal(readLabMd('001-a', root)?.data.title, 'A: "quoted"');
-      assert.equal(readLabMd('001-a', root)?.data.date, '2026-10-08');
+      writeFileSync(join(root, 'src/content/lab/alpha.md'), md);
+      assert.equal(readLabMd('alpha', root)?.data.title, 'A: "quoted"');
+      assert.equal(readLabMd('alpha', root)?.data.date, '2026-10-08');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -100,7 +100,7 @@ describe('lab head in sync / media keys resolve', () => {
     writeFileSync(join(root, path), content);
   };
   const md = (extra = '') =>
-    `---\ndate: 2026-10-08\ntitle: New\nmedium: runtime\nposter: lab/001-a/poster.webp\ntags: [canvas2d]\n${extra}---\n`;
+    `---\ndate: 2026-10-08\ntitle: New\nmedium: runtime\nposter: lab/alpha/poster.webp\ntags: [canvas2d]\n${extra}---\n`;
 
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'content-check-test-'));
@@ -108,23 +108,23 @@ describe('lab head in sync / media keys resolve', () => {
   afterEach(() => rmSync(root, { recursive: true, force: true }));
 
   test('head: fails until the page is rewritten from the md, then passes', () => {
-    write('src/content/lab/001-a.md', md());
-    write('public/lab/001-a/index.html', PAGE);
-    assert.match(checkLabHeadInSync(root)[0] ?? '', /pnpm lab:build 001-a/);
-    assert.ok(applyHeadFromMd('001-a', root));
+    write('src/content/lab/alpha.md', md());
+    write('public/lab/alpha/index.html', PAGE);
+    assert.match(checkLabHeadInSync(root)[0] ?? '', /pnpm lab:build alpha/);
+    assert.ok(applyHeadFromMd('alpha', root));
     assert.deepEqual(checkLabHeadInSync(root), []);
   });
 
   test('head: a sketch without md (before lab:add) is not checked', () => {
-    write('public/lab/001-a/index.html', PAGE);
+    write('public/lab/alpha/index.html', PAGE);
     assert.deepEqual(checkLabHeadInSync(root), []);
   });
 
   test('media: every poster / video key must be in the manifest', () => {
-    write('src/content/lab/001-a.md', md('video: lab/001-a/clip.mp4\n'));
-    write('media/manifest.json', JSON.stringify({ 'lab/001-a/poster.webp': { width: 1, height: 1, bytes: 1 } }));
+    write('src/content/lab/alpha.md', md('video: lab/alpha/clip.mp4\n'));
+    write('media/manifest.json', JSON.stringify({ 'lab/alpha/poster.webp': { width: 1, height: 1, bytes: 1 } }));
     const problems = checkMediaKeysResolve(root);
     assert.equal(problems.length, 1);
-    assert.match(problems[0], /video: "lab\/001-a\/clip\.mp4"/);
+    assert.match(problems[0], /video: "lab\/alpha\/clip\.mp4"/);
   });
 });

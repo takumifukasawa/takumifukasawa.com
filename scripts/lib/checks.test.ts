@@ -34,56 +34,56 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe('lab build in sync', () => {
   test('passes when the output was built from the current source', () => {
-    builtSketch('001-a');
+    builtSketch('alpha');
     assert.deepEqual(checkLabBuildInSync(root), []);
   });
 
   test('fails when the source changed after the build', () => {
-    builtSketch('001-a');
-    write('lab/001-a/main.ts', 'console.log(2);');
+    builtSketch('alpha');
+    write('lab/alpha/main.ts', 'console.log(2);');
     const problems = checkLabBuildInSync(root);
     assert.equal(problems.length, 1);
-    assert.match(problems[0], /pnpm lab:build 001-a/);
+    assert.match(problems[0], /pnpm lab:build alpha/);
   });
 
   test('fails when a new source file was added after the build', () => {
-    builtSketch('001-a');
-    write('lab/001-a/frag.glsl', 'void main() {}');
+    builtSketch('alpha');
+    write('lab/alpha/frag.glsl', 'void main() {}');
     assert.equal(checkLabBuildInSync(root).length, 1);
   });
 
   test('ignores gitignored files (.DS_Store, .vite/) so a fresh clone gives the same hash', () => {
-    builtSketch('001-a');
-    write('lab/001-a/.DS_Store', 'finder');
-    write('lab/001-a/.vite/deps.json', '{}');
+    builtSketch('alpha');
+    write('lab/alpha/.DS_Store', 'finder');
+    write('lab/alpha/.vite/deps.json', '{}');
     assert.deepEqual(checkLabBuildInSync(root), []);
   });
 
   test('fails when a sketch was never built', () => {
-    write('lab/001-a/index.html', '<html></html>');
+    write('lab/alpha/index.html', '<html></html>');
     assert.match(checkLabBuildInSync(root)[0] ?? '', /ビルドされていない/);
   });
 
   test('fails when an output has no source (renamed slug)', () => {
-    write('public/lab/001-old/index.html', `<html>${SHELL}</html>`);
-    assert.match(checkLabBuildInSync(root)[0] ?? '', /public\/lab\/001-old/);
+    write('public/lab/stale/index.html', `<html>${SHELL}</html>`);
+    assert.match(checkLabBuildInSync(root)[0] ?? '', /public\/lab\/stale/);
   });
 
   test('skips sketches without index.html (non-web sketches, decision 0003)', () => {
-    write('lab/002-vex/main.vex', '@P.y += 1;');
+    write('lab/vex/main.vex', '@P.y += 1;');
     assert.deepEqual(checkLabBuildInSync(root), []);
   });
 });
 
 describe('lab shell embedded', () => {
   test('passes when every output embeds /_shell.js', () => {
-    write('public/lab/001-a/index.html', `<html data-shell="none"><head>${SHELL}</head></html>`);
+    write('public/lab/alpha/index.html', `<html data-shell="none"><head>${SHELL}</head></html>`);
     assert.deepEqual(checkLabShellEmbedded(root), []);
   });
 
   test('fails when an output lost the tag', () => {
-    write('public/lab/001-a/index.html', '<html><head></head></html>');
-    assert.match(checkLabShellEmbedded(root)[0] ?? '', /001-a/);
+    write('public/lab/alpha/index.html', '<html><head></head></html>');
+    assert.match(checkLabShellEmbedded(root)[0] ?? '', /alpha/);
   });
 });
 
@@ -91,14 +91,14 @@ describe('no large files', () => {
   const big = Buffer.alloc(3 * 1024 * 1024);
 
   test('fails on a staged file over 2 MB', () => {
-    write('public/lab/001-a/texture.png', big);
+    write('public/lab/alpha/texture.png', big);
     git('add', '-A');
     assert.match(checkNoLargeFiles(root)[0] ?? '', /texture\.png: 3\.0 MB/);
   });
 
   test('passes when the file is in the allowlist', () => {
-    write('public/lab/001-a/texture.png', big);
-    write('scripts/large-files-allow.txt', '# needed offline\npublic/lab/001-a/texture.png\n');
+    write('public/lab/alpha/texture.png', big);
+    write('scripts/large-files-allow.txt', '# needed offline\npublic/lab/alpha/texture.png\n');
     git('add', '-A');
     assert.deepEqual(checkNoLargeFiles(root), []);
   });

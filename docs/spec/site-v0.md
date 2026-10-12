@@ -15,7 +15,7 @@ sketch が無いサイトには載せるものが無い。順序を逆にする�
 
 | Phase | 範囲 | 完了の条件 |
 |---|---|---|
-| **P0** | `lab/` の雛形 + `pnpm new` / `pnpm lab:add` + R2 + `media.takumifukasawa.com` + Pages | sketch 001 が `takumifukasawa.com/lab/001-flow-field/` で動き、poster/mp4 が R2 から配信され、X に投稿できる |
+| **P0** | `lab/` の雛形 + `pnpm new` / `pnpm lab:add` + R2 + `media.takumifukasawa.com` + Pages | sketch 001 が `takumifukasawa.com/lab/flow-field/` で動き、poster/mp4 が R2 から配信され、X に投稿できる |
 | **P1** | サイト v0（この doc の範囲）。**2 ページだけ** | sketch 1〜10 件程度が載ったサイトが `takumifukasawa.com` で公開されている |
 | **P1.5** | Notes 一式（`/notes/` + 記事ページ + MDX + Shiki + KaTeX + RSS） | **最初の記事を書きたくなった時に作る**。1 セッションで足りる |
 | **P2** | `/lab/` 索引の分離 / 日付密度グリッド / サイト内 embed（iframe のクリックロード）/ Works ページ / tag 一覧 / 動的 OGP | （別 spec） |
@@ -45,7 +45,7 @@ P0 は**サイトのページを `/` の 1 枚だけに留める**（残りは `
 
 | 条件 | 行き先 |
 |---|---|
-| `public/lab/<NNN-slug>/index.html` がある | `takumifukasawa.com/lab/<NNN-slug>/`（実物が動く。同一ドメインだが別タブで開く） |
+| `public/lab/<slug>/index.html` がある | `takumifukasawa.com/lab/<slug>/`（実物が動く。同一ドメインだが別タブで開く） |
 | 無く `externalUrl` がある | その URL（独立 repo の作品。決定 0003） |
 | 上のどちらも無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
 | いずれも無い | `media.takumifukasawa.com/.../poster.webp` |

@@ -30,7 +30,7 @@
 
 | 置き場 | 条件 |
 |---|---|
-| `lab/<NNN-slug>/` | **既定。すべてここから始める** |
+| `lab/<slug>/` | **既定。すべてここから始める** |
 | `lab/core/` | 同じコードを 3 つ以上の sketch で書いた後（`../spec/publish-pipeline.md`） |
 | **独立 repo** | 下の条件を 1 つ以上満たした時だけ |
 
@@ -55,7 +55,7 @@
 
 ### `lab/` は「sketch のソース置き場」であって「Web ビルドの置き場」ではない
 
-`lab/<NNN-slug>/` に `index.html` があるものだけがビルドされ、`public/lab/<NNN-slug>/` 経由で `takumifukasawa.com/lab/<NNN-slug>/` に配信される。
+`lab/<slug>/` に `index.html` があるものだけがビルドされ、`public/lab/<slug>/` 経由で `takumifukasawa.com/lab/<slug>/` に配信される。
 **`index.html` が無いディレクトリもそのまま置いてよい** — Houdini の VEX、Blender / Houdini の Python ツール、UE の設定メモなど。
 
 これで Web 以外の sketch にも「誘導先の repo リンク」ができる（frontmatter の `repo` がそのディレクトリを指せる）。
@@ -65,7 +65,7 @@ repo を増やさずに済むので、決定 0001 の落選案 C（1 作品 1 re
 
 | 対象 | 置き場 |
 |---|---|
-| **テキスト資産**（VEX / HDA の中身 / Python ツール / `.py` / 設定の抜粋） | `lab/<NNN-slug>/` に入れる |
+| **テキスト資産**（VEX / HDA の中身 / Python ツール / `.py` / 設定の抜粋） | `lab/<slug>/` に入れる |
 | **プロジェクトファイル・ソースアセット**（`.hip` / `.hiplc` / `.blend` / `.uproject` / `.uasset` / `.fbx` / `.exr` など） | git に入れない。ローカル + 外部ストレージ |
 | **成果物**（動画 / 静止画） | R2（`lab` / `works` の frontmatter から参照） |
 

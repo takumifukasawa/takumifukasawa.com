@@ -15,7 +15,7 @@
 //   height.ts     per-cell hash heights (not noise -- noise reads as terrain)
 //   growth.ts     which block rises when, and the curve it rises on
 //   surface.ts    THE difference: where a UV rectangle lands on pod.glb, and which way is up there
-//   pod.blender.py  how pod.glb was made (parametric grid, so u runs around and v along, one seam)
+//   hull.blender.py how hull.glb was made (kitbash boxes unioned, Smart UV Project into planar islands)
 // Everything here is plumbing: scene, camera, light, the render loop.
 //
 // The whole piece is a loop. Every time-dependent value is a function of (time mod loopPeriod) with no
@@ -102,13 +102,26 @@ scene.add(ground);
 
 // The body is a mesh, so nothing can be placed until it has loaded. Everything below is wired up first
 // and the loop only starts once the geometry is in.
-const gltf = await new GLTFLoader().loadAsync(new URL('./pod.glb', import.meta.url).href);
+const gltf = await new GLTFLoader().loadAsync(new URL('./hull.glb', import.meta.url).href);
 let geometry: THREE.BufferGeometry | undefined;
 gltf.scene.traverse((child) => {
   if (!geometry && (child as THREE.Mesh).isMesh) geometry = (child as THREE.Mesh).geometry;
 });
-if (!geometry) throw new Error('pod.glb has no mesh');
+if (!geometry) throw new Error('hull.glb has no mesh');
 const surface = createMeshSurface(geometry, params);
+
+// The hull itself, drawn under the greeble. Without it the gaps between UV islands are holes you see
+// straight through, and the form has to be guessed from the detail alone -- which is backwards: on a real
+// model the hull carries the silhouette and the greeble is what sits on top of it.
+//
+// createMeshSurface already scaled the position attribute in place, so the geometry is at the right size.
+const hull = new THREE.Mesh(
+  geometry,
+  new THREE.MeshStandardMaterial({ color: 0x4d555c, roughness: 0.6, metalness: 0.25 }),
+);
+hull.castShadow = true;
+hull.receiveShadow = true;
+scene.add(hull);
 
 let field: Blocks[] = [];
 
@@ -127,9 +140,11 @@ const rebuild = () => {
 
   // The body is elongated, so its bounding sphere is much bigger than what it actually fills. Framing off
   // the sphere leaves it small and lost in the middle of the frame.
-  orbit['radius'] = radius * 2.9;
-  orbit['height'] = radius * 0.65;
-  orbit['azimuth'] = Math.PI * 0.08;
+  // Across the long axis, not down it. The hull's length runs along x, so looking from near the x axis
+  // squashes the whole ship into its own nose -- which is exactly what the first framing did.
+  orbit['radius'] = radius * 2.6;
+  orbit['height'] = radius * 0.95;
+  orbit['azimuth'] = Math.PI * 0.42;
 
   key.position.set(-1, 2.2, 1.6).multiplyScalar(radius * 2);
   key.shadow.camera.left = -radius * 1.8;
@@ -141,9 +156,10 @@ const rebuild = () => {
   rim.position.set(1.4, 0.4, -1.6).multiplyScalar(radius * 2);
 
   const cells = subdivide(params);
-  field = createField(cells, params);
+  field = createField(cells, params, surface);
   for (const blocks of field) scene.add(blocks['mesh']);
-  console.log(`[wip] ${cells.length} cells (${field[1]?.['cells'].length ?? 0} bars)`);
+  const placed = field.reduce((n, b) => n + b['cells'].length, 0);
+  console.log(`[wip] ${cells.length} cells -> ${placed} on the hull (${field[1]?.['cells'].length ?? 0} bars)`);
 };
 
 const post = createPost(renderer, scene, camera, params);

@@ -6,6 +6,7 @@ import { hashCell } from './hash.ts';
 import { cellHeight } from './height.ts';
 import type { Params } from './params.ts';
 import { createFrame, type Surface } from './surface.ts';
+import type { Rect } from './subdivide.ts';
 import type { Cell } from './subdivide.ts';
 
 export type Blocks = {
@@ -55,12 +56,42 @@ const createBlocks = (cells: Cell[], params: Params, material: THREE.Material, h
   };
 };
 
+// The UV of a point in the subdivision domain. The domain is square and centred on the origin; UV is the
+// unit square. One place, so the filter below and the per-frame placement cannot disagree.
+const uvOf = (x: number, z: number, size: number): [number, number] => [x / size + 0.5, z / size + 0.5];
+
+// Drop the cells that land in the gaps between UV islands.
+//
+// Centre AND corners: a panel whose centre is on an island but whose corner is not would hang off the edge
+// of the facet. The corners are pulled slightly inward because an island's own boundary is exactly where
+// the unwrap put its margin, and a corner sitting exactly on it is a coin flip.
+const onSurface = (cell: Rect, params: Params, surface: Surface, probe: ReturnType<typeof createFrame>) => {
+  const size = params['size'];
+  const inset = 0.02;
+  const corners: [number, number][] = [
+    [cell.x + cell.w / 2, cell.z + cell.d / 2],
+    [cell.x + cell.w * inset, cell.z + cell.d * inset],
+    [cell.x + cell.w * (1 - inset), cell.z + cell.d * inset],
+    [cell.x + cell.w * inset, cell.z + cell.d * (1 - inset)],
+    [cell.x + cell.w * (1 - inset), cell.z + cell.d * (1 - inset)],
+  ];
+  for (const [x, z] of corners) {
+    const [u, v] = uvOf(x, z, size);
+    if (!surface['at'](u, v, 0, probe)) return false;
+  }
+  return true;
+};
+
 // Two meshes, not one with per-instance colour: the bars need `emissive`, which is a material property and
 // cannot vary per instance. Two draw calls is still two.
-export const createField = (cells: Cell[], params: Params): Blocks[] => {
+export const createField = (cells: Cell[], params: Params, surface: Surface): Blocks[] => {
+  const probe = createFrame();
   const bars: Cell[] = [];
   const mass: Cell[] = [];
-  for (const cell of cells) (isBar(cell, params) ? bars : mass).push(cell);
+  for (const cell of cells) {
+    if (!onSurface(cell, params, surface, probe)) continue;
+    (isBar(cell, params) ? bars : mass).push(cell);
+  }
 
   // Low metalness on purpose. At 0.9 a standard material has almost no diffuse term, so it stops responding
   // to the directional lights and only shows what the environment map reflects -- which, with
@@ -122,7 +153,8 @@ export const updateBlocks = (blocks: Blocks, time: number, params: Params, surfa
     const z0 = cell.z + (cell.z <= plate.z + EDGE ? half : 0);
     const z1 = cell.z + cell.d - (cell.z + cell.d >= plate.z + plate.d - EDGE ? half : 0);
 
-    surface['at']((x0 + x1) / 2 / size + 0.5, (z0 + z1) / 2 / size + 0.5, time, frame);
+    const [u, v] = uvOf((x0 + x1) / 2, (z0 + z1) / 2, size);
+    surface['at'](u, v, time, frame);
 
     xAxis.copy(frame['tangent']);
     zAxis.crossVectors(xAxis, frame['normal']); // right-handed with y = normal

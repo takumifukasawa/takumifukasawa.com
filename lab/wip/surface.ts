@@ -5,9 +5,11 @@
 // ground, and this one reads it as the UV of a mesh. Nothing downstream -- heights, timing, hashing, the
 // emissive bars -- knows the difference.
 //
-// The mesh is pod.glb, built by pod.blender.py as a parametric grid so that u runs around the body and v
-// along it, with a single seam where u wraps. That matters more than the shape does: an unwrapped mesh
-// would scatter the panels across UV islands and tear them at every island edge.
+// The mesh is hull.glb, built by hull.blender.py: a kitbash mass of boxes unioned into one faceted shell.
+// Faceted on purpose. On a smooth body every panel faces a slightly different way, so the greeble never
+// presents as a field and reads as a texture; on a flat facet the whole patch shares one normal and turns
+// toward the camera together, which is how greeble works on a spaceship hull. It also means each island is
+// planar, so a panel can be as large as it likes without cutting through the body.
 import * as THREE from 'three';
 import type { Params } from './params.ts';
 
@@ -28,7 +30,9 @@ export const createFrame = (): Frame => ({
 });
 
 export type Surface = {
-  'at': (u: number, v: number, time: number, out: Frame) => void;
+  // Returns false when the UV lands on nothing. A faceted hull is unwrapped into islands, so roughly half
+  // of UV space is the gap between them -- callers must drop those cells rather than place a panel there.
+  'at': (u: number, v: number, time: number, out: Frame) => boolean;
 };
 
 // The body breathes. Integer multiples of the loop frequency only: anything else and the recording has a
@@ -47,7 +51,7 @@ export const createMeshSurface = (geometry: THREE.BufferGeometry, params: Params
   const normal = geometry.getAttribute('normal') as THREE.BufferAttribute;
   const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
   const indexAttr = geometry.getIndex();
-  if (!normal || !uv) throw new Error('pod.glb must carry normals and UVs');
+  if (!normal || !uv) throw new Error('hull.glb must carry normals and UVs');
 
   // Scale the body to params['radius'] once, here. Everything else in the sketch (camera distance, fog,
   // depth of field, the height of the greeble) is expressed in multiples of radius, so the mesh has to
@@ -143,8 +147,7 @@ export const createMeshSurface = (geometry: THREE.BufferGeometry, params: Params
       const bv = Math.floor(cv * BINS);
 
       let found = test(bins[bv * BINS + bu]!, cu, cv);
-      // The ring of neighbouring bins covers the float-edge cases at bin borders. If even that misses,
-      // keep the previous frame -- a stale panel is invisible; a NaN one takes the whole mesh with it.
+      // The ring of neighbouring bins covers float-edge cases at bin borders.
       if (!found) {
         for (let du = -1; du <= 1 && !found; du++) {
           for (let dv = -1; dv <= 1 && !found; dv++) {
@@ -155,7 +158,9 @@ export const createMeshSurface = (geometry: THREE.BufferGeometry, params: Params
           }
         }
       }
-      if (!found && hit.t < 0) return;
+      // A real miss: the UV is in the gap between islands. Say so rather than reusing the last frame,
+      // which would leave a panel floating wherever the previous lookup happened to land.
+      if (!found) return false;
 
       const t = hit.t;
       const a = corner(t, 0);
@@ -201,6 +206,7 @@ export const createMeshSurface = (geometry: THREE.BufferGeometry, params: Params
           params['radius'] * breathe * pulse(p.x * inv, p.y * inv, p.z * inv, (time / params['loopPeriod']) * Math.PI * 2);
         p.addScaledVector(out['normal'], offset);
       }
+      return true;
     },
   };
 };

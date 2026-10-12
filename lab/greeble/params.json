@@ -31,5 +31,9 @@
   "ambient": 1.1,
   "fogNear": 1.6,
   "fogFar": 4.5,
-  "barHeight": 0.12
+  "barHeight": 0.12,
+  "dofAperture": 1.0,
+  "dofFocus": 1.5,
+  "dofMaxBlur": 0.012,
+  "pixelRatio": 1.5
 }

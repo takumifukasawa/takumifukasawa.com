@@ -52,6 +52,14 @@ export const SCHEMA = {
   'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
   'bloomThreshold': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
   'aberration': { 'folder': 'post', 'min': 0, 'max': 0.2, 'step': 0.002 }, // UV offset at the corners, so tiny
+  // Depth of field. 0 aperture disables the pass entirely -- it costs a second geometry pass (see post.ts).
+  'dofAperture': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.05 },
+  'dofFocus': { 'folder': 'post', 'min': 0.2, 'max': 4, 'step': 0.02 }, // focal distance, as a multiple of size
+  'dofMaxBlur': { 'folder': 'post', 'min': 0, 'max': 0.03, 'step': 0.001 },
+  // The biggest lever on a phone. Post is fill-rate bound (the DOF blur alone is 41 taps per pixel), and a
+  // modern phone reports devicePixelRatio 3, so the cap here decides how many pixels all of that runs over.
+  // Capped against the device's own ratio, never multiplied past it.
+  'pixelRatio': { 'folder': 'perf', 'min': 0.5, 'max': 2, 'step': 0.1 }
 } as const;
 
 export type ParamKey = keyof typeof SCHEMA;
@@ -65,6 +73,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'exposure', 'camSwing',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
+  'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',
 ];
 
 export const loadParams = (): Params => {

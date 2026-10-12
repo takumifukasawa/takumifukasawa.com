@@ -36,7 +36,6 @@ const canvas = document.querySelector<HTMLCanvasElement>('#c')!;
 const params = loadParams();
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed in three r186
 // Filmic, not linear: the emissive bars run well past 1.0 and linear clipping turns them into flat orange
@@ -128,8 +127,11 @@ const rebuild = () => {
 };
 
 const post = createPost(renderer, scene, camera, params);
+const debug = createDebug(params, rebuild);
 
 const setSize = () => {
+  // Never above the device's own ratio: rendering more pixels than the screen has is pure cost.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, params['pixelRatio']));
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / h;
@@ -140,7 +142,15 @@ const setSize = () => {
 
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
-const update = (time: number, _deltaTime: number) => {
+let appliedPixelRatio = 0;
+
+const update = (time: number, deltaTime: number) => {
+  debug['tick'](deltaTime);
+  // Changing the resolution means reallocating every render target, so only on an actual change.
+  if (params['pixelRatio'] !== appliedPixelRatio) {
+    appliedPixelRatio = params['pixelRatio'];
+    setSize();
+  }
   if (orbit['auto']) {
     const swing = Math.sin((time / params['loopPeriod']) * Math.PI * 2) * params['camSwing'];
     const azimuth = orbit['azimuth'] + swing;
@@ -181,7 +191,6 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
-createDebug(params, rebuild);
 rebuild();
 
 const startTime = getCurrentRealTime();

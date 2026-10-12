@@ -4,6 +4,7 @@
 // at the frame edges is one of the signatures of the reference (an HDRP physical camera look). Both are
 // knobs in params.json, so tuning them never touches this file.
 import * as THREE from 'three';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -26,6 +27,15 @@ export const createPost = (
 ): Post => {
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
+
+  // Depth of field, before bloom: in a real camera the lens defocuses and the sensor blooms, in that order.
+  //
+  // THIS IS THE EXPENSIVE PASS. BokehPass draws the whole scene a second time with a depth override
+  // material to build its depth map, so the geometry cost roughly doubles. That is why `dofAperture: 0`
+  // disables the pass outright rather than just setting the aperture to zero -- a phone that cannot afford
+  // it should not pay for a second geometry pass that produces no visible blur.
+  const bokeh = new BokehPass(scene, camera, { focus: 1, aperture: 0, maxblur: 0.01 });
+  composer.addPass(bokeh);
 
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
@@ -56,6 +66,19 @@ export const createPost = (
       bloom.resolution.set(width, height);
     },
     'apply': (next) => {
+      // The aperture knob is scaled here, not in params.json. three's shader computes
+      //   dofblur = clamp((focus + viewZ) * aperture, -maxblur, maxblur)
+      // where (focus + viewZ) is the distance from the focal plane in WORLD units -- about +-20 at this
+      // field size. So the useful aperture is around 0.0005, which is unreadable in a slider and easy to
+      // get wrong by a factor of ten (it was, the first time). The knob is 0..3; 1 means "the far edge of
+      // the field reaches maxblur".
+      bokeh.enabled = next['dofAperture'] > 0;
+      if (bokeh.enabled) {
+        const uniforms = bokeh.materialBokeh.uniforms;
+        uniforms['focus']!.value = next['size'] * next['dofFocus'];
+        uniforms['aperture']!.value = (next['dofAperture'] * next['dofMaxBlur']) / (next['size'] * 0.85);
+        uniforms['maxblur']!.value = next['dofMaxBlur'];
+      }
       bloom.strength = next['bloomStrength'];
       bloom.radius = next['bloomRadius'];
       bloom.threshold = next['bloomThreshold'];

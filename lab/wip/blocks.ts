@@ -19,12 +19,15 @@ export type Blocks = {
 // alone is the whole trick: long cells already run along the grid axes, so the glow comes out as traces on
 // a board rather than as scattered glowing cubes.
 const isBar = (cell: Cell, params: Params): boolean => {
-  const long = Math.max(cell.w, cell.d);
-  const short = Math.min(cell.w, cell.d);
+  // On the plate, so a long thin panel glows along its whole length instead of breaking into lit fragments.
+  const plate = cell.plate;
+  const long = Math.max(plate.w, plate.d);
+  const short = Math.min(plate.w, plate.d);
   // Thin as well as long. Aspect ratio alone also matches big rectangles, and a lit slab the size of a
-  // district reads as a mistake, not as a trace.
-  if (short > params['minSide'] * 2.5) return false;
-  return long / short >= params['barAspect'] && hashCell(cell, params['seed'] + 4919) < params['barRate'];
+  // district reads as a mistake, not as a trace. Measured against plateSize, not minSide: the threshold
+  // has to scale with what a panel IS, or changing plateSize silently turns the traces off.
+  if (short > params['plateSize'] * 0.35) return false;
+  return long / short >= params['barAspect'] && hashCell(plate, params['seed'] + 4919) < params['barRate'];
 };
 
 // Pivot at the bottom face, so scaling y grows the box upward instead of from its centre. Doing it in the
@@ -94,6 +97,10 @@ const scale = new THREE.Vector3();
 // Every frame, for every instance. The body moves, so the whole field has to be re-placed -- unlike the
 // flat version, where only the y scale changed. This is the per-frame cost of putting greeble on something
 // alive; the perf folder in the pane is how you find out whether a phone can afford it.
+// Coordinates come out of the same arithmetic as the plate's, so an edge that was inherited unchanged
+// compares exactly equal; the epsilon only guards against a cut landing a float apart.
+const EDGE = 1e-9;
+
 export const updateBlocks = (blocks: Blocks, time: number, params: Params, surface: Surface) => {
   const cells = blocks['cells'];
   const size = params['size'];
@@ -106,8 +113,16 @@ export const updateBlocks = (blocks: Blocks, time: number, params: Params, surfa
     const cell = cells[i]!;
     const g = growth(time, blocks['delays'][i]!, params);
 
-    // The cell's centre and extent, as fractions of the UV domain.
-    surface['at']((cell.x + cell.w / 2) / size + 0.5, (cell.z + cell.d / 2) / size + 0.5, time, frame);
+    // Inset only where the leaf's edge IS the plate's edge. Inside a plate the boxes stay flush and fuse
+    // into one panel; the gap then reads as a trench between panels rather than as grout between tiles.
+    const plate = cell.plate;
+    const half = gap / 2;
+    const x0 = cell.x + (cell.x <= plate.x + EDGE ? half : 0);
+    const x1 = cell.x + cell.w - (cell.x + cell.w >= plate.x + plate.w - EDGE ? half : 0);
+    const z0 = cell.z + (cell.z <= plate.z + EDGE ? half : 0);
+    const z1 = cell.z + cell.d - (cell.z + cell.d >= plate.z + plate.d - EDGE ? half : 0);
+
+    surface['at']((x0 + x1) / 2 / size + 0.5, (z0 + z1) / 2 / size + 0.5, time, frame);
 
     xAxis.copy(frame['tangent']);
     zAxis.crossVectors(xAxis, frame['normal']); // right-handed with y = normal
@@ -115,9 +130,9 @@ export const updateBlocks = (blocks: Blocks, time: number, params: Params, surfa
 
     // A floor on every axis: a zero scale collapses the matrix and the normals go undefined (black flicker).
     scale.set(
-      Math.max(((cell.w - gap) / size) * frame['scaleU'], 0.0001),
+      Math.max(((x1 - x0) / size) * frame['scaleU'], 0.0001),
       Math.max(blocks['heights'][i]! * g * heightScale, 0.0001),
-      Math.max(((cell.d - gap) / size) * frame['scaleV'], 0.0001),
+      Math.max(((z1 - z0) / size) * frame['scaleV'], 0.0001),
     );
     matrix.scale(scale);
     matrix.setPosition(frame['position']);

@@ -6,8 +6,11 @@ import { hashCell } from './hash.ts';
 import type { Params } from './params.ts';
 import type { Cell } from './subdivide.ts';
 
+// Keyed on the PLATE, not the leaf: every leaf of a plate gets the same height, so a group of adjacent
+// boxes reads as one panel instead of as independent confetti (subdivide.ts).
 export const cellHeight = (cell: Cell, params: Params): number => {
-  const h = hashCell(cell, params['seed']);
+  const plate = cell.plate;
+  const h = hashCell(plate, params['seed']);
 
   // Squared, not linear. A flat distribution gives a plateau with a uniform skyline, which is the single
   // easiest way to lose the greeble read -- what is wanted is a low mass with a few things out of it.
@@ -16,8 +19,8 @@ export const cellHeight = (cell: Cell, params: Params): number => {
   // Masts: a few small footprints shoot well past the mass, and that is what reads as antennae and pipes
   // rather than buildings. Only a *fraction* of the small cells -- boosting every one turns the field into
   // a bed of needles, which is a different and much worse object. (Learned by doing exactly that.)
-  const small = cell.w * cell.d < params['minSide'] * params['minSide'] * 9;
-  const pick = hashCell(cell, params['seed'] ^ 0x5bf03635);
+  const small = plate.w * plate.d < params['plateSize'] * params['plateSize'] * 0.09;
+  const pick = hashCell(plate, params['seed'] ^ 0x5bf03635);
   const rate = params['spikeRate'];
   if (small && pick < rate) {
     v = params['heightMax'] * (1 + params['spikeBoost']) * (0.5 + (pick / Math.max(rate, 1e-6)) * 0.5);

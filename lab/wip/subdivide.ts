@@ -12,8 +12,15 @@
 //   4. which cells survive   -- dropping some leaves the streets and clearings between clusters
 import type { Params } from './params.ts';
 
-// One footprint: an axis-aligned rectangle on the ground plane, plus the recursion depth it stopped at.
-export type Cell = { x: number; z: number; w: number; d: number; depth: number };
+export type Rect = { x: number; z: number; w: number; d: number };
+
+// One footprint, plus the PLATE it belongs to: the ancestor rectangle that everything under it shares.
+//
+// This is what separates greeble from a scatter of boxes. Scatter gives every element its own independent
+// height; greeble has a few large plates that read first, each broken into smaller detail. Height and
+// timing are decided per plate (height.ts, growth.ts), so a group of adjacent leaves rises together and
+// reads as one panel -- while each leaf stays small enough to sit on a curved surface.
+export type Cell = Rect & { depth: number; plate: Rect };
 
 // mulberry32. Deterministic, so a seed reproduces a field exactly and a recording can be reshot.
 const createRandom = (seed: number) => {
@@ -34,7 +41,11 @@ export const subdivide = (params: Params): Cell[] => {
   const bias = params['splitBias'];
   const cells: Cell[] = [];
 
-  const recurse = (x: number, z: number, w: number, d: number, depth: number) => {
+  const recurse = (x: number, z: number, w: number, d: number, depth: number, plate: Rect | undefined) => {
+    // The first ancestor small enough to read as a single panel becomes the plate for everything below it.
+    const here: Rect = { x, z, w, d };
+    const group = plate ?? (Math.max(w, d) <= params['plateSize'] ? here : undefined);
+
     // An axis is cuttable only if both halves can still clear minSide. Checking per axis (rather than
     // checking the longer side and hoping) is what keeps slivers out of the result entirely.
     const canX = w >= minSide * 2;
@@ -53,7 +64,7 @@ export const subdivide = (params: Params): Cell[] => {
     // large at maxDepth, and on a curved surface that one cell is a slab stabbing through the body.
     // Termination is still guaranteed -- every split removes at least minSide, and (!canX && !canZ) always wins.
     if ((!tooBig && depth >= maxDepth) || (!canX && !canZ) || (!tooBig && depth > 0 && rnd() < params['stopChance'])) {
-      if (rnd() >= params['holeChance']) cells.push({ x, z, w, d, depth });
+      if (rnd() >= params['holeChance']) cells.push({ x, z, w, d, depth, plate: group ?? here });
       return;
     }
 
@@ -67,16 +78,16 @@ export const subdivide = (params: Params): Cell[] => {
 
     if (alongX) {
       const cut = Math.min(Math.max(w * t, minSide), w - minSide);
-      recurse(x, z, cut, d, depth + 1);
-      recurse(x + cut, z, w - cut, d, depth + 1);
+      recurse(x, z, cut, d, depth + 1, group);
+      recurse(x + cut, z, w - cut, d, depth + 1, group);
     } else {
       const cut = Math.min(Math.max(d * t, minSide), d - minSide);
-      recurse(x, z, w, cut, depth + 1);
-      recurse(x, z + cut, w, d - cut, depth + 1);
+      recurse(x, z, w, cut, depth + 1, group);
+      recurse(x, z + cut, w, d - cut, depth + 1, group);
     }
   };
 
   const size = params['size'];
-  recurse(-size / 2, -size / 2, size, size, 0);
+  recurse(-size / 2, -size / 2, size, size, 0, undefined);
   return cells;
 };

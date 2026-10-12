@@ -17,6 +17,9 @@ export const SCHEMA = {
   'depth': { 'folder': 'footprints', 'min': 0, 'max': 16, 'step': 1 }, // cell count is bounded by 2^depth
   'minSide': { 'folder': 'footprints', 'min': 0.05, 'max': 2, 'step': 0.01 }, // no cut may leave a side shorter
   'maxSide': { 'folder': 'footprints', 'min': 0.2, 'max': 24, 'step': 0.1 }, // a leaf wider than this keeps splitting
+  // How big one panel reads. Leaves stay under maxSide so they sit on the curve; a plate is the ancestor
+  // they share a height with, so this is what brings back the range of sizes that maxSide alone destroys.
+  'plateSize': { 'folder': 'footprints', 'min': 0.3, 'max': 12, 'step': 0.1 },
   'splitBias': { 'folder': 'footprints', 'min': 0, 'max': 1, 'step': 0.01 }, // 0 = every cut halves; 1 = down to 1:9
   'stopChance': { 'folder': 'footprints', 'min': 0, 'max': 0.6, 'step': 0.01 }, // early stop -- makes density uneven
   'holeChance': { 'folder': 'footprints', 'min': 0, 'max': 0.5, 'step': 0.01 }, // drops a leaf, leaving a gap

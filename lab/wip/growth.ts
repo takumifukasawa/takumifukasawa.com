@@ -16,13 +16,16 @@ import type { Cell } from './subdivide.ts';
 const fract = (v: number) => v - Math.floor(v);
 
 // Phase offset within the loop, 0..1.
+// Keyed on the plate for the same reason as the height: if the leaves of one panel started at slightly
+// different times the panel would ripple instead of rising as a thing.
 export const cellDelay = (cell: Cell, params: Params): number => {
-  const cx = cell.x + cell.w / 2;
-  const cz = cell.z + cell.d / 2;
+  const plate = cell.plate;
+  const cx = plate.x + plate.w / 2;
+  const cz = plate.z + plate.d / 2;
   // Normalised by the half-diagonal, so the far corners land at ~1 whatever the field size is.
   const radius = Math.hypot(cx, cz) / (params['size'] * 0.71);
   // Mostly radial, with enough hash to break the perfect rings -- otherwise it is a ripple in water.
-  const jitter = hashCell(cell, params['seed'] + 7777);
+  const jitter = hashCell(plate, params['seed'] + 7777);
   return fract((radius * 0.75 + jitter * 0.25) * params['spread']);
 };
 

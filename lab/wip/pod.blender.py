@@ -18,7 +18,7 @@ RIDGES = 12
 RIDGE_AMP = 0.085
 LENGTH = 5.2
 BASE_R = 1.0
-OUT = r"D:\Development\takumifukasawa.com\lab\carapace\pod.glb"
+OUT = r"D:\Development\takumifukasawa.com\lab\wip\pod.glb"
 
 
 def profile(t: float) -> float:

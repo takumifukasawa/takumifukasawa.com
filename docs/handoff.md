@@ -3,13 +3,13 @@
 <!-- 最終更新は絶対日付で。session-handoff が更新し、session-catchup が最初に読む。
      長期タスクの機械可読な進行状態は .harness/state/ に置き、ここには人間向けの要約だけ書く。 -->
 
-最終更新: 2026-10-12
+最終更新: 2026-10-12（2 回目）
 
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-最初の sketch は作ったが出さないと決めて `lab-archives/mirror-sphere/` へ棚上げした（決定 0006）。
-**いま `lab/greeble/` を作っている最中**で、動くところまで来ている（続きは下の「greeble の現在地」）。
+最初の sketch は棚上げ済み（`lab-archives/mirror-sphere/`、決定 0006）。いま `lab/` には 2 件:
+**`greeble`**（平面に greeble。完成している）と **`wip`**（同じ核を Blender で作った体の UV に貼ったもの。制作中）。
 **`lab:add` の本番初回はまだ通っていない。ここが唯一の未検証な一本道。**
 
 ## 別の PC で再開するとき（最初にやること）
@@ -44,7 +44,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | `lab/greeble/`（コミット済み・作業中）。棚上げ分は `lab-archives/mirror-sphere/`。**slug に連番は無い**（決定 0007） | `ls lab/`、決定 0007 |
+| `lab/` の中身 | `greeble`（完成）と `wip`（制作中）。棚上げ分は `lab-archives/mirror-sphere/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`） | `ls lab/`、決定 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
@@ -63,7 +63,23 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
-## greeble の現在地（次のセッションもここから続ける）
+## 2026-10-12 の 2 回目のセッションで動いたもの
+
+- **greeble を仕上げた**: 発光トレース / ライティング / bloom・色収差・被写界深度 / ループするカメラ。
+  実機で重さを測るための `perf`（フレーム時間）と `pixelRatio` のノブも入れた
+- **`artifacts run` 検査を足した**（決定 0008）。ビルド成果物をヘッドレス Chrome で開いてコンソールエラー 0 を見る。
+  **property mangling は既定で切った** — three の `ShaderChunk` / `ShaderLib` / `shaderIDs` が文字列キーで壊れる
+- **`wip` へ方向転換**: greeble が Unity の起動画面に似すぎるので、同じ核を**体の UV に貼る**方向へ。
+  `surface.ts` だけが変わり、`subdivide` / `height` / `growth` は 1 行も触っていない。
+  体は Blender MCP（**公式** `lab/blender_mcp`）で作った莢（`lab/wip/pod.glb` + 生成スクリプト）
+- **制作中の slug を `wip` にする規約**を入れた。`pnpm lab:add` が `wip*` を拒否する
+
+**いま残っている見た目の課題**: `wip` が Geometry Nodes の instance scatter に見える。原因は特定済みで、
+曲面で箱が体を突き抜けるのを `maxSide` で抑えたときに**大小の幅（大きな板）を一緒に潰した**こと。
+直し方は「**高さを葉ではなく BSP の祖先ノードで決める**」= 隣接する葉が高さを共有して 1 枚の板に見える。
+箱は小さいままなので曲率にも乗る。未着手。
+
+## greeble の現在地
 
 動いていて、ビルド成果物も `artifacts run` を通っている。**残っているのは人間の目での確認と詰め。**
 

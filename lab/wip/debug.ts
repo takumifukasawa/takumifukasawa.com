@@ -10,10 +10,10 @@ const NOOP: Debug = { 'tick': () => {} };
 export const createDebug = (params: Params, onRebuild: () => void): Debug => {
   if (new URLSearchParams(location.search).has('clean')) return NOOP;
 
-  const pane = new Pane({ title: 'carapace' });
+  const pane = new Pane({ title: 'wip' });
 
   // Frame time first, and expanded. The reason it exists is that "is this too heavy on a phone?" is not a
-  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab carapace
+  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab wip
   // --https` and read the number. ms is the honest unit: 16.7 is the 60 fps budget, and unlike fps it does
   // not compress the interesting part of the range into a few pixels.
   const perf = { 'ms': 0 };
@@ -63,7 +63,7 @@ export const createDebug = (params: Params, onRebuild: () => void): Debug => {
       body: JSON.stringify(params),
     });
     if (!res.ok) {
-      console.error('[carapace] save failed:', res.status, await res.text());
+      console.error('[wip] save failed:', res.status, await res.text());
       return;
     }
     // Writing params.json is a source change, so Vite reloads the page -- which is the confirmation:

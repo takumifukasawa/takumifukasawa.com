@@ -42,7 +42,9 @@ if (https) {
 const server = await createServer({
   configFile,
   plugins,
-  server: { host: https ? true : 'localhost' },
+  // strictPort: without it Vite silently moves to the next free port, so a stale server from an earlier
+  // session keeps 5173 and you spend a while looking at the wrong sketch. Failing here costs one message.
+  server: { host: https ? true : 'localhost', port: 5173, strictPort: true },
 });
 await server.listen();
 server.printUrls();

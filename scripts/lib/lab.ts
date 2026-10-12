@@ -18,6 +18,12 @@ export const publicLabDir = join(repoRoot, 'public', 'lab');
 // builders do it by requiring index.html, and `pnpm new` by refusing a directory that already exists.
 export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+// Slugs that mean "still being made". A sketch lives under one of these while its subject is still moving,
+// and is renamed to its real slug at publish time -- because the slug becomes the URL and is permanent from
+// then on (decision 0007). `pnpm lab:add` refuses them, so the convention cannot be forgotten into a
+// permanent /lab/wip/ (docs/spec/publish-pipeline.md).
+export const WORKSPACE_SLUGS = /^wip(-[a-z0-9]+)*$/;
+
 // Sketch slugs that have a web build (index.html). Directories without index.html
 // (Houdini VEX, Python tools, ...) are valid sketches but are never built (decision 0003).
 export const webSketchSlugs = (root = repoRoot): string[] => {

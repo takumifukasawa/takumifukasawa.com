@@ -1,6 +1,12 @@
-// carapace — Carapace
+// wip — the workspace sketch
 //
-// Greeble on a body instead of on a plane. "Greeble" is the ILM term for the meaningless surface detail
+// `wip` is not a title, it is the slug this sketch keeps WHILE it is being made. The slug becomes the URL
+// the moment `pnpm lab:add` runs and is permanent after that (decision 0007), so naming a piece before
+// knowing what it is produces a URL that lies -- which is exactly what happened when "greeble" turned into
+// a body and the name stopped meaning anything. Rename this directory to the real slug when publishing;
+// `pnpm lab:add` refuses to publish `wip` (docs/spec/publish-pipeline.md).
+//
+// What it currently is: greeble on a body instead of on a plane. "Greeble" is the ILM term for the meaningless surface detail
 // that makes a model read as huge (aka nurnie; the manual counterpart is kitbash), and it is normally
 // applied in a model's UV space -- which is exactly what happens here.
 //
@@ -137,7 +143,7 @@ const rebuild = () => {
   const cells = subdivide(params);
   field = createField(cells, params);
   for (const blocks of field) scene.add(blocks['mesh']);
-  console.log(`[carapace] ${cells.length} cells (${field[1]?.['cells'].length ?? 0} bars)`);
+  console.log(`[wip] ${cells.length} cells (${field[1]?.['cells'].length ?? 0} bars)`);
 };
 
 const post = createPost(renderer, scene, camera, params);

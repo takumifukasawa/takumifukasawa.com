@@ -12,6 +12,30 @@ sketch 1 件の公開を **2 コマンド + 1 push** に収める。ここが重
 
 repo は 1 つ。push も 1 回（決定 0001）。
 
+### 作っている間は `wip`、出すときに本名を付ける
+
+**slug は URL になり、`pnpm lab:add` を通した瞬間に恒久化する**（決定 0007）。何になるか分かる前に名前を
+付けると、**URL が嘘になる**。実際に起きた: `greeble`（平面に生やす）として始めたものが体に貼る方向へ
+変わり、slug だけが元の主題を指したまま残った。
+
+なので**制作中は `wip`**（並行するなら `wip-a` / `wip-b`）に置き、出すと決めた時点で本名へ改名する。
+
+```bash
+git mv lab/wip lab/<real-slug>
+sed -i 's/wip/<real-slug>/g' lab/<real-slug>/index.html lab/<real-slug>/vite.config.ts lab/<real-slug>/main.ts
+rm -rf public/lab/wip lab/.build-meta/wip.json
+pnpm lab:build <real-slug>
+```
+
+**忘れられないように `pnpm lab:add` が `wip*` を拒否する**（`WORKSPACE_SLUGS` / `scripts/lib/lab.ts`）。
+拒否のメッセージに上の手順が入っている。`wipe` のような本物のタイトルは通る。
+
+落選案: 「いま見ているもの」を `/lab/current/` のような固定パスで配信する。指す先という状態を
+リポジトリに増やすことになり、並行して作ると破綻する。改名は数行で済むので、規約だけで足りる。
+
+**dev サーバーの URL は slug を含まない**（`http://localhost:5173/`）ので、そもそも改名の影響を受けない。
+`strictPort` を入れてあるので、古いサーバーが 5173 を掴んでいたら**黙って別ポートにずれず落ちる**。
+
 ```bash
 pnpm new flow-field "Flow field with curl noise"
 #   lab/flow-field/ に雛形（OGP 入り index.html / main.ts / shader.glsl）

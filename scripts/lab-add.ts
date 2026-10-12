@@ -17,7 +17,7 @@ import {
   applyHeadFromMd, formatLabMd, inferMedium, inferTags, labMdPath, mergeFrontmatter, readLabMd, readManifest,
   titleFromIndexHtml, writeManifest, type LabFrontmatter, type MediaEntry,
 } from './lib/content.ts';
-import { labDir, repoRoot, sketchFiles, SLUG_PATTERN } from './lib/lab.ts';
+import { labDir, repoRoot, sketchFiles, SLUG_PATTERN, WORKSPACE_SLUGS } from './lib/lab.ts';
 import { encodeVideo, extractFrame, probeVideo, toWebp } from './lib/media.ts';
 import { createR2, objectExists, putObject, type R2 } from './lib/r2.ts';
 
@@ -42,6 +42,17 @@ if (!slug || positionals.length > 1) {
   fail('usage: pnpm lab:add <slug> [--video <mp4>] [--poster <image>] [--title "<title>"] [--dry-run] [--no-push]');
 }
 if (!SLUG_PATTERN.test(slug)) fail(`slug must look like flow-field: ${slug}`);
+if (WORKSPACE_SLUGS.test(slug)) {
+  fail(
+    `"${slug}" is a workspace slug, not a title. The slug becomes the URL and is permanent (decision 0007).
+` +
+      `  Rename it first:  git mv lab/${slug} lab/<real-slug>
+` +
+      `  then fix the slug inside index.html / vite.config.ts / main.ts, delete public/lab/${slug}/,
+` +
+      `  and run: pnpm lab:build <real-slug>`,
+  );
+}
 if (!values.video && !values.poster) fail('give --video <mp4> (poster is taken from it) or --poster <image>, or both');
 for (const path of [values.video, values.poster]) if (path && !existsSync(path)) fail(`file not found: ${path}`);
 

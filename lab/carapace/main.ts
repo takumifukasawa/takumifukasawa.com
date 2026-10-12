@@ -8,7 +8,8 @@
 //   subdivide.ts  footprints (recursive rectangular subdivision) -- now read as UV, not as ground
 //   height.ts     per-cell hash heights (not noise -- noise reads as terrain)
 //   growth.ts     which block rises when, and the curve it rises on
-//   surface.ts    THE difference: where a UV rectangle lands in the world, and which way is up there
+//   surface.ts    THE difference: where a UV rectangle lands on pod.glb, and which way is up there
+//   pod.blender.py  how pod.glb was made (parametric grid, so u runs around and v along, one seam)
 // Everything here is plumbing: scene, camera, light, the render loop.
 //
 // The whole piece is a loop. Every time-dependent value is a function of (time mod loopPeriod) with no
@@ -28,7 +29,8 @@ import { createDebug } from './debug.ts';
 import { loadParams } from './params.ts';
 import { createPost } from './post.ts';
 import { subdivide } from './subdivide.ts';
-import { createSurface } from './surface.ts';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { createMeshSurface } from './surface.ts';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 
@@ -92,7 +94,15 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-const surface = createSurface(params);
+// The body is a mesh, so nothing can be placed until it has loaded. Everything below is wired up first
+// and the loop only starts once the geometry is in.
+const gltf = await new GLTFLoader().loadAsync(new URL('./pod.glb', import.meta.url).href);
+let geometry: THREE.BufferGeometry | undefined;
+gltf.scene.traverse((child) => {
+  if (!geometry && (child as THREE.Mesh).isMesh) geometry = (child as THREE.Mesh).geometry;
+});
+if (!geometry) throw new Error('pod.glb has no mesh');
+const surface = createMeshSurface(geometry, params);
 
 let field: Blocks[] = [];
 
@@ -109,9 +119,11 @@ const rebuild = () => {
   ground.position.y = -radius * 1.9;
   controls.target.set(0, 0, 0);
 
-  orbit['radius'] = radius * 5.2;
-  orbit['height'] = radius * 1.1;
-  orbit['azimuth'] = Math.PI * 0.26;
+  // The body is elongated, so its bounding sphere is much bigger than what it actually fills. Framing off
+  // the sphere leaves it small and lost in the middle of the frame.
+  orbit['radius'] = radius * 2.9;
+  orbit['height'] = radius * 0.65;
+  orbit['azimuth'] = Math.PI * 0.08;
 
   key.position.set(-1, 2.2, 1.6).multiplyScalar(radius * 2);
   key.shadow.camera.left = -radius * 1.8;

@@ -34,11 +34,9 @@ export const SCHEMA = {
   'rise': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction of the period spent rising
   'fall': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction spent sinking back
   'overshoot': { 'folder': 'motion', 'min': 0, 'max': 3, 'step': 0.05 }, // how far the rise goes past full height
-  // body (surface.ts) -- the UV domain above is wrapped onto this
-  'radius': { 'folder': 'body', 'min': 1, 'max': 20, 'step': 0.1 },
-  'lumps': { 'folder': 'body', 'min': 0, 'max': 0.6, 'step': 0.01 }, // how far from a sphere
-  'lumpScale': { 'folder': 'body', 'min': 0.5, 'max': 8, 'step': 0.1 }, // size of the lumps
-  'breathe': { 'folder': 'body', 'min': 0, 'max': 0.3, 'step': 0.005 }, // amplitude of the pulse
+  // body (surface.ts) -- the UV domain above is wrapped onto pod.glb
+  'radius': { 'folder': 'body', 'min': 1, 'max': 20, 'step': 0.1 }, // the mesh is scaled to this
+  'breathe': { 'folder': 'body', 'min': 0, 'max': 0.3, 'step': 0.005 }, // pulse along the normal
   // look (blocks.ts, main.ts)
   'barAspect': { 'folder': 'look', 'min': 1, 'max': 12, 'step': 0.1 }, // how elongated a cell must be to glow
   'barRate': { 'folder': 'look', 'min': 0, 'max': 1, 'step': 0.01 }, // fraction of those that actually do
@@ -77,7 +75,7 @@ export type Params = Record<ParamKey, number>;
 export const LIVE_KEYS: ParamKey[] = [
   'loopPeriod', 'rise', 'fall', 'overshoot',
   'exposure', 'camSwing',
-  'radius', 'lumps', 'lumpScale', 'breathe',
+  'radius', 'breathe',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',

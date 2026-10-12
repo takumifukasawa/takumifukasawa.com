@@ -3,13 +3,14 @@
 <!-- 最終更新は絶対日付で。session-handoff が更新し、session-catchup が最初に読む。
      長期タスクの機械可読な進行状態は .harness/state/ に置き、ここには人間向けの要約だけ書く。 -->
 
-最終更新: 2026-10-11
+最終更新: 2026-10-12
 
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-sketch 001 は作ったが出さないと決めて `lab-archives/` へ棚上げした（決定 0006）。**いま `lab/greeble/` を作っている最中**で、
-同時に **slug から連番を外すリファクタが未コミットで進行中**（下の「進行中の作業」）。`lab:add` の本番初回はまだ通っていない。
+最初の sketch は作ったが出さないと決めて `lab-archives/mirror-sphere/` へ棚上げした（決定 0006）。
+**いま `lab/greeble/` を作っている最中**で、動くところまで来ている（続きは下の「greeble の現在地」）。
+**`lab:add` の本番初回はまだ通っていない。ここが唯一の未検証な一本道。**
 
 ## 別の PC で再開するとき（最初にやること）
 
@@ -32,47 +33,63 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 | 項目 | 状態 | 出典 |
 |---|---|---|
-| 決定 0001〜0006 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005 / 0006 は 2026-10-11） | `decisions/`, `spec/` |
-| 検査 | **`lab build in sync` が落ちている**（`lab/greeble/` が未ビルド。作業中なら正常）。他は pass。すべて pre-commit で走る。**件数は叩いて確かめる**（ここに書くと腐る） | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
+| 決定 0001〜0008 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005〜0007 は 2026-10-11、0008 は 2026-10-12） | `decisions/`, `spec/` |
+| 検査 | **全部 pass。件数は叩いて確かめる**（ここに書くと腐る）。`artifacts run` だけ `fast` ではない = **pre-commit では走らない**ので、公開前に `harness check`（`--fast` なし）を 1 回通すこと | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
-| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（sketch 002）で commit / push まで通すのが残り** | 計画 0-8 |
+| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（`lab/greeble/`）で commit / push まで通すのが残り** | 計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
 | R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | `lab/greeble/`（**未追跡・作業中**）。001-mirror-sphere は `lab-archives/mirror-sphere/` へ棚上げ。番号の扱いは決定 0006 を改訂中 | `git status --short`、決定 0006 |
+| `lab/` の中身 | `lab/greeble/`（コミット済み・作業中）。棚上げ分は `lab-archives/mirror-sphere/`。**slug に連番は無い**（決定 0007） | `ls lab/`、決定 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **進行中のリファクタを畳む**（下の「進行中の作業」）。`lab build in sync` が通るところまで。順序制約: **これを先にしないと、以降の失敗が作品側かリファクタ側か切り分けられない。**
-2. **人間: `lab/greeble/` を仕上げる。** 技術的コアは自分で書く（決定 0005）。
-3. 録画したら `pnpm lab:add <slug> --video <mp4>`（まず `--dry-run` で中身を見る）。
-   **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。**ここが唯一の未検証な一本道。**
-4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/<slug>`）を確かめる。下の実測表の残りもここで埋まる。
-5. AI 側で残っているもの: ブラウザでの動作確認（mangle 後の作品、`_shell.js` の `h` キー）。
+1. **人間: `lab/greeble/` を目で見る。** `pnpm dev:lab greeble` → http://localhost:5173/ 。
+   順序制約: **動きは一度も人間の目で確認されていない**（下の「greeble の現在地」）。これを先にしないと、
+   以降の調整が「直した」のか「元から見えていなかった」のか切り分けられない。
+2. **greeble を仕上げる。** ノブは Tweakpane で回して `save to params.json` を押す（値はコードに書かない）。
+   足すなら発光バー / 速度方向ストレッチのパーティクル / DOF / 色収差（参照元にあって未実装）。
+3. 録画したら `pnpm lab:add greeble --video <mp4>`（まず `--dry-run` で中身を見る）。
+   **これが `lab:add` の本番初回**なので、AI と一緒に R2 / manifest / md / commit / push を確かめる。
+   直前に `harness check`（`--fast` なし）で `artifacts run` を通しておく。
+4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble`）を確かめる。下の実測表の残りもここで埋まる。
+5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
 6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
-## 進行中の作業（2026-10-11 時点で未コミット。AI が書いたものではない）
+## greeble の現在地（次のセッションもここから続ける）
 
-**slug から連番を外すリファクタ。** `git status --short` で見える。畳むまで検査は赤いままになる。
+動いていて、ビルド成果物も `artifacts run` を通っている。**残っているのは人間の目での確認と詰め。**
 
-| | |
+| ファイル | 役割 |
 |---|---|
-| 変更済み | docs 13 本 + `scripts/`（`new.ts` / `lab.ts` / テスト 3 本）+ `src/content.config.ts` / `src/lib/media.ts` + `lab/AGENTS.md` |
-| ステージ済み | `lab-archives/001-mirror-sphere/` → `lab-archives/mirror-sphere/` のリネーム |
-| 未追跡 | `lab/greeble/`（`index.html` / `main.ts` / `vite.config.ts` / `time/`） |
-| 検査 | `lab build in sync` が fail（`public/lab/greeble/` が未ビルド） |
+| `subdivide.ts` | 再帰矩形分割（BSP）。長辺を 85% の確率で切り、切り位置を中央からずらし、確率で早期打ち切り / セルを落とす |
+| `height.ts` | セルごとのハッシュ。小セルの一部だけをマストとして突出させる |
+| `growth.ts` | 位相オフセット（放射状 + ハッシュ）と ease-out-back。両端が 0 なのでループが厳密に閉じる |
+| `hash.ts` | 上 2 つが共有する 32bit ミックス |
+| `params.json` | **ノブの値はここだけ。`.ts` に値は 1 つも無い** |
+| `params.ts` | スキーマ（キー・範囲・フォルダ）。型も検証も pane もここから導出 |
+| `blocks.ts` / `main.ts` / `debug.ts` | 配線（three の scene、instancing、行列詰め、Tweakpane） |
 
-**揃っていないように見える点**（次のセッションはここから確かめる）: 改訂後の決定 0006 は
-「番号を持つのは `lab/` だけ」「`001-greeble` があれば `001-something-else` も弾く」と書いているが、
-`docs/coding.md` は `lab/<slug>/` に書き換わっていて、実際のディレクトリも `lab/greeble/` で番号が無い。
-**0006 の本文と実装のどちらが正か**は人間に聞く（下の「未確定事項」）。
+**AI との分担について**: 決定 0005 では核（procedural logic）を人間が書くことになっているが、
+**この sketch については人間の明示的な指示（「一旦作り切ってみてほしい」）で AI が書き切った**。
+例外であって方針変更ではない。3 本は独立したファイルなので、任意の 1 本だけ自分で書き直せる形にしてある。
+
+### 確認できていないこと（ここから始める）
+
+- **動いているところを人間が見ていない。** ロジックは Node で数値的に検証した（ループ誤差 6.7e-15、
+  周期を 240 分割して静止する瞬間が 0%）が、自動操作で開いたタブは `requestAnimationFrame` が止まるので
+  画面での確認は取れていない（`learnings.md` 2026-10-12）
+- **保存ボタンを pane から押していない。** エンドポイントは `curl` で検証済み（正常系・不正な POST の 400 とも）だが、
+  ボタン → fetch → Vite のリロードという一連は未確認
+- 参照元（Unity 6 の起動画面）にあって未実装: 発光するバー、速度方向ストレッチのパーティクル、被写界深度、色収差。
+  **幾何だけで成立するかを先に見るため意図的に外した**
 
 ### P0 で必ず実測するもの（未確認のまま進めている前提）
 
@@ -86,15 +103,16 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 ## 未確定事項（人間の判断待ち）
 
-- **連番の設計**: 改訂中の決定 0006 の本文と、`coding.md` / 実際のディレクトリ名が食い違っている（上の「進行中の作業」）。どちらが正か
 - 「説明の文章を書かない」を agent-harness へ昇格させるか（2026-10-11 保留）。いまはこの repo の `AGENTS.md` のみ。昇格させるなら断定形ではなく条件つき（成果物が「説明の要るもの」か「現物が語るもの」かを先に確認する形）に書き換える
 - フォント・配色・レイアウトの方向性（P1 着手時に決める）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
 
-### 2026-10-11 に決めたことの置き場（本文はそれぞれの doc にある）
+### 2026-10-11〜12 に決めたことの置き場（本文はそれぞれの doc にある）
 
 | 決めたこと | どこに書いたか |
 |---|---|
-| 没 sketch の置き場（`lab-archives/`。番号は返さない） | `decisions/0006` |
+| 没 sketch の置き場（`lab-archives/<slug>/`） | `decisions/0006`（番号の節は 0007 で廃止） |
+| sketch の識別子から連番を外す（`lab/<slug>/`） | `decisions/0007` |
+| ビルド成果物をヘッドレスで開く検査 / property mangling を既定で切る | `decisions/0008`、`coding.md`、`architecture.md` の不変条件表 |
 | AI にどこまで書かせるか（線は「道具か主題か」） | `decisions/0005` |
 | 配信を Pages → Workers Static Assets | `decisions/0001` の「やり直す条件 2」に発動を追記。設定値は `spec/site-v0.md`、制限と実測は `references/cloudflare-limits.md` |
 | `_shell.js` が計測も載せる（発火条件は導線の表示条件と別） | `decisions/0004` の 2026-10-11 の追記 |
@@ -163,6 +181,9 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 - `docs/tech-debt.md` — 2 件とも返済済。行は残してある（新規の負債は無い）
 - `docs/roles/` — harness の seed のまま。`task-orchestrate` を回す段階になったら読む
 - `docs/rules/README.md` — `lab/AGENTS.md` と `lab/core/AGENTS.md` を登録済み。`lab-archives/` に `AGENTS.md` は置いていない（棚上げしたソースに規律は要らない）
-- `docs/architecture.md` / `docs/glossary.md` — Pages → Workers の表記だけ直した。構造は変わっていない
+- `docs/architecture.md` — 2026-10-12 に不変条件の表へ `artifacts run` を 1 行足しただけ。構造は変わっていない
+- `docs/glossary.md` — `<NNN-slug>` → `<slug>` の置換のみ（決定 0007）
+- `docs/spec/` 3 本 — 同上。連番の置換と `no`（連番）フィールドの扱いだけ。仕様そのものは変えていない
 - `.harness/state/` — 使っていない（`task-orchestrate` を回していないため）
-- `harness status` — managed の drift 0、`harness diff` も差分なし。`doctor` の WARN 2 件は既知（Codex の deny hook が未信頼、`.harness/source.local` 由来）
+- `harness status` — managed の drift 0（2026-10-12 時点）。`doctor` の WARN 2 件は既知（Codex の deny hook が未信頼、`.harness/source.local` 由来）
+- **`.harness/checks.sh` は seed なので、`artifacts run` の追加は drift にならない**（プロジェクトが編集する領域）

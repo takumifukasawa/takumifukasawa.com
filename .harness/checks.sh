@@ -30,3 +30,5 @@ check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"
 check fast "lab head in sync"   "node scripts/check.ts lab-head-in-sync"
 check fast "media keys resolve" "node scripts/check.ts media-keys-resolve"
+# fast にしない: Chrome を起動するので数秒かかる。だが公開前には必ず通す（これだけが成果物そのものを動かす検査）。
+check      "artifacts run"      "node scripts/check-artifacts.ts"

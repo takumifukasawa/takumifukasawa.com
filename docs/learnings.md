@@ -5,6 +5,48 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-12 [harness候補] 自動操作で開いたタブは `requestAnimationFrame` が止まるので、アニメーションが「動いていない」ように見える
+
+- 症状: ブラウザ自動操作でページを開き、数秒待って 2 枚スクリーンショットを撮ると**1 ピクセルも違わない**。
+  アニメーションのロジックを疑って延々探すことになる。
+- 原因: 自動操作で開いたタブはフォアグラウンドにならない。`document.hidden === true` の間、
+  Chrome は `requestAnimationFrame` を止める。描画が 1 フレーム目で凍っているだけで、コードは正しい。
+- 対処 / 再発したら: まず `document.visibilityState` を見る（`javascript_tool` で 1 行）。
+  **動きの検証はブラウザに頼らず、時間の関数を Node 側で直接サンプリングする**のが速い
+  （位相関数なら「周期を N 分割して、動いている要素が 0 の瞬間があるか」を数値で出せる）。
+  スクリーンショットで確かめられるのは「静止画として正しいか」までだと割り切る（2026-10-12、greeble で踏んだ）。
+
+## 2026-10-12 [harness候補] Bash ツール経由のヒアドキュメントはバックスラッシュを 1 枚剥がす
+
+- 症状: スクリプトでソースを生成すると、書いたはずの「バックスラッシュ + n」が**実際の改行**になってファイルに入り、
+  `Unterminated string` や `Unterminated regexp literal` でビルドが落ちる。生成元のコードを何度見ても正しい。
+  **この項目自体、最初に書いたとき同じ理由で壊れた。**
+- 原因: `<<'PY'` のようにクォートしたヒアドキュメントでも、Bash ツールに渡る途中でバックスラッシュが 1 枚畳まれる。
+  Python / Node 側が受け取る時点で既にエスケープが 1 段落ちている。
+- 対処 / 再発したら: **生成するコードにバックスラッシュを含めない**。
+  正規表現は `new RegExp('...')` を避けて書き換える（例: 先頭のパス区切りを削るなら
+  `while (s.startsWith('/') || s.startsWith(sep)) s = s.slice(1)`）。
+  どうしても要るなら `chr(92)` / `String.fromCharCode(92)` で組み立てる。
+  書いた直後に `sed -n '<行>p'` で**その 1 行だけ目視する**と、ビルドまで行かずに気付ける（2026-10-12）。
+
+## 2026-10-12 three の組み込みマテリアルを使う sketch は property mangling を切る（dev では出ない）
+
+- 症状: `pnpm dev:lab` では完璧に動くのに、**ビルド成果物だけが真っ黒**になる。コンソールに
+  `TypeError: Cannot read properties of undefined (reading 'replace')` が 1 行だけ出て、スタックは
+  mangle 済みで読めない。作品のコードを疑って延々探すことになる。
+- 原因: 作品の `vite.config.ts` の `mangleProperties`（terser の `mangle.properties`）。
+  three は `#include <common>` のチャンク名を**シェーダーの文字列から取り出して** `ShaderChunk[name]` で引く。
+  mangle はオブジェクト側のキーだけを書き換えるので、文字列側と食い違って `undefined` になり、
+  最初のフレームの前に `.replace` で落ちる。`keep_quoted: true` は**ソースで引用されている名前しか**守らないので効かない。
+- 対処 / 再発したら: その sketch の `vite.config.ts` で `const mangleProperties = false;`。
+  **2026-10-12 以降、雛形の既定が `false` になった**（決定 0008）ので、新しい sketch で踏むのは
+  自分で `true` に戻したときだけ。
+  **`reserved` で塞ごうとしないこと。** 一度試して 3 回壊れた: `ShaderChunk[include]`（予約できる）→
+  `ShaderLib[shaderID]`（予約できる）→ `shaderIDs[material.type]`（**export されていない**）。
+  4 つ目を事前に列挙する手段が無く、公開 API の範囲では閉じられない。
+  **dev では絶対に再現しない。** `harness check` の `artifacts run` が成果物を実際に開いて捕まえる
+  （2026-10-12、greeble で踏んだ）。
+
 ## 2026-10-11 [harness候補] JSR のパッケージに依存した npm install は `@jsr` スコープの設定が無いと 404 で落ちる
 
 - 症状: `/plugin install` や `npm install` が
@@ -143,8 +185,8 @@
   12 月に雛形を作って 1 月に画像をアップロードすると**年が変わって URL が食い違い、`og:image` が 404 のまま残る**。
   X はカードをキャッシュし、Card Validator が廃止されているので**取り返しがつかない**。
 - 原因: 「URL が予測可能だから先に書ける」という利点に乗ったが、予測の材料に**実行時刻**が混ざっていた。
-- 対処 / 再発したら: 予測 URL に使う材料は、**scaffold 時と公開時で必ず同じ値になるもの**（slug、連番）だけにする。
-  日付・年・タイムスタンプは入れない。この件では R2 の key から年を外した（`lab/<NNN-slug>/...`）。
+- 対処 / 再発したら: 予測 URL に使う材料は、**scaffold 時と公開時で必ず同じ値になるもの**（slug）だけにする。
+  日付・年・タイムスタンプは入れない。この件では R2 の key から年を外した（`lab/<slug>/...`）。
 
 ## 2026-10-08 macOS で大文字小文字だけ違うファイル名へ「書いてから旧名を rm」すると新しいファイルが消える [harness候補]
 

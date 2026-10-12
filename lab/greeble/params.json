@@ -1,0 +1,20 @@
+{
+  "size": 24,
+  "depth": 13,
+  "minSide": 0.18,
+  "splitBias": 0.75,
+  "stopChance": 0.06,
+  "holeChance": 0.05,
+  "seed": 1,
+  "heightMin": 0.06,
+  "heightMax": 1.4,
+  "spikeRate": 0.06,
+  "spikeBoost": 1.2,
+  "storeys": 6,
+  "gap": 0.035,
+  "loopPeriod": 8,
+  "spread": 1,
+  "rise": 0.16,
+  "fall": 0.12,
+  "overshoot": 1
+}

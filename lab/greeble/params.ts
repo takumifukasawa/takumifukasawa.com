@@ -4,7 +4,10 @@
 //
 // Quoted keys throughout: terser mangles unquoted property names in the build, and these are read by
 // string (Tweakpane bindings, JSON keys). See the note in vite.config.ts.
-import saved from './params.json';
+// The import attribute is required by Node and accepted by Vite, so params.ts can also be imported from a
+// plain `node script.ts` -- which is how the loop is verified numerically (the browser cannot be trusted to
+// animate at all in an automated tab; docs/learnings.md 2026-10-12).
+import saved from './params.json' with { type: 'json' };
 
 // One table, three consumers: the Params type, the pane (debug.ts) and the completeness check below.
 // Every knob is a number -- keep it that way, or Params collapses to Record<string, unknown>.
@@ -30,14 +33,39 @@ export const SCHEMA = {
   'rise': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction of the period spent rising
   'fall': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction spent sinking back
   'overshoot': { 'folder': 'motion', 'min': 0, 'max': 3, 'step': 0.05 }, // how far the rise goes past full height
+  // look (blocks.ts, main.ts)
+  'barAspect': { 'folder': 'look', 'min': 1, 'max': 12, 'step': 0.1 }, // how elongated a cell must be to glow
+  'barRate': { 'folder': 'look', 'min': 0, 'max': 1, 'step': 0.01 }, // fraction of those that actually do
+  'barHeight': { 'folder': 'look', 'min': 0.02, 'max': 1, 'step': 0.01 }, // bars stay flat; 1 = same as the mass
+  'emissive': { 'folder': 'look', 'min': 0, 'max': 20, 'step': 0.1 }, // bar brightness; this is what bloom picks up
+  'exposure': { 'folder': 'look', 'min': 0.1, 'max': 4, 'step': 0.05 },
+  'camSwing': { 'folder': 'look', 'min': 0, 'max': 1.2, 'step': 0.01 }, // radians the camera swings per loop
+  // Lighting and fog, as multiples of `size` where they are distances, so they survive a change of scale.
+  // All live: the look is tuned by eye from the pane, and a rebuild per slider drag makes that unusable.
+  'keyLight': { 'folder': 'light', 'min': 0, 'max': 12, 'step': 0.1 },
+  'rimLight': { 'folder': 'light', 'min': 0, 'max': 12, 'step': 0.1 },
+  'ambient': { 'folder': 'light', 'min': 0, 'max': 4, 'step': 0.05 }, // hemisphere + environment together
+  'fogNear': { 'folder': 'light', 'min': 0.1, 'max': 6, 'step': 0.05 },
+  'fogFar': { 'folder': 'light', 'min': 0.5, 'max': 12, 'step': 0.1 },
+  // post (post.ts)
+  'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
+  'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
+  'bloomThreshold': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
+  'aberration': { 'folder': 'post', 'min': 0, 'max': 0.2, 'step': 0.002 }, // UV offset at the corners, so tiny
 } as const;
 
 export type ParamKey = keyof typeof SCHEMA;
 export type Params = Record<ParamKey, number>;
 
-// Changing anything in the footprints or heights folder invalidates data that is computed once per rebuild;
-// the motion folder (except spread, which feeds the precomputed delays) is read every frame.
-export const LIVE_KEYS: ParamKey[] = ['loopPeriod', 'rise', 'fall', 'overshoot'];
+// Knobs the render loop reads every frame. Everything NOT listed here feeds data that is computed once per
+// rebuild (footprints, heights, per-cell delays, materials), so changing it has to rebuild the field.
+// `spread` looks like motion but feeds the precomputed delays, so it is deliberately absent.
+export const LIVE_KEYS: ParamKey[] = [
+  'loopPeriod', 'rise', 'fall', 'overshoot',
+  'exposure', 'camSwing',
+  'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
+  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
+];
 
 export const loadParams = (): Params => {
   const values = saved as Record<string, unknown>;

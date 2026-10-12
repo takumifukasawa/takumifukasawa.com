@@ -16,5 +16,20 @@
   "spread": 1,
   "rise": 0.16,
   "fall": 0.12,
-  "overshoot": 1
+  "overshoot": 1,
+  "barAspect": 3.2,
+  "barRate": 0.6,
+  "emissive": 2.6,
+  "exposure": 1.6,
+  "camSwing": 0.22,
+  "bloomStrength": 0.5,
+  "bloomRadius": 0.5,
+  "bloomThreshold": 0.85,
+  "aberration": 0.03,
+  "keyLight": 5.0,
+  "rimLight": 2.2,
+  "ambient": 1.1,
+  "fogNear": 1.6,
+  "fogFar": 4.5,
+  "barHeight": 0.12
 }

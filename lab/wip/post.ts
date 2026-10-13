@@ -12,11 +12,12 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import aberrationFrag from './aberration.frag.glsl?raw';
 import type { Params } from './params.ts';
+import type { Tier } from './quality.ts';
 
 export type Post = {
   'composer': EffectComposer;
-  'setSize': (width: number, height: number) => void;
-  'apply': (params: Params) => void;
+  'setSize': (width: number, height: number, bloomScale: number) => void;
+  'apply': (params: Params, tier: Tier) => void;
 };
 
 export const createPost = (
@@ -38,8 +39,8 @@ export const createPost = (
   composer.addPass(bokeh);
 
   // The bloom pyramid runs at a fraction of the frame. It is a blur, so its resolution is invisible, and on
-  // a phone this is one of the cheapest things to give up (gamedev:mobile-audio-render).
-  const bloomScale = params['bloomScale'];
+  // a phone this is one of the cheapest things to give up (gamedev:mobile-audio-render). The fraction
+  // arrives through setSize rather than being captured here, because quality.ts lowers it further.
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
     params['bloomStrength'],
@@ -64,21 +65,24 @@ export const createPost = (
 
   return {
     'composer': composer,
-    'setSize': (width, height) => {
+    'setSize': (width, height, bloomScale) => {
       composer.setSize(width, height);
       // setSize, not `resolution.set`: assigning the vector leaves the pass's render targets at their old
       // size, so bloom silently stopped following window resizes. Scaled down because the bloom pyramid is
       // pure fill rate and nobody can see its resolution -- it is a blur.
-      bloom.setSize(width * bloomScale, height * bloomScale);
+      bloom.setSize(Math.max(1, width * bloomScale), Math.max(1, height * bloomScale));
     },
-    'apply': (next) => {
+    'apply': (next, tier) => {
       // The aperture knob is scaled here, not in params.json. three's shader computes
       //   dofblur = clamp((focus + viewZ) * aperture, -maxblur, maxblur)
       // where (focus + viewZ) is the distance from the focal plane in WORLD units -- about +-20 at this
       // field size. So the useful aperture is around 0.0005, which is unreadable in a slider and easy to
       // get wrong by a factor of ten (it was, the first time). The knob is 0..3; 1 means "the far edge of
       // the field reaches maxblur".
-      bokeh.enabled = next['dofAperture'] > 0;
+      // The tier can switch it off outright, which is the point of disabling the pass rather than zeroing
+      // the aperture: a device that cannot hold its frame rate should not be paying for the second
+      // geometry pass at all.
+      bokeh.enabled = tier['dof'] && next['dofAperture'] > 0;
       if (bokeh.enabled) {
         const uniforms = bokeh.materialBokeh.uniforms;
         uniforms['focus']!.value = next['size'] * next['dofFocus'];

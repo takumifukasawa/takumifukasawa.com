@@ -18,7 +18,8 @@ import type { Params } from './params.ts';
 // would make streaks weave between single blocks, which reads as noise.
 const GRID = 48;
 
-const COLOR = new THREE.Color(0x6fc8ff);
+// Reused, not reallocated: this is written from params every frame so the colour is a knob.
+const COLOR = new THREE.Color();
 
 // A soft disc for the head of each trail. Built as a DataTexture rather than from a canvas so that
 // createFlow can also be called from a plain `node` script -- which is how the flow is verified, there
@@ -141,24 +142,39 @@ export const createFlow = (params: Params): Flow => {
 
   const angle = () => (params['flowAngle'] * Math.PI) / 180;
 
-  // `scatter` fills the field at startup; otherwise the particle waits somewhere upstream and drifts in.
+  // Where the stream enters and leaves. One number, so the spawn band, the kill test and the fade cannot
+  // drift apart -- which is exactly how the stream broke before (see the lifetime note below).
+  const BOUND = () => size * 0.85;
+
+  // `scatter` fills the field at startup; otherwise the particle re-enters just outside the upstream edge.
   //
-  // The upstream wait is what keeps the stream steady. Spawning everything on a narrow edge band means a
-  // cohort crosses together, leaves together and is reborn together -- the stream then arrives in clumps
-  // with gaps between them, forever, because nothing ever breaks the phase.
+  // The band is thin and sits ON the edge, not in a deep reservoir upstream. A reservoir looks like it
+  // would stagger arrivals, and it does -- but only if a particle lives long enough to cross it, and the
+  // crossing time is set by the field size and the speed while the lifetime was a constant. Grow the
+  // field and the two silently stop agreeing: particles start dying out of sight, and the few that make
+  // it through arrive as a clump with an empty gap behind it. What actually keeps the stream steady is
+  // that the population's phases are spread once, at startup, and then preserved -- each particle cycles
+  // with the same period, so a spread set of phases stays spread.
   const spawn = (i: number, scatter: boolean) => {
     const a = angle();
     const dirX = Math.cos(a);
     const dirZ = Math.sin(a);
-    const half = size * 0.72;
-    const across = (Math.random() - 0.5) * 2 * half;
-    const along = scatter ? (Math.random() * 2 - 1) * half : half + Math.random() * size;
+    const bound = BOUND();
+    const across = (Math.random() - 0.5) * 2 * bound;
+    const along = scatter ? (Math.random() * 2 - 1) * bound : bound + Math.random() * size * 0.05;
     px[i] = -dirX * along - dirZ * across;
     pz[i] = -dirZ * along + dirX * across;
     vx[i] = dirX * params['flowSpeed'];
     vz[i] = dirZ * params['flowSpeed'];
-    age[i] = 0;
-    life[i] = 6 + Math.random() * 6;
+    // Lifetime in units of the crossing, not in seconds. At 1.0 a particle would reach the far edge
+    // exactly as it expired; the spread above that means most are retired by leaving the frame and a few
+    // turn over early, which is what keeps the population from marching in lockstep. A particle deflected
+    // around a raised plate travels further than the straight crossing, so the headroom is not optional.
+    const crossing = (2 * bound) / Math.max(params['flowSpeed'], 0.01);
+    life[i] = crossing * (1.3 + Math.random() * 0.9);
+    // Startup only: spread the phases, or every particle fades in on the same frame and the first thing
+    // the viewer sees is one synchronised pulse.
+    age[i] = scatter ? Math.random() * life[i]! : 0;
     // Collapse the whole history onto the new position. Without this the trail draws a line from wherever
     // the particle died to wherever it was reborn, straight across the field.
     for (let s = 0; s < slots; s++) {
@@ -204,6 +220,7 @@ export const createFlow = (params: Params): Flow => {
 
   const update = (deltaTime: number, plates: Plates, params: Params) => {
     rasterise(plates);
+    COLOR.setHex(params['flowColor']);
     head = (head + 1) % slots;
 
     const dt = Math.min(deltaTime, 1 / 20); // a stalled tab must not teleport the whole stream
@@ -213,7 +230,7 @@ export const createFlow = (params: Params): Flow => {
     const speed = params['flowSpeed'];
     const push = params['flowPush'];
     const swirl = params['flowSwirl'];
-    const bound = size * 0.85;
+    const bound = BOUND(); // the one place the edge is defined (see spawn)
     const step = size / GRID;
 
     for (let i = 0; i < count; i++) {
@@ -259,16 +276,35 @@ export const createFlow = (params: Params): Flow => {
       // Measured ALONG the flow, not from the origin. A radial bound kills particles that are still waiting
       // upstream, which forces them all back onto the same narrow spawn band and rebuilds the clumping the
       // staggered spawn exists to avoid.
-      const downstream = px[i]! * dirX + pz[i]! * dirZ;
-      const sideways = Math.abs(px[i]! * -dirZ + pz[i]! * dirX);
-      if (age[i]! > life[i]! || downstream > bound || sideways > bound) spawn(i, false);
+      let downstream = px[i]! * dirX + pz[i]! * dirZ;
+      let sideways = Math.abs(px[i]! * -dirZ + pz[i]! * dirX);
+      if (age[i]! > life[i]! || downstream > bound || sideways > bound) {
+        spawn(i, false);
+        // Re-measure: the fade below is a function of position, so reading the position the particle had
+        // before it was reborn would light it up at full brightness on its first frame back.
+        downstream = px[i]! * dirX + pz[i]! * dirZ;
+        sideways = Math.abs(px[i]! * -dirZ + pz[i]! * dirX);
+      }
 
       hist[(i * slots + head) * 2] = px[i]!;
       hist[(i * slots + head) * 2 + 1] = pz[i]!;
 
-      // Fade in and out at the ends of the life, or trails appear and vanish as hard pops.
-      const t = age[i]! / life[i]!;
-      const fade = Math.min(1, t * 6) * Math.min(1, (1 - t) * 4) * params['flowBrightness'];
+      // Fade by POSITION in the field, not by age.
+      //
+      // Age-based fading made the look depend on three numbers that have no reason to agree -- lifetime,
+      // speed and field size. It also could not fade a particle out at the edge it actually leaves by:
+      // the kill test above is positional, so a particle retired at the boundary vanished at whatever
+      // brightness its age happened to give it. Against the fogged far edge that reads as a pop.
+      //
+      // u runs 0 at the upstream edge to 1 at the downstream one; v is the sideways distance. The same
+      // bound drives all three, so entering, leaving and dying are the same event by construction.
+      const u = (downstream + bound) / (2 * bound);
+      const v = sideways / bound;
+      const fade =
+        Math.max(0, Math.min(1, u * 8)) *
+        Math.max(0, Math.min(1, (1 - u) * 8)) *
+        Math.max(0, Math.min(1, (1 - v) * 8)) *
+        params['flowBrightness'];
       const halfWidth = params['flowWidth'] / 2;
       const base = i * slots * 2;
 
@@ -329,7 +365,14 @@ export const createFlow = (params: Params): Flow => {
         }
       }
     }
-    headMaterial.size = params['flowHead'];
+    // Relative to the ribbon, not an absolute world size. The two were independent numbers, so narrowing
+    // the ribbon left the cap behind at whatever size it had and the head stopped fitting the trail --
+    // which is only ever visible as "the sizes do not match", never as a number being wrong. As a
+    // multiple, one knob is the ribbon's width and the other is how far the cap overhangs it.
+    //
+    // The disc's alpha is (1 - d*d)^2, so its bright core is about 55% of the quad: a multiple near 1.8
+    // puts the core flush with the ribbon, and anything above that reads as a glow around the head.
+    headMaterial.size = params['flowWidth'] * params['flowHead'];
     geometry.getAttribute('position').needsUpdate = true;
     geometry.getAttribute('color').needsUpdate = true;
     headGeometry.getAttribute('position').needsUpdate = true;

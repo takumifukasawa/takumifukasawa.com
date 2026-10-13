@@ -205,3 +205,16 @@
 - 対処 / 再発したら: 作品で R2 から `.glb` / `.hdr` / `.ktx2` / `.bin` などを読むようになったら、まず `curl -sI` で `cf-cache-status` を見る。
   `DYNAMIC` なら Cloudflare の Cache Rules で `media.takumifukasawa.com` を「Eligible for cache」にする（無料プランで可）。
   確かめるときは R2 の `lab/` 以下ではなく `_test/` に置いて、終わったら消す（`lab/` の key は上書きしない約束なので試し書きに使わない）。
+
+## 2026-10-13 terser の `booleans_as_integers` が three の HDRLoader を壊す（dev では出ない）
+
+- 症状: `lab/wip` のビルド成果物が `artifacts run` で落ちる。`[console] THREE.Error: THREE.HDRLoader: Bad File Format:
+  missing image size specifier`。`pnpm dev:lab wip` では正常。`minify: false` にすると通る。
+- 原因: `booleans_as_integers: true` は `true`/`false` を `1`/`0` に書き換える。HDRLoader は Radiance ヘッダを
+  行単位で読み、行の終端を boolean の同一性比較で判定しているので、整数になると一致しなくなり
+  画像サイズ指定子に到達する前に抜ける。**この作品のコードは無関係**で、`mangleProperties` を切ったのと同じ理由。
+- 対処 / 再発したら: 作品が three の**ローダー**（HDRLoader / EXRLoader / GLTFLoader ...）を使い、
+  dev で動いて成果物が落ちるなら、**まず `lab/<slug>/vite.config.ts` の `booleans_as_integers` を false にする**。
+  それで直らなければ compress オプションを二分探索する（`minify: false` で通ることを先に確認してから。
+  オプションを 1 つずつ戻してビルド → `node scripts/check-artifacts.ts <slug>` を回す）。
+  この手の壊れ方は dev では絶対に出ないので、判定は必ず成果物側で行う（決定 0008）。

@@ -9,6 +9,11 @@
 // animate at all in an automated tab; docs/learnings.md 2026-10-12).
 import saved from './params.json' with { type: 'json' };
 
+// One knob's declaration. A colour is `view: 'color'` and still a NUMBER (0xRRGGBB) -- Tweakpane binds a
+// number as a colour picker, so the whole palette becomes tunable without Params turning into
+// Record<string, number | string> and taking every arithmetic site in the sketch with it.
+export type Spec = { 'folder': string; 'min'?: number; 'max'?: number; 'step'?: number; 'view'?: 'color' };
+
 // One table, three consumers: the Params type, the pane (debug.ts) and the completeness check below.
 // Every knob is a number -- keep it that way, or Params collapses to Record<string, unknown>.
 export const SCHEMA = {
@@ -76,7 +81,10 @@ export const SCHEMA = {
   'flowTurn': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // how fast a streak can change heading
   'flowTrail': { 'folder': 'flow', 'min': 1, 'max': 32, 'step': 1 }, // spine segments; rebuilds the geometry
   'flowWidth': { 'folder': 'flow', 'min': 0.01, 'max': 1.5, 'step': 0.01 }, // ribbon width at the head
-  'flowHead': { 'folder': 'flow', 'min': 0, 'max': 2, 'step': 0.01 }, // the camera-facing disc at the tip
+  // The camera-facing disc at the tip, as a MULTIPLE of flowWidth. 0 removes it; about 1.8 puts its bright
+  // core flush with the ribbon; above that it reads as a glow around the head. Relative rather than
+  // absolute so that narrowing the ribbon narrows the cap with it instead of leaving it mismatched.
+  'flowHead': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 },
   'flowBrightness': { 'folder': 'flow', 'min': 0, 'max': 4, 'step': 0.05 },
   'flowAltitude': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // above the fixed greeble, below the raised
   // post (post.ts)
@@ -89,11 +97,40 @@ export const SCHEMA = {
   'dofAperture': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.05 },
   'dofFocus': { 'folder': 'post', 'min': 0.2, 'max': 4, 'step': 0.02 }, // focal distance, as a multiple of size
   'dofMaxBlur': { 'folder': 'post', 'min': 0, 'max': 0.03, 'step': 0.001 },
+  // Surfaces. Separate from the colours because roughness and metalness are what decide whether the
+  // environment map is visible at all: at metalness 0 a standard material ignores it entirely.
+  'massRough': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  'massMetal': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  'barRough': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  'barMetal': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  'groundRough': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  'groundMetal': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
+  // How strongly the HDRI shows up, independent of the hemisphere fill. These used to be one knob
+  // (environmentIntensity = ambient * 0.6), so the reflections could not be dialled in without also
+  // moving the flat fill -- and with a real HDRI the reflection IS the look.
+  'envIntensity': { 'folder': 'material', 'min': 0, 'max': 4, 'step': 0.05 },
+  // The palette. Every colour in the sketch is here; none is written in a .ts file.
+  'bgColor': { 'folder': 'colour', 'view': 'color' }, // background AND fog -- they must match or a horizon appears
+  'massColor': { 'folder': 'colour', 'view': 'color' },
+  'barColor': { 'folder': 'colour', 'view': 'color' }, // the bars' base colour, underneath the emission
+  'barEmissive': { 'folder': 'colour', 'view': 'color' },
+  'groundColor': { 'folder': 'colour', 'view': 'color' },
+  'flowColor': { 'folder': 'colour', 'view': 'color' },
+  'keyColor': { 'folder': 'colour', 'view': 'color' },
+  'rimColor': { 'folder': 'colour', 'view': 'color' },
+  'skyColor': { 'folder': 'colour', 'view': 'color' }, // hemisphere, from above
+  'earthColor': { 'folder': 'colour', 'view': 'color' }, // hemisphere, bounced from below
+  // Dynamic resolution (quality.ts). 1 = let the sketch give up resolution when frames run long.
+  // Tier 0 is exactly what params.json says, so this can only ever take quality away, never add it.
+  'autoQuality': { 'folder': 'perf', 'min': 0, 'max': 1, 'step': 1 },
+  // Frame time in ms above which it steps down. 24 is about 42 fps; below that the motion stops reading
+  // as motion. The step back up is at 72% of this, and the gap between the two is what stops it flapping.
+  'qualityMs': { 'folder': 'perf', 'min': 14, 'max': 60, 'step': 1 },
   // The biggest lever on a phone. Post is fill-rate bound (the DOF blur alone is 41 taps per pixel), and a
   // modern phone reports devicePixelRatio 3, so the cap here decides how many pixels all of that runs over.
   // Capped against the device's own ratio, never multiplied past it.
   'pixelRatio': { 'folder': 'perf', 'min': 0.5, 'max': 2, 'step': 0.1 }
-} as const;
+} as const satisfies Record<string, Spec>;
 
 export type ParamKey = keyof typeof SCHEMA;
 export type Params = Record<ParamKey, number>;
@@ -107,14 +144,45 @@ export const LIVE_KEYS: ParamKey[] = [
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
-  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
-  'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',
+  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'aberration',
+  'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio', 'autoQuality', 'qualityMs',
+  // Materials and colours are assigned onto the existing objects every frame, so none of them rebuilds
+  // the field. `emissive` used to: it was read once when the material was made, which meant the one knob
+  // the bloom threshold has to be balanced against was the one that cost a full rebuild to try.
+  'emissive', 'massRough', 'massMetal', 'barRough', 'barMetal', 'groundRough', 'groundMetal', 'envIntensity',
+  'bgColor', 'massColor', 'barColor', 'barEmissive', 'groundColor', 'flowColor',
+  'keyColor', 'rimColor', 'skyColor', 'earthColor',
 ];
+
+export const isColor = (key: ParamKey) => (SCHEMA[key] as Spec)['view'] === 'color';
+
+// A colour is a number in memory and "#rrggbb" in params.json. The file is the one place a human reads
+// these values back, and 7042176 is not a colour anybody can read.
+export const toJSON = (params: Params): Record<string, number | string> => {
+  const out: Record<string, number | string> = {};
+  for (const key of Object.keys(SCHEMA) as ParamKey[]) {
+    out[key] = isColor(key) ? '#' + params[key].toString(16).padStart(6, '0') : params[key];
+  }
+  return out;
+};
+
+const HEX = /^#[0-9a-fA-F]{6}$/;
 
 export const loadParams = (): Params => {
   const values = saved as Record<string, unknown>;
-  const missing = (Object.keys(SCHEMA) as ParamKey[]).filter((key) => typeof values[key] !== 'number');
+  const params = {} as Params;
+  const missing: string[] = [];
+  for (const key of Object.keys(SCHEMA) as ParamKey[]) {
+    const raw = values[key];
+    if (typeof raw === 'number') {
+      params[key] = raw;
+    } else if (isColor(key) && typeof raw === 'string' && HEX.test(raw)) {
+      params[key] = parseInt(raw.slice(1), 16);
+    } else {
+      missing.push(key);
+    }
+  }
   // Loud and early: a missing key would otherwise reach the geometry as NaN and render nothing at all.
-  if (missing.length > 0) throw new Error(`params.json is missing or non-numeric: ${missing.join(', ')}`);
-  return { ...(values as Params) };
+  if (missing.length > 0) throw new Error(`params.json is missing or unreadable: ${missing.join(', ')}`);
+  return params;
 };

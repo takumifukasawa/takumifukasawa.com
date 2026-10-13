@@ -16,6 +16,7 @@ export type Blocks = {
   'heights': number[];
   'delays': number[];
   'plateIdx': Int32Array; // which plate each cell belongs to, for the pointer lift
+  'bar': boolean; // which of the two materials this half of the field wears, so the palette can find it
 };
 
 // A few of the long thin footprints become emissive bars. Picking them by *aspect ratio* and not by hash
@@ -46,6 +47,7 @@ const createBlocks = (
   params: Params,
   material: THREE.Material,
   plates: Plates,
+  bar: boolean,
   heightScale = 1,
 ): Blocks => {
   // InstancedMesh wants at least one slot; count is what actually gets drawn.
@@ -62,6 +64,7 @@ const createBlocks = (
     'heights': cells.map((cell) => cellHeight(cell, params) * heightScale),
     'delays': cells.map((cell) => cellDelay(cell, params)),
     'plateIdx': Int32Array.from(cells, (cell) => plates['indexOf'](cell)),
+    'bar': bar,
   };
 };
 
@@ -102,25 +105,38 @@ export const createField = (cells: Cell[], params: Params, surface: Surface, pla
     (isBar(cell, params) ? bars : mass).push(cell);
   }
 
-  // Low metalness on purpose. At 0.9 a standard material has almost no diffuse term, so it stops responding
-  // to the directional lights and only shows what the environment map reflects -- which, with
-  // RoomEnvironment as a stand-in for a real HDRI, is nearly nothing. Painted metal reads better here than
-  // bare metal, and it is what lets the key / rim knobs actually do something.
-  const massMaterial = new THREE.MeshStandardMaterial({ color: 0x6b7680, roughness: 0.55, metalness: 0.2 });
-  const barMaterial = new THREE.MeshStandardMaterial({
-    color: 0x120a07,
-    roughness: 0.3,
-    metalness: 0.6,
-    emissive: 0xff5a28,
-    emissiveIntensity: params['emissive'],
-  });
+  // Nothing about the look is decided here: both materials are built empty and then written every frame
+  // by applyMaterials from params, so colour, roughness and metalness are knobs rather than code.
+  const massMaterial = new THREE.MeshStandardMaterial();
+  const barMaterial = new THREE.MeshStandardMaterial();
 
   // Bars are kept flat. Given the same height as everything else they come out as thin glowing *walls*,
   // which reads as signage; lying along the ground they read as traces on a board, which is the reference.
   return [
-    createBlocks(mass, params, massMaterial, plates),
-    createBlocks(bars, params, barMaterial, plates, params['barHeight']),
+    createBlocks(mass, params, massMaterial, plates, false),
+    createBlocks(bars, params, barMaterial, plates, true, params['barHeight']),
   ];
+};
+
+// Every frame. All of this is uniform assignment -- no shader recompiles, no buffer reallocation -- so the
+// whole palette can be live. Metalness in particular has to be live to be tunable at all: a metal with
+// nothing to reflect renders black, so its usable range depends entirely on the environment map, and
+// finding the pair by eye is the only way.
+export const applyMaterials = (field: Blocks[], params: Params) => {
+  for (const blocks of field) {
+    const material = blocks['mesh'].material as THREE.MeshStandardMaterial;
+    if (blocks['bar']) {
+      material.color.setHex(params['barColor']);
+      material.roughness = params['barRough'];
+      material.metalness = params['barMetal'];
+      material.emissive.setHex(params['barEmissive']);
+      material.emissiveIntensity = params['emissive'];
+    } else {
+      material.color.setHex(params['massColor']);
+      material.roughness = params['massRough'];
+      material.metalness = params['massMetal'];
+    }
+  }
 };
 
 export const disposeField = (field: Blocks[]) => {

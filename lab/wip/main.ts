@@ -28,13 +28,16 @@
 
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { createField, disposeField, updateBlocks, type Blocks } from './blocks.ts';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
+import envUrl from './env.hdr?url';
+import { applyMaterials, createField, disposeField, updateBlocks, type Blocks } from './blocks.ts';
 import { createFlow, type Flow } from './flow.ts';
 import { collectPlates, updateLift, type Plates } from './lift.ts';
 import { createPointer } from './pointer.ts';
 import { createDebug } from './debug.ts';
 import { loadParams } from './params.ts';
 import { createPost } from './post.ts';
+import { createQuality } from './quality.ts';
 import { subdivide } from './subdivide.ts';
 import { createPlaneSurface } from './surface.ts';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
@@ -55,17 +58,29 @@ renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed in
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x05070a);
+// Colours, intensities and fog distances are all written per frame from params (every one of them a
+// LIVE_KEY), so the look can be tuned by eye from the pane and saved. Nothing about the look is decided in
+// this file -- these two only need to be the right KIND of object for the per-frame writes to land on.
+scene.background = new THREE.Color();
+scene.fog = new THREE.Fog(0, 1, 2);
 
 // Metal with nothing to reflect renders black, so a metallic material needs an environment before it is a
-// material at all. RoomEnvironment is three's built-in stand-in; swapping it for a real HDRI later changes
-// only this block.
+// material at all -- and with the floor going metallic, the environment IS the look.
+//
+// Two stages, because the HDRI arrives over the network: RoomEnvironment is three's procedural stand-in
+// and it is ready synchronously, so the first frames are lit rather than black, and the real map replaces
+// it when it lands. env.hdr is a 512-wide equirect built by `node scripts/prep-hdri.ts` from a Poly Haven
+// source (CC0) -- 512 because PMREMGenerator resamples whatever it is given down to a 256-per-face cube,
+// so a 1k source is 1.2 MB spent on data that is filtered away before it reaches a pixel.
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-// Intensities and fog distances are applied per frame from params (all LIVE_KEYS), so the look can be
-// tuned by eye from the pane and saved. Nothing about the look is decided in this file.
-const FOG_COLOR = 0x05070a;
-scene.fog = new THREE.Fog(FOG_COLOR, 1, 2);
+new HDRLoader().load(envUrl, (texture) => {
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  const previous = scene.environment;
+  scene.environment = pmrem.fromEquirectangular(texture).texture;
+  previous?.dispose();
+  texture.dispose();
+});
 
 // Far enough back that the whole body is in frame: greeble only reads as greeble at the density scale,
 // and from close up the identical geometry reads as architecture.
@@ -80,23 +95,21 @@ const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200); // fov is set per f
 const orbit = { 'radius': 1, 'height': 1, 'azimuth': 0 };
 const target = new THREE.Vector3();
 
-const key = new THREE.DirectionalLight(0xdfefff, 1);
+const key = new THREE.DirectionalLight(0xffffff, 1);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
 scene.add(key);
 
 // Warm rim from the far side. Without it every block reads as one flat tone from the key light and the
 // field loses its edges; this is also where the reference's red/orange against teal/white comes from.
-const rim = new THREE.DirectionalLight(0xff7a3c, 1);
+const rim = new THREE.DirectionalLight(0xffffff, 1);
 scene.add(rim);
 
-const ambient = new THREE.HemisphereLight(0x93c5fd, 0x3a1206, 1);
+const ambient = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
 scene.add(ambient);
 
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(1, 1),
-  new THREE.MeshStandardMaterial({ color: 0x121820, roughness: 0.95, metalness: 0 }),
-);
+const groundMaterial = new THREE.MeshStandardMaterial();
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), groundMaterial);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
@@ -158,28 +171,37 @@ const rebuild = () => {
 };
 
 const post = createPost(renderer, scene, camera, params);
-const debug = createDebug(params, rebuild);
+const quality = createQuality();
+const debug = createDebug(params, quality, rebuild);
+
+// Both are the saved knob scaled down by whatever tier quality.ts has settled on. The pixel ratio is then
+// capped against the device: drawing more pixels than the screen has is pure cost.
+let appliedPixelRatio = Math.min(window.devicePixelRatio, params['pixelRatio']);
+let appliedBloomScale = params['bloomScale'];
 
 const setSize = () => {
-  // Never above the device's own ratio: rendering more pixels than the screen has is pure cost.
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, params['pixelRatio']));
+  renderer.setPixelRatio(appliedPixelRatio);
   const w = window.innerWidth;
   const h = window.innerHeight;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h, false);
-  post['setSize'](w, h);
+  post['setSize'](w, h, appliedBloomScale);
 };
 
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
-let appliedPixelRatio = 0;
-
 const update = (time: number, deltaTime: number) => {
+  // The tier for this frame. Reading the frame time here rather than in the pane is deliberate: the
+  // sketch has to respond to it whether or not the debug UI exists (?clean has no pane at all).
+  const tier = quality['update'](deltaTime, params);
   debug['tick'](deltaTime);
-  // Changing the resolution means reallocating every render target, so only on an actual change.
-  if (params['pixelRatio'] !== appliedPixelRatio) {
-    appliedPixelRatio = params['pixelRatio'];
+  // Changing either of these reallocates render targets, so only on an actual change.
+  const pixelRatio = Math.min(window.devicePixelRatio, params['pixelRatio'] * tier['pixel']);
+  const bloomScale = params['bloomScale'] * tier['bloom'];
+  if (pixelRatio !== appliedPixelRatio || bloomScale !== appliedBloomScale) {
+    appliedPixelRatio = pixelRatio;
+    appliedBloomScale = bloomScale;
     setSize();
   }
   // Its own period, not loopPeriod. They were the same number back when the whole piece was one cycle;
@@ -195,13 +217,27 @@ const update = (time: number, deltaTime: number) => {
 
   renderer.toneMappingExposure = params['exposure'];
   key.intensity = params['keyLight'];
+  key.color.setHex(params['keyColor']);
   rim.intensity = params['rimLight'];
+  rim.color.setHex(params['rimColor']);
   ambient.intensity = params['ambient'];
-  scene.environmentIntensity = params['ambient'] * 0.6;
+  ambient.color.setHex(params['skyColor']);
+  ambient.groundColor.setHex(params['earthColor']);
+  // Its own knob, no longer a fraction of `ambient`. With a real HDRI this is the reflection strength,
+  // which is a different decision from how much flat fill the scene gets.
+  scene.environmentIntensity = params['envIntensity'];
+  groundMaterial.color.setHex(params['groundColor']);
+  groundMaterial.roughness = params['groundRough'];
+  groundMaterial.metalness = params['groundMetal'];
+  applyMaterials(field, params);
+  // The fog must be the background colour, or the field dissolves into a band of the wrong hue at the
+  // horizon -- so one knob writes both.
+  (scene.background as THREE.Color).setHex(params['bgColor']);
   const fog = scene.fog as THREE.Fog;
+  fog.color.setHex(params['bgColor']);
   fog.near = params['size'] * params['fogNear'];
   fog.far = params['size'] * params['fogFar'];
-  post['apply'](params);
+  post['apply'](params, tier);
   if (plates) {
     updateLift(plates, deltaTime, pointer, params);
     for (const blocks of field) updateBlocks(blocks, time, params, surface, plates);

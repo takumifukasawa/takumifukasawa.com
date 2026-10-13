@@ -1,13 +1,14 @@
 // Tweakpane, built from the schema in params.ts so the knobs are declared in exactly one place.
 // Never shown when ?clean is present (that is the recording URL; decision 0004).
 import { Pane } from 'tweakpane';
-import { LIVE_KEYS, SCHEMA, type ParamKey, type Params } from './params.ts';
+import { LIVE_KEYS, SCHEMA, isColor, toJSON, type ParamKey, type Params, type Spec } from './params.ts';
+import type { Quality } from './quality.ts';
 
 export type Debug = { 'tick': (deltaTime: number) => void };
 
 const NOOP: Debug = { 'tick': () => {} };
 
-export const createDebug = (params: Params, onRebuild: () => void): Debug => {
+export const createDebug = (params: Params, quality: Quality, onRebuild: () => void): Debug => {
   if (new URLSearchParams(location.search).has('clean')) return NOOP;
 
   const pane = new Pane({ title: 'wip' });
@@ -16,21 +17,34 @@ export const createDebug = (params: Params, onRebuild: () => void): Debug => {
   // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab wip
   // --https` and read the number. ms is the honest unit: 16.7 is the 60 fps budget, and unlike fps it does
   // not compress the interesting part of the range into a few pixels.
-  const perf = { 'ms': 0 };
+  //
+  // Read straight off quality.ts rather than smoothed again here. The number the pane shows has to be the
+  // same number the dynamic resolution is deciding on, or a tier change looks unexplained.
   const perfFolder = pane.addFolder({ title: 'perf' });
-  perfFolder.addBinding(perf, 'ms', { readonly: true, view: 'graph', min: 0, max: 40 });
-  perfFolder.addBinding(perf, 'ms', { readonly: true, format: (v: number) => v.toFixed(1) });
+  perfFolder.addBinding(quality, 'ms', { readonly: true, view: 'graph', min: 0, max: 40 });
+  perfFolder.addBinding(quality, 'ms', { readonly: true, format: (v: number) => v.toFixed(1) });
+  // Which tier it settled on. 0 is the saved params; anything else means the device could not hold them,
+  // and that is the single most useful thing to see on a phone.
+  perfFolder.addBinding(quality, 'tier', { readonly: true, format: (v: number) => v.toFixed(0) });
 
-  const folders = new Map<string, ReturnType<Pane['addFolder']>>();
+  // Seeded with the folder just built, so the schema's own `perf` knobs (pixelRatio, autoQuality,
+  // qualityMs) land next to the frame time they exist to control instead of in a second folder with the
+  // same name. It also means perf stays expanded while the rest start collapsed.
+  const folders = new Map<string, ReturnType<Pane['addFolder']>>([['perf', perfFolder]]);
 
   for (const key of Object.keys(SCHEMA) as ParamKey[]) {
-    const spec = SCHEMA[key];
+    const spec: Spec = SCHEMA[key];
     let folder = folders.get(spec['folder']);
     if (!folder) {
-      folder = pane.addFolder({ title: spec['folder'] });
+      // Collapsed. There are enough knobs now that an expanded pane is taller than a phone screen, and
+      // the thing actually being read on a phone is the frame time above -- which stays open.
+      folder = pane.addFolder({ title: spec['folder'], expanded: false });
       folders.set(spec['folder'], folder);
     }
-    const binding = folder.addBinding(params, key, { min: spec['min'], max: spec['max'], step: spec['step'] });
+    // A colour is still a number (0xRRGGBB); `view: 'color'` is what turns the slider into a picker.
+    const binding = isColor(key)
+      ? folder.addBinding(params, key, { view: 'color' })
+      : folder.addBinding(params, key, { min: spec['min'], max: spec['max'], step: spec['step'] });
     // Live knobs are read every frame. Everything else feeds data computed once per rebuild, so changing
     // it has to rebuild the field -- on `last` only, or dragging a slider rebuilds on every pixel.
     if (!LIVE_KEYS.includes(key)) {
@@ -40,13 +54,9 @@ export const createDebug = (params: Params, onRebuild: () => void): Debug => {
     }
   }
 
-  // Smoothed, because a raw per-frame number is unreadable: it is the sustained cost that matters, and a
-  // single long frame (a GC, the pane redrawing itself) would otherwise look like the sketch is slow.
-  const debug: Debug = {
-    'tick': (deltaTime) => {
-      perf['ms'] += (deltaTime * 1000 - perf['ms']) * 0.1;
-    },
-  };
+  // The readouts above are bound to quality's own fields, and Tweakpane only redraws a readonly binding
+  // when it is refreshed -- so this is what makes them move.
+  const debug: Debug = { 'tick': () => perfFolder.refresh() };
 
   // Dev only. There is no endpoint in the built sketch, and the published build has no reason to write
   // anything -- its values are already baked in from params.json at build time.
@@ -60,7 +70,7 @@ export const createDebug = (params: Params, onRebuild: () => void): Debug => {
     const res = await fetch('/__params', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
+      body: JSON.stringify(toJSON(params)),
     });
     if (!res.ok) {
       console.error('[wip] save failed:', res.status, await res.text());

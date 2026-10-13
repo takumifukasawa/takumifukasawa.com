@@ -26,8 +26,12 @@ const saveParams: Plugin = {
             typeof values === 'object' &&
             values !== null &&
             !Array.isArray(values) &&
-            Object.values(values).every((v) => typeof v === 'number' && Number.isFinite(v));
-          if (!ok) throw new Error('expected a flat object of finite numbers');
+            // Colours are the one non-number: params.ts writes them as "#rrggbb" so the file stays
+            // readable, and parses them back to 0xRRGGBB on load.
+            Object.values(values).every(
+              (v) => (typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)),
+            );
+          if (!ok) throw new Error('expected a flat object of finite numbers and #rrggbb colours');
           writeFileSync(join(import.meta.dirname, 'params.json'), JSON.stringify(values, null, 2) + '\n');
           res.end('ok');
         } catch (error) {
@@ -58,6 +62,10 @@ export default defineConfig({
   // fair game for terser's property mangling (`keep_quoted` only spares keys that are quoted *in the
   // source*, and the bundler re-emits them unquoted), which would silently rename every knob in the build.
   json: { stringify: true },
+  // .hdr is not one of Vite's known asset types, so without this `import url from './env.hdr?url'`
+  // resolves in dev and then emits nothing into the build -- the sketch loses its reflections only in
+  // the published output, which is the hardest kind of breakage to notice (docs/decisions/0008).
+  assetsInclude: ['**/*.hdr'],
   // Relative base so the build output can be moved (decision 0004). Do not write absolute paths in sketch code.
   base: './',
   build: {
@@ -76,7 +84,14 @@ export default defineConfig({
       compress: {
         passes: 1,
         arguments: true,
-        booleans_as_integers: true,
+        // booleans_as_integers is OFF, and like mangleProperties above the reason is three's code, not
+        // this sketch's. It rewrites true/false as 1/0, and three's HDRLoader parses the Radiance header
+        // with a reader whose end-of-line signal is a boolean compared by identity -- as integers the
+        // comparison stops matching and the loader dies on "Bad File Format: missing image size
+        // specifier". It renders perfectly in dev and throws in the build, which is the same shape of
+        // failure as the ShaderChunk one and the same reason `artifacts run` exists (decision 0008).
+        // Found by bisecting the compress options; it was worth a few bytes.
+        booleans_as_integers: false,
         drop_console: true,
         drop_debugger: true,
         keep_fargs: false,

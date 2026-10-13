@@ -44,7 +44,10 @@ const canvas = document.querySelector<HTMLCanvasElement>('#c')!;
 // Values come from params.json, never from code (the debug pane's save button writes that file).
 const params = loadParams();
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+// antialias: false on purpose. Everything is drawn through EffectComposer, which renders into its own
+// targets -- the canvas MSAA never participates and is pure cost on a phone
+// (gamedev:mobile-audio-render). Post-process aliasing is handled by the passes, not by the canvas.
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed in three r186
 // Filmic, not linear: the emissive bars run well past 1.0 and linear clipping turns them into flat orange
@@ -66,7 +69,7 @@ scene.fog = new THREE.Fog(FOG_COLOR, 1, 2);
 
 // Far enough back that the whole body is in frame: greeble only reads as greeble at the density scale,
 // and from close up the identical geometry reads as architecture.
-const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200); // fov is set per frame from params
 
 // No OrbitControls. Touch has no hover, so on a phone every interaction is a drag: with the camera on one
 // finger, raising a plate and spinning the scene become the same gesture and neither can be aimed. The
@@ -118,11 +121,16 @@ const rebuild = () => {
   ground.position.y = 0;
   target.set(0, 0, 0);
 
-  // Close enough that the floor runs off every edge of the frame. A field that ends inside the frame reads
-  // as an object sitting in a void; one that overflows reads as a place, and leaves the eye no empty
-  // background to settle on. Still high enough to see the pattern of the flow rather than just its edge.
-  orbit['radius'] = size * 0.78;
-  orbit['height'] = size * 0.52;
+  // The floor has to run off every edge of the frame: a field that ends inside it reads as an object in a
+  // void, and leaves the eye an empty background to settle on.
+  //
+  // Enlarging the field does NOT fix that. Distance and height are both multiples of size, so the whole
+  // composition is scale-invariant -- only the RATIOS and the field of view decide whether the far edge
+  // lands inside the frame. The condition is
+  //     height / tan(elevation - fov/2) - distance  <=  size / 2
+  // which at camDistance 0.62, camHeight 0.55, camFov 26 comes out at 0.39 against a limit of 0.5.
+  orbit['radius'] = size * params['camDistance'];
+  orbit['height'] = size * params['camHeight'];
   orbit['azimuth'] = Math.PI * 0.25;
 
   key.position.set(-1, 2.4, 1.6).multiplyScalar(size * 0.5);
@@ -174,7 +182,13 @@ const update = (time: number, deltaTime: number) => {
     appliedPixelRatio = params['pixelRatio'];
     setSize();
   }
-  const swing = Math.sin((time / params['loopPeriod']) * Math.PI * 2) * params['camSwing'];
+  // Its own period, not loopPeriod. They were the same number back when the whole piece was one cycle;
+  // with autoGrow off, loopPeriod drives nothing the eye can see and the camera should not inherit it.
+  if (camera.fov !== params['camFov']) {
+    camera.fov = params['camFov'];
+    camera.updateProjectionMatrix();
+  }
+  const swing = Math.sin((time / params['camPeriod']) * Math.PI * 2) * params['camSwing'];
   const azimuth = orbit['azimuth'] + swing;
   camera.position.set(Math.cos(azimuth) * orbit['radius'], orbit['height'], Math.sin(azimuth) * orbit['radius']);
   camera.lookAt(target);

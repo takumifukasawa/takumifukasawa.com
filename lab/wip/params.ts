@@ -44,7 +44,13 @@ export const SCHEMA = {
   'barHeight': { 'folder': 'look', 'min': 0.02, 'max': 1, 'step': 0.01 }, // bars stay flat; 1 = same as the mass
   'emissive': { 'folder': 'look', 'min': 0, 'max': 20, 'step': 0.1 }, // bar brightness; this is what bloom picks up
   'exposure': { 'folder': 'look', 'min': 0.1, 'max': 4, 'step': 0.05 },
-  'camSwing': { 'folder': 'look', 'min': 0, 'max': 1.2, 'step': 0.01 }, // radians the camera swings per loop
+  'camSwing': { 'folder': 'look', 'min': 0, 'max': 1.2, 'step': 0.01 }, // radians the camera swings either way
+  'camPeriod': { 'folder': 'look', 'min': 4, 'max': 180, 'step': 1 }, // seconds for one swing, there and back
+  // The framing. Distance and height are multiples of size; the composition is scale-invariant, so
+  // these ratios and camFov are the only things that decide whether the floor covers the frame.
+  'camDistance': { 'folder': 'look', 'min': 0.2, 'max': 3, 'step': 0.01 },
+  'camHeight': { 'folder': 'look', 'min': 0.05, 'max': 2, 'step': 0.01 },
+  'camFov': { 'folder': 'look', 'min': 10, 'max': 80, 'step': 1 },
   // Lighting and fog, as multiples of `size` where they are distances, so they survive a change of scale.
   // All live: the look is tuned by eye from the pane, and a rebuild per slider drag makes that unusable.
   'keyLight': { 'folder': 'light', 'min': 0, 'max': 12, 'step': 0.1 },
@@ -76,6 +82,7 @@ export const SCHEMA = {
   // post (post.ts)
   'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
   'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
+  'bloomScale': { 'folder': 'post', 'min': 0.1, 'max': 1, 'step': 0.05 }, // bloom resolution; rebuilds targets
   'bloomThreshold': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
   'aberration': { 'folder': 'post', 'min': 0, 'max': 0.2, 'step': 0.002 }, // UV offset at the corners, so tiny
   // Depth of field. 0 aperture disables the pass entirely -- it costs a second geometry pass (see post.ts).
@@ -96,7 +103,7 @@ export type Params = Record<ParamKey, number>;
 // `spread` looks like motion but feeds the precomputed delays, so it is deliberately absent.
 export const LIVE_KEYS: ParamKey[] = [
   'autoGrow', 'loopPeriod', 'rise', 'fall', 'overshoot',
-  'exposure', 'camSwing',
+  'exposure', 'camSwing', 'camPeriod', 'camDistance', 'camHeight', 'camFov',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',

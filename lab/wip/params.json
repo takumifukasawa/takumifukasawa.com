@@ -1,5 +1,5 @@
 {
-  "size": 24,
+  "size": 34,
   "depth": 15,
   "minSide": 0.1,
   "splitBias": 0.75,
@@ -38,11 +38,11 @@
   "pixelRatio": 1.5,
   "maxSide": 2.2,
   "plateSize": 1.1,
-  "liftRadius": 3.6,
+  "liftRadius": 5.1,
   "liftHeight": 5.0,
   "liftRise": 9.0,
   "liftFall": 2.5,
-  "flowCount": 2300,
+  "flowCount": 3000,
   "flowSpeed": 9.0,
   "flowAngle": 0,
   "flowPush": 1.1,
@@ -53,5 +53,10 @@
   "flowTrail": 14,
   "flowWidth": 0.13,
   "flowHead": 0.34,
-  "autoGrow": 0
+  "autoGrow": 0,
+  "camPeriod": 48,
+  "camDistance": 0.62,
+  "camHeight": 0.55,
+  "camFov": 26,
+  "bloomScale": 0.5
 }

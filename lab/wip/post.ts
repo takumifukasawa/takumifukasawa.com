@@ -37,6 +37,9 @@ export const createPost = (
   const bokeh = new BokehPass(scene, camera, { focus: 1, aperture: 0, maxblur: 0.01 });
   composer.addPass(bokeh);
 
+  // The bloom pyramid runs at a fraction of the frame. It is a blur, so its resolution is invisible, and on
+  // a phone this is one of the cheapest things to give up (gamedev:mobile-audio-render).
+  const bloomScale = params['bloomScale'];
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
     params['bloomStrength'],
@@ -63,7 +66,10 @@ export const createPost = (
     'composer': composer,
     'setSize': (width, height) => {
       composer.setSize(width, height);
-      bloom.resolution.set(width, height);
+      // setSize, not `resolution.set`: assigning the vector leaves the pass's render targets at their old
+      // size, so bloom silently stopped following window resizes. Scaled down because the bloom pyramid is
+      // pure fill rate and nobody can see its resolution -- it is a blur.
+      bloom.setSize(width * bloomScale, height * bloomScale);
     },
     'apply': (next) => {
       // The aperture knob is scaled here, not in params.json. three's shader computes

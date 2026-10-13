@@ -59,12 +59,17 @@ export const SCHEMA = {
   // flow (flow.ts) -- the streaks crossing the field
   'flowCount': { 'folder': 'flow', 'min': 0, 'max': 6000, 'step': 50 }, // rebuilds the instanced mesh
   'flowSpeed': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // world units per second
-  'flowAngle': { 'folder': 'flow', 'min': 0, 'max': 360, 'step': 1 }, // degrees in the ground plane
+  // Degrees in the ground plane. 0 is what reads as upper-left to lower-right ON SCREEN at the default
+  // camera azimuth. A world direction and a screen direction are not the same thing: setting this to the
+  // camera's own 45 sends the stream straight at the viewer, and the sign is easy to derive backwards
+  // (it was, twice). If the camera framing changes, re-check this by looking rather than by deriving.
+  'flowAngle': { 'folder': 'flow', 'min': 0, 'max': 360, 'step': 1 },
   'flowPush': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // away from rising ground
   'flowSwirl': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // along its contour -- this is "around"
   'flowTurn': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // how fast a streak can change heading
-  'flowLength': { 'folder': 'flow', 'min': 0.05, 'max': 8, 'step': 0.05 },
-  'flowWidth': { 'folder': 'flow', 'min': 0.01, 'max': 1, 'step': 0.01 },
+  'flowTrail': { 'folder': 'flow', 'min': 0, 'max': 24, 'step': 1 }, // past positions drawn behind each point
+  'flowSize': { 'folder': 'flow', 'min': 0.02, 'max': 2, 'step': 0.01 }, // world units; sizeAttenuation is on
+  'flowBrightness': { 'folder': 'flow', 'min': 0, 'max': 4, 'step': 0.05 },
   'flowAltitude': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // above the fixed greeble, below the raised
   // post (post.ts)
   'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
@@ -92,7 +97,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'exposure', 'camSwing',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
-  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowLength', 'flowWidth', 'flowAltitude',
+  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowSize', 'flowBrightness', 'flowAltitude',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',
 ];

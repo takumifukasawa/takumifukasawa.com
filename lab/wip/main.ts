@@ -137,11 +137,11 @@ const rebuild = () => {
   rim.position.set(1.4, 0.6, -1.6).multiplyScalar(size * 0.5);
 
   if (flow) {
-    scene.remove(flow['mesh']);
+    scene.remove(flow['object']);
     flow['dispose']();
   }
   flow = createFlow(params);
-  scene.add(flow['mesh']);
+  scene.add(flow['object']);
 
   const cells = subdivide(params);
   plates = collectPlates(cells);

@@ -20,8 +20,33 @@ const GRID = 48;
 
 const COLOR = new THREE.Color(0x6fc8ff);
 
+// A soft disc for the head of each trail. Built as a DataTexture rather than from a canvas so that
+// createFlow can also be called from a plain `node` script -- which is how the flow is verified, there
+// being no way to drive a pointer from a headless browser.
+const discTexture = (): THREE.DataTexture => {
+  const N = 64;
+  const data = new Uint8Array(N * N * 4);
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const dx = (x + 0.5) / N - 0.5;
+      const dy = (y + 0.5) / N - 0.5;
+      const d = Math.min(1, Math.hypot(dx, dy) * 2);
+      // Smoothstep in, then squared: a hard-edged disc reads as a sticker, this reads as a light.
+      const a = (1 - d * d) ** 2;
+      const k = (y * N + x) * 4;
+      data[k] = 255;
+      data[k + 1] = 255;
+      data[k + 2] = 255;
+      data[k + 3] = Math.round(a * 255);
+    }
+  }
+  const texture = new THREE.DataTexture(data, N, N);
+  texture.needsUpdate = true;
+  return texture;
+};
+
 export type Flow = {
-  'object': THREE.Mesh;
+  'object': THREE.Group;
   'update': (deltaTime: number, plates: Plates, params: Params) => void;
   'dispose': () => void;
 };
@@ -75,6 +100,32 @@ export const createFlow = (params: Params): Flow => {
 
   const ribbon = new THREE.Mesh(geometry, material);
   ribbon.frustumCulled = false;
+
+  // The head of each trail, as a camera-facing disc. Points always face the camera, so the billboard comes
+  // for free -- no per-instance orientation to keep in sync with the ribbon.
+  const headGeometry = new THREE.BufferGeometry();
+  const headPositions = new Float32Array(count * 3);
+  const headColors = new Float32Array(count * 3);
+  headGeometry.setAttribute('position', new THREE.BufferAttribute(headPositions, 3));
+  headGeometry.setAttribute('color', new THREE.BufferAttribute(headColors, 3));
+
+  const disc = discTexture();
+  const headMaterial = new THREE.PointsMaterial({
+    map: disc,
+    size: 1,
+    sizeAttenuation: true,
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  });
+  const heads = new THREE.Points(headGeometry, headMaterial);
+  heads.frustumCulled = false;
+
+  const group = new THREE.Group();
+  group.add(ribbon);
+  group.add(heads);
 
   const px = new Float32Array(count);
   const pz = new Float32Array(count);
@@ -259,18 +310,33 @@ export const createFlow = (params: Params): Flow => {
           colors[k + v * 3 + 1] = COLOR.g * lit;
           colors[k + v * 3 + 2] = COLOR.b * lit;
         }
+
+        if (s === 0) {
+          headPositions[i * 3] = x;
+          headPositions[i * 3 + 1] = y;
+          headPositions[i * 3 + 2] = z;
+          headColors[i * 3] = COLOR.r * fade;
+          headColors[i * 3 + 1] = COLOR.g * fade;
+          headColors[i * 3 + 2] = COLOR.b * fade;
+        }
       }
     }
+    headMaterial.size = params['flowHead'];
     geometry.getAttribute('position').needsUpdate = true;
     geometry.getAttribute('color').needsUpdate = true;
+    headGeometry.getAttribute('position').needsUpdate = true;
+    headGeometry.getAttribute('color').needsUpdate = true;
   };
 
   return {
-    'object': ribbon,
+    'object': group,
     'update': update,
     'dispose': () => {
       geometry.dispose();
       material.dispose();
+      headGeometry.dispose();
+      headMaterial.dispose();
+      disc.dispose();
     },
   };
 };

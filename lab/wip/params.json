@@ -51,5 +51,6 @@
   "flowAltitude": 1.7,
   "flowBrightness": 1.6,
   "flowTrail": 14,
-  "flowWidth": 0.16
+  "flowWidth": 0.13,
+  "flowHead": 0.34
 }

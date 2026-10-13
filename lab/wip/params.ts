@@ -69,6 +69,7 @@ export const SCHEMA = {
   'flowTurn': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // how fast a streak can change heading
   'flowTrail': { 'folder': 'flow', 'min': 1, 'max': 32, 'step': 1 }, // spine segments; rebuilds the geometry
   'flowWidth': { 'folder': 'flow', 'min': 0.01, 'max': 1.5, 'step': 0.01 }, // ribbon width at the head
+  'flowHead': { 'folder': 'flow', 'min': 0, 'max': 2, 'step': 0.01 }, // the camera-facing disc at the tip
   'flowBrightness': { 'folder': 'flow', 'min': 0, 'max': 4, 'step': 0.05 },
   'flowAltitude': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // above the fixed greeble, below the raised
   // post (post.ts)
@@ -97,7 +98,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'exposure', 'camSwing',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
-  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowBrightness', 'flowAltitude',
+  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',
 ];

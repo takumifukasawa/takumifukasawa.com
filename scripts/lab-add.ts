@@ -17,7 +17,15 @@ import {
   applyHeadFromMd, formatLabMd, inferMedium, inferTags, labMdPath, mergeFrontmatter, readLabMd, readManifest,
   titleFromIndexHtml, writeManifest, type LabFrontmatter, type MediaEntry,
 } from './lib/content.ts';
-import { labDir, repoRoot, sketchFiles, SLUG_PATTERN, WORKSPACE_SLUGS } from './lib/lab.ts';
+import {
+  currentBranch,
+  labDir,
+  PRODUCTION_BRANCH,
+  repoRoot,
+  sketchFiles,
+  SLUG_PATTERN,
+  WORKSPACE_SLUGS,
+} from './lib/lab.ts';
 import { encodeVideo, extractFrame, probeVideo, toWebp } from './lib/media.ts';
 import { createR2, objectExists, putObject, type R2 } from './lib/r2.ts';
 
@@ -51,6 +59,20 @@ if (WORKSPACE_SLUGS.test(slug)) {
       `  then fix the slug inside index.html / vite.config.ts / main.ts, delete public/lab/${slug}/,
 ` +
       `  and run: pnpm lab:build <real-slug>`,
+  );
+}
+const branch = currentBranch();
+if (branch !== PRODUCTION_BRANCH && !dryRun) {
+  fail(
+    `on branch "${branch}", but only "${PRODUCTION_BRANCH}" is deployed (decision 0009).
+` +
+      `  Publishing from here pushes the work somewhere nothing serves, which looks like success until
+` +
+      `  someone opens the URL. Merge first:
+` +
+      `    git switch ${PRODUCTION_BRANCH} && git merge ${branch} && pnpm lab:add ${slug} ...
+` +
+      `  Or rehearse without publishing: pnpm lab:add ${slug} ... --dry-run`,
   );
 }
 if (!values.video && !values.poster) fail('give --video <mp4> (poster is taken from it) or --poster <image>, or both');

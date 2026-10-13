@@ -24,6 +24,14 @@ export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // permanent /lab/wip/ (docs/spec/publish-pipeline.md).
 export const WORKSPACE_SLUGS = /^wip(-[a-z0-9]+)*$/;
 
+// The branch Cloudflare deploys from. `pnpm lab:add` publishes, and publishing from anywhere else pushes
+// the work somewhere nothing serves it -- which looks exactly like a successful publish until someone
+// opens the URL (decision 0009).
+export const PRODUCTION_BRANCH = 'main';
+
+export const currentBranch = (root = repoRoot): string =>
+  execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+
 // Sketch slugs that have a web build (index.html). Directories without index.html
 // (Houdini VEX, Python tools, ...) are valid sketches but are never built (decision 0003).
 export const webSketchSlugs = (root = repoRoot): string[] => {

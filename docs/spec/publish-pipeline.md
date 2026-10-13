@@ -12,7 +12,19 @@ sketch 1 件の公開を **2 コマンド + 1 push** に収める。ここが重
 
 repo は 1 つ。push も 1 回（決定 0001）。
 
-### 作っている間は `wip`、出すときに本名を付ける
+### 作っている間は `develop` の `wip`、出すときに `main` へ
+
+**ブランチ**: 日々の commit と端末間の同期は `develop`。**`main` だけが Cloudflare に配信される**
+（決定 0009）。公開は `develop` を `main` にマージする行為で、`pnpm lab:add` は `main` 以外では止まる。
+
+制作中の確認は Tailscale / ローカル Wi-Fi、または `develop` の Branch Preview URL
+（`develop-takumifukasawa-com.<subdomain>.workers.dev`）。**本番には出ない。**
+
+**注意**: `lab/<slug>/` をビルドすると `public/lab/<slug>/` に出て、それは commit され配信される。
+`pnpm lab:add` が `wip*` を拒否するのは**索引に載せること**だけで、`main` に出てしまえば
+`/lab/wip/` には到達できる。これを止めているのは `lab:add` のスラグ判定ではなく、ブランチの方。
+
+### スラグは `wip`、出すときに本名を付ける
 
 **slug は URL になり、`pnpm lab:add` を通した瞬間に恒久化する**（決定 0007）。何になるか分かる前に名前を
 付けると、**URL が嘘になる**。実際に起きた: `greeble`（平面に生やす）として始めたものが体に貼る方向へ

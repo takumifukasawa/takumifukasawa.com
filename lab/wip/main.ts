@@ -6,20 +6,19 @@
 // a body and the name stopped meaning anything. Rename this directory to the real slug when publishing;
 // `pnpm lab:add` refuses to publish `wip` (docs/spec/publish-pipeline.md).
 //
-// What it currently is: greeble on a body instead of on a plane. "Greeble" is the ILM term for the meaningless surface detail
-// that makes a model read as huge (aka nurnie; the manual counterpart is kitbash), and it is normally
-// applied in a model's UV space -- which is exactly what happens here.
+// What it currently is: a greeble floor that answers the pointer. Plates near the pointer rise; a flow
+// crossing the field has to find its way around them.
 //
-// The procedural core, unchanged from the flat version (lab/greeble/):
-//   subdivide.ts  footprints (recursive rectangular subdivision) -- now read as UV, not as ground
-//   height.ts     per-cell hash heights (not noise -- noise reads as terrain)
-//   growth.ts     which block rises when, and the curve it rises on
-//   surface.ts    THE difference: where a UV rectangle lands on pod.glb, and which way is up there
-//   hull.blender.py how hull.glb was made (kitbash boxes unioned, Smart UV Project into planar islands)
-// Everything here is plumbing: scene, camera, light, the render loop.
+//   subdivide.ts  footprints (recursive rectangular subdivision), grouped into plates
+//   height.ts     per-plate hash heights (not noise -- noise reads as terrain)
+//   growth.ts     which plate rises when, and the curve it rises on
+//   surface.ts    where a domain rectangle lands in the world. A plane, here
+//   lift.ts       how far each plate has risen toward the pointer
+// Everything else is plumbing: scene, camera, light, the render loop.
 //
-// The whole piece is a loop. Every time-dependent value is a function of (time mod loopPeriod) with no
-// integration and no stored state, so the recording closes exactly (decision 0005).
+// NOT a loop, unlike every earlier version of this sketch. The lift and its settle are integrated, so the
+// piece cannot close into an exact cycle (decision 0005) -- which is correct, because a thing driven by a
+// pointer was never going to be a recordable loop. The recording is a take, not a cycle.
 //
 // Conventions (docs/decisions/0004-lab-shell.md):
 // - No absolute paths starting with `/`; the build output may be moved.
@@ -31,12 +30,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createField, disposeField, updateBlocks, type Blocks } from './blocks.ts';
+import { createFlow, type Flow } from './flow.ts';
+import { collectPlates, updateLift, type Plates } from './lift.ts';
+import { createPointer } from './pointer.ts';
 import { createDebug } from './debug.ts';
 import { loadParams } from './params.ts';
 import { createPost } from './post.ts';
 import { subdivide } from './subdivide.ts';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createMeshSurface } from './surface.ts';
+import { createPlaneSurface } from './surface.ts';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 
@@ -100,30 +101,12 @@ ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// The body is a mesh, so nothing can be placed until it has loaded. Everything below is wired up first
-// and the loop only starts once the geometry is in.
-const gltf = await new GLTFLoader().loadAsync(new URL('./hull.glb', import.meta.url).href);
-let geometry: THREE.BufferGeometry | undefined;
-gltf.scene.traverse((child) => {
-  if (!geometry && (child as THREE.Mesh).isMesh) geometry = (child as THREE.Mesh).geometry;
-});
-if (!geometry) throw new Error('hull.glb has no mesh');
-const surface = createMeshSurface(geometry, params);
-
-// The hull itself, drawn under the greeble. Without it the gaps between UV islands are holes you see
-// straight through, and the form has to be guessed from the detail alone -- which is backwards: on a real
-// model the hull carries the silhouette and the greeble is what sits on top of it.
-//
-// createMeshSurface already scaled the position attribute in place, so the geometry is at the right size.
-const hull = new THREE.Mesh(
-  geometry,
-  new THREE.MeshStandardMaterial({ color: 0x4d555c, roughness: 0.6, metalness: 0.25 }),
-);
-hull.castShadow = true;
-hull.receiveShadow = true;
-scene.add(hull);
+const surface = createPlaneSurface(params);
+const pointer = createPointer(canvas, camera);
 
 let field: Blocks[] = [];
+let plates: Plates | undefined;
+let flow: Flow | undefined;
 
 // Called at startup and whenever a knob outside LIVE_KEYS changes. The footprints, heights, per-cell delays
 // and materials are all computed here, once -- never per frame.
@@ -131,32 +114,38 @@ const rebuild = () => {
   for (const blocks of field) scene.remove(blocks['mesh']);
   disposeField(field);
 
-  // Everything in the world is sized off the body now, not off the subdivision domain.
-  const radius = params['radius'];
+  // Back to the subdivision domain as the world: the surface IS the ground now.
+  const size = params['size'];
 
-  ground.scale.set(radius * 12, radius * 12, 1);
-  ground.position.y = -radius * 1.9;
+  ground.scale.set(size * 4, size * 4, 1);
+  ground.position.y = 0;
   controls.target.set(0, 0, 0);
 
-  // The body is elongated, so its bounding sphere is much bigger than what it actually fills. Framing off
-  // the sphere leaves it small and lost in the middle of the frame.
-  // Across the long axis, not down it. The hull's length runs along x, so looking from near the x axis
-  // squashes the whole ship into its own nose -- which is exactly what the first framing did.
-  orbit['radius'] = radius * 2.6;
-  orbit['height'] = radius * 0.95;
-  orbit['azimuth'] = Math.PI * 0.42;
+  // Higher than the pure greeble framing. The flow runs across the field, and from a low angle the raised
+  // plates hide the stream behind them -- the pattern of the flow has to be visible, not just its edge.
+  orbit['radius'] = size * 1.35;
+  orbit['height'] = size * 0.85;
+  orbit['azimuth'] = Math.PI * 0.25;
 
-  key.position.set(-1, 2.2, 1.6).multiplyScalar(radius * 2);
-  key.shadow.camera.left = -radius * 1.8;
-  key.shadow.camera.right = radius * 1.8;
-  key.shadow.camera.top = radius * 1.8;
-  key.shadow.camera.bottom = -radius * 1.8;
-  key.shadow.camera.far = radius * 10;
+  key.position.set(-1, 2.4, 1.6).multiplyScalar(size * 0.5);
+  key.shadow.camera.left = -size * 0.8;
+  key.shadow.camera.right = size * 0.8;
+  key.shadow.camera.top = size * 0.8;
+  key.shadow.camera.bottom = -size * 0.8;
+  key.shadow.camera.far = size * 4;
   key.shadow.camera.updateProjectionMatrix();
-  rim.position.set(1.4, 0.4, -1.6).multiplyScalar(radius * 2);
+  rim.position.set(1.4, 0.6, -1.6).multiplyScalar(size * 0.5);
+
+  if (flow) {
+    scene.remove(flow['mesh']);
+    flow['dispose']();
+  }
+  flow = createFlow(params);
+  scene.add(flow['mesh']);
 
   const cells = subdivide(params);
-  field = createField(cells, params, surface);
+  plates = collectPlates(cells);
+  field = createField(cells, params, surface, plates);
   for (const blocks of field) scene.add(blocks['mesh']);
   const placed = field.reduce((n, b) => n + b['cells'].length, 0);
   console.log(`[wip] ${cells.length} cells -> ${placed} on the hull (${field[1]?.['cells'].length ?? 0} bars)`);
@@ -202,10 +191,14 @@ const update = (time: number, deltaTime: number) => {
   ambient.intensity = params['ambient'];
   scene.environmentIntensity = params['ambient'] * 0.6;
   const fog = scene.fog as THREE.Fog;
-  fog.near = params['radius'] * params['fogNear'];
-  fog.far = params['radius'] * params['fogFar'];
+  fog.near = params['size'] * params['fogNear'];
+  fog.far = params['size'] * params['fogFar'];
   post['apply'](params);
-  for (const blocks of field) updateBlocks(blocks, time, params, surface);
+  if (plates) {
+    updateLift(plates, deltaTime, pointer, params);
+    for (const blocks of field) updateBlocks(blocks, time, params, surface, plates);
+    flow?.['update'](deltaTime, plates, params);
+  }
 };
 
 const render = (_time: number, _deltaTime: number) => {

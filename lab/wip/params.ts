@@ -37,9 +37,6 @@ export const SCHEMA = {
   'rise': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction of the period spent rising
   'fall': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction spent sinking back
   'overshoot': { 'folder': 'motion', 'min': 0, 'max': 3, 'step': 0.05 }, // how far the rise goes past full height
-  // body (surface.ts) -- the UV domain above is wrapped onto pod.glb
-  'radius': { 'folder': 'body', 'min': 1, 'max': 20, 'step': 0.1 }, // the mesh is scaled to this
-  'breathe': { 'folder': 'body', 'min': 0, 'max': 0.3, 'step': 0.005 }, // pulse along the normal
   // look (blocks.ts, main.ts)
   'barAspect': { 'folder': 'look', 'min': 1, 'max': 12, 'step': 0.1 }, // how elongated a cell must be to glow
   'barRate': { 'folder': 'look', 'min': 0, 'max': 1, 'step': 0.01 }, // fraction of those that actually do
@@ -54,6 +51,21 @@ export const SCHEMA = {
   'ambient': { 'folder': 'light', 'min': 0, 'max': 4, 'step': 0.05 }, // hemisphere + environment together
   'fogNear': { 'folder': 'light', 'min': 0.1, 'max': 6, 'step': 0.05 },
   'fogFar': { 'folder': 'light', 'min': 0.5, 'max': 12, 'step': 0.1 },
+  // pointer (lift.ts) -- the interaction
+  'liftRadius': { 'folder': 'pointer', 'min': 0.2, 'max': 12, 'step': 0.1 }, // world units of influence
+  'liftHeight': { 'folder': 'pointer', 'min': 0, 'max': 12, 'step': 0.1 }, // added at the centre, domain units
+  'liftRise': { 'folder': 'pointer', 'min': 0.5, 'max': 30, 'step': 0.5 }, // per second; higher = snappier
+  'liftFall': { 'folder': 'pointer', 'min': 0.2, 'max': 20, 'step': 0.1 }, // per second; lower = settles slowly
+  // flow (flow.ts) -- the streaks crossing the field
+  'flowCount': { 'folder': 'flow', 'min': 0, 'max': 6000, 'step': 50 }, // rebuilds the instanced mesh
+  'flowSpeed': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // world units per second
+  'flowAngle': { 'folder': 'flow', 'min': 0, 'max': 360, 'step': 1 }, // degrees in the ground plane
+  'flowPush': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // away from rising ground
+  'flowSwirl': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // along its contour -- this is "around"
+  'flowTurn': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // how fast a streak can change heading
+  'flowLength': { 'folder': 'flow', 'min': 0.05, 'max': 8, 'step': 0.05 },
+  'flowWidth': { 'folder': 'flow', 'min': 0.01, 'max': 1, 'step': 0.01 },
+  'flowAltitude': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // above the fixed greeble, below the raised
   // post (post.ts)
   'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
   'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
@@ -78,8 +90,9 @@ export type Params = Record<ParamKey, number>;
 export const LIVE_KEYS: ParamKey[] = [
   'loopPeriod', 'rise', 'fall', 'overshoot',
   'exposure', 'camSwing',
-  'radius', 'breathe',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
+  'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
+  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowLength', 'flowWidth', 'flowAltitude',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio',
 ];

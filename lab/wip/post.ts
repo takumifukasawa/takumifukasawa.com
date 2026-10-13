@@ -75,8 +75,8 @@ export const createPost = (
       bokeh.enabled = next['dofAperture'] > 0;
       if (bokeh.enabled) {
         const uniforms = bokeh.materialBokeh.uniforms;
-        uniforms['focus']!.value = next['radius'] * next['dofFocus'] * 3.2;
-        uniforms['aperture']!.value = (next['dofAperture'] * next['dofMaxBlur']) / (next['radius'] * 1.2);
+        uniforms['focus']!.value = next['size'] * next['dofFocus'];
+        uniforms['aperture']!.value = (next['dofAperture'] * next['dofMaxBlur']) / (next['size'] * 0.85);
         uniforms['maxblur']!.value = next['dofMaxBlur'];
       }
       bloom.strength = next['bloomStrength'];

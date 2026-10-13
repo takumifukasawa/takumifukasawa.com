@@ -5,6 +5,7 @@ import { cellDelay, growth } from './growth.ts';
 import { hashCell } from './hash.ts';
 import { cellHeight } from './height.ts';
 import type { Params } from './params.ts';
+import type { Plates } from './lift.ts';
 import { createFrame, type Surface } from './surface.ts';
 import type { Rect } from './subdivide.ts';
 import type { Cell } from './subdivide.ts';
@@ -14,6 +15,7 @@ export type Blocks = {
   'cells': Cell[];
   'heights': number[];
   'delays': number[];
+  'plateIdx': Int32Array; // which plate each cell belongs to, for the pointer lift
 };
 
 // A few of the long thin footprints become emissive bars. Picking them by *aspect ratio* and not by hash
@@ -39,7 +41,13 @@ const boxGeometry = () => {
   return geometry;
 };
 
-const createBlocks = (cells: Cell[], params: Params, material: THREE.Material, heightScale = 1): Blocks => {
+const createBlocks = (
+  cells: Cell[],
+  params: Params,
+  material: THREE.Material,
+  plates: Plates,
+  heightScale = 1,
+): Blocks => {
   // InstancedMesh wants at least one slot; count is what actually gets drawn.
   const mesh = new THREE.InstancedMesh(boxGeometry(), material, Math.max(cells.length, 1));
   mesh.count = cells.length;
@@ -53,6 +61,7 @@ const createBlocks = (cells: Cell[], params: Params, material: THREE.Material, h
     // Static per-instance data, computed once. Only the growth factor changes per frame.
     'heights': cells.map((cell) => cellHeight(cell, params) * heightScale),
     'delays': cells.map((cell) => cellDelay(cell, params)),
+    'plateIdx': Int32Array.from(cells, (cell) => plates['indexOf'](cell)),
   };
 };
 
@@ -84,7 +93,7 @@ const onSurface = (cell: Rect, params: Params, surface: Surface, probe: ReturnTy
 
 // Two meshes, not one with per-instance colour: the bars need `emissive`, which is a material property and
 // cannot vary per instance. Two draw calls is still two.
-export const createField = (cells: Cell[], params: Params, surface: Surface): Blocks[] => {
+export const createField = (cells: Cell[], params: Params, surface: Surface, plates: Plates): Blocks[] => {
   const probe = createFrame();
   const bars: Cell[] = [];
   const mass: Cell[] = [];
@@ -108,7 +117,10 @@ export const createField = (cells: Cell[], params: Params, surface: Surface): Bl
 
   // Bars are kept flat. Given the same height as everything else they come out as thin glowing *walls*,
   // which reads as signage; lying along the ground they read as traces on a board, which is the reference.
-  return [createBlocks(mass, params, massMaterial), createBlocks(bars, params, barMaterial, params['barHeight'])];
+  return [
+    createBlocks(mass, params, massMaterial, plates),
+    createBlocks(bars, params, barMaterial, plates, params['barHeight']),
+  ];
 };
 
 export const disposeField = (field: Blocks[]) => {
@@ -132,17 +144,27 @@ const scale = new THREE.Vector3();
 // compares exactly equal; the epsilon only guards against a cut landing a float apart.
 const EDGE = 1e-9;
 
-export const updateBlocks = (blocks: Blocks, time: number, params: Params, surface: Surface) => {
+export const updateBlocks = (
+  blocks: Blocks,
+  time: number,
+  params: Params,
+  surface: Surface,
+  plates: Plates,
+) => {
   const cells = blocks['cells'];
   const size = params['size'];
   const gap = params['gap'];
-  // Heights come out of height.ts in domain units, the same units the subdivision uses. Scaling them by
-  // radius/size keeps the greeble the same size *relative to the body* as it was relative to the plane.
-  const heightScale = params['radius'] / size;
+  // Heights come out of height.ts in domain units. On the plane the domain IS the world (createPlaneSurface
+  // maps them 1:1), so they need no conversion. A curved body did need one, and the leftover `params.radius`
+  // from that version silently turned every scale into NaN here -- nothing rendered and nothing complained.
+  const heightScale = 1;
 
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i]!;
     const g = growth(time, blocks['delays'][i]!, params);
+    // The pointer's contribution is added, not multiplied: a plate that is naturally flat should still
+    // rise when pushed, and a tall one should not shoot off the screen.
+    const lifted = blocks['heights'][i]! * g + plates['lift'][blocks['plateIdx'][i]!]! * params['liftHeight'];
 
     // Inset only where the leaf's edge IS the plate's edge. Inside a plate the boxes stay flush and fuse
     // into one panel; the gap then reads as a trench between panels rather than as grout between tiles.
@@ -163,7 +185,7 @@ export const updateBlocks = (blocks: Blocks, time: number, params: Params, surfa
     // A floor on every axis: a zero scale collapses the matrix and the normals go undefined (black flicker).
     scale.set(
       Math.max(((x1 - x0) / size) * frame['scaleU'], 0.0001),
-      Math.max(blocks['heights'][i]! * g * heightScale, 0.0001),
+      Math.max(lifted * heightScale, 0.0001),
       Math.max(((z1 - z0) / size) * frame['scaleV'], 0.0001),
     );
     matrix.scale(scale);

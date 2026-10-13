@@ -61,6 +61,10 @@ export const SCHEMA = {
   'keyLight': { 'folder': 'light', 'min': 0, 'max': 12, 'step': 0.1 },
   'rimLight': { 'folder': 'light', 'min': 0, 'max': 12, 'step': 0.1 },
   'ambient': { 'folder': 'light', 'min': 0, 'max': 4, 'step': 0.05 }, // hemisphere + environment together
+  // How dark the key light's shadow goes. 1 is a full shadow, 0 removes it entirely. This is three's own
+  // shadow.intensity, which lifts the shadow without touching the fill lights -- raising `ambient` to the
+  // same effect would also flatten every unlit face, which is the opposite of what a shallower shadow is for.
+  'shadowStrength': { 'folder': 'light', 'min': 0, 'max': 1, 'step': 0.01 },
   'fogNear': { 'folder': 'light', 'min': 0.1, 'max': 6, 'step': 0.05 },
   'fogFar': { 'folder': 'light', 'min': 0.5, 'max': 12, 'step': 0.1 },
   // pointer (lift.ts) -- the interaction
@@ -141,7 +145,7 @@ export type Params = Record<ParamKey, number>;
 export const LIVE_KEYS: ParamKey[] = [
   'autoGrow', 'loopPeriod', 'rise', 'fall', 'overshoot',
   'exposure', 'camSwing', 'camPeriod', 'camDistance', 'camHeight', 'camFov',
-  'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
+  'keyLight', 'rimLight', 'ambient', 'shadowStrength', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'aberration',

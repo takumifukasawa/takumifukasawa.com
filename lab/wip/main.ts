@@ -218,6 +218,7 @@ const update = (time: number, deltaTime: number) => {
   renderer.toneMappingExposure = params['exposure'];
   key.intensity = params['keyLight'];
   key.color.setHex(params['keyColor']);
+  key.shadow.intensity = params['shadowStrength'];
   rim.intensity = params['rimLight'];
   rim.color.setHex(params['rimColor']);
   ambient.intensity = params['ambient'];

@@ -16,10 +16,13 @@ import type { Params } from './params.ts';
 
 export type Tier = { 'pixel': number; 'bloom': number; 'dof': boolean };
 
+// Every step has to change something the device can feel. Dropping DOF used to be its own tier, with the
+// resolution held at the step before it -- and with dofAperture at 0 that tier changed nothing at all, so
+// the ladder spent a second and a half of sustained slowness walking through a rung that did not exist.
+// Giving up the DOF pass is folded into the step that also drops resolution.
 const TIERS: Tier[] = [
   { 'pixel': 1, 'bloom': 1, 'dof': true },
   { 'pixel': 0.85, 'bloom': 0.75, 'dof': true },
-  { 'pixel': 0.7, 'bloom': 0.5, 'dof': true },
   { 'pixel': 0.7, 'bloom': 0.5, 'dof': false },
   { 'pixel': 0.55, 'bloom': 0.4, 'dof': false },
 ];
@@ -37,6 +40,12 @@ const DOWN_HOLD = 0.75;
 const UP_HOLD = 4;
 const WARMUP = 1.5; // the first frames are shader compilation and texture upload, not the steady state
 
+// A frame longer than this is not a frame rate, it is a stall: the tab went to the background and rAF
+// stopped, or the machine swapped, or a debugger paused. Feeding one of those to the average poisons it
+// for dozens of frames -- long enough to walk several tiers down -- and the device was never slow. 200 ms
+// is well past the worst real frame (5 fps) and well short of a backgrounded tab's seconds-long gaps.
+const STALL_MS = 200;
+
 export const createQuality = (): Quality => {
   let over = 0; // seconds spent above the budget
   let under = 0; // and below the climb-back threshold
@@ -49,8 +58,27 @@ export const createQuality = (): Quality => {
     'ms': 0,
     'update': (deltaTime, params) => {
       const frameMs = deltaTime * 1000;
+
+      // A hidden tab is not a slow one. Browsers throttle or stop rAF in the background, so the frames
+      // either side of a visibility change are seconds long; without this the sketch quietly ratchets its
+      // quality down every time it is tabbed away from, and the doubling cooldown means it stops coming
+      // back. Re-settle on return rather than trusting the first frames after a resume.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        settle = Math.max(settle, 0.5);
+        over = 0;
+        under = 0;
+        return TIERS[quality['tier']]!;
+      }
+
       // Smoothed, because one long frame (a GC, the pane redrawing itself) is not a reason to change the
-      // resolution, and an unsmoothed signal would make this oscillate on its own.
+      // resolution, and an unsmoothed signal would make this oscillate on its own. Stalls are discarded
+      // outright rather than smoothed: averaging cannot tell a 2-second gap from sustained slowness.
+      if (frameMs > STALL_MS) {
+        settle = Math.max(settle, 0.5);
+        over = 0;
+        under = 0;
+        return TIERS[quality['tier']]!;
+      }
       quality['ms'] += (frameMs - quality['ms']) * 0.1;
 
       if (settle > 0) {

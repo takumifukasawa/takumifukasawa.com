@@ -2,7 +2,7 @@
 // Every sketch embeds `<script src="/_shell.js" defer></script>`; everything else lives here, so changing
 // this one file updates all sketches without rebuilding them. Contract: docs/decisions/0004-lab-shell.md.
 //
-// P0 version: a plain text link in the corner. The look is decided in P1.
+// The link is an outlined circle with a back arrow, in the corner. No wordmark (see the note by the markup).
 
 // Measured separately from the link below: the link is a visual affordance that a sketch can turn off,
 // while "how many people opened this sketch" should be counted either way. The only skip is an iframe,
@@ -61,20 +61,43 @@
     host.setAttribute('data-site-shell', '');
     host.style.cssText = `position: fixed; ${position} z-index: 2147483647; pointer-events: none;`;
     const root = host.attachShadow({ mode: 'open' });
+    // An outlined circle with an arrow in it, and no wordmark. The name next to the arrow was a label on
+    // a control that only does one thing, on a page whose only other link is the sketch itself -- so it
+    // was text explaining a thing that does not need explaining, over someone's work. Dropping it lets
+    // the target be big enough to hit on a phone without the corner of the frame becoming a signature.
+    //
+    // The accessible name moves to aria-label: a screen reader still needs to be told where this goes.
+    // mix-blend-mode keeps the ring and the arrow legible over whatever the sketch happens to render
+    // underneath, which is why there is no fill -- a solid chip would cover the piece.
+    //
+    // The arrow is drawn, not typed. A text glyph sits wherever its font puts it inside the line box, and
+    // that differs across platforms -- centring it by eye here would be centring it for this machine only.
+    // A path in a square viewBox lands in the same place everywhere.
     root.innerHTML = `
       <style>
         a {
           pointer-events: auto;
-          font: 12px/1 ui-sans-serif, system-ui, sans-serif;
-          letter-spacing: 0.04em;
+          display: grid;
+          place-items: center;
+          box-sizing: border-box;
+          width: 40px;
+          height: 40px;
+          border: 1px solid #fff;
+          border-radius: 50%;
           color: #fff;
           mix-blend-mode: difference;
           text-decoration: none;
           opacity: 0.7;
         }
         a:hover, a:focus-visible { opacity: 1; }
+        svg { display: block; }
       </style>
-      <a href="/">← takumifukasawa</a>
+      <a href="/" aria-label="takumifukasawa.com">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 12H6M11 7l-5 5 5 5"/>
+        </svg>
+      </a>
     `;
     document.body.appendChild(host);
 

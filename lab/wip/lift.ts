@@ -52,7 +52,10 @@ export const collectPlates = (cells: Cell[]): Plates => {
   };
 };
 
-export const updateLift = (plates: Plates, deltaTime: number, pointer: Pointer, params: Params) => {
+// Returns the largest change any plate made this frame. The caller uses it to decide whether the field
+// moved at all -- with autoGrow off, a settled field is perfectly static, and everything downstream of it
+// (the instance matrices, the shadow map) can be left exactly as it was.
+export const updateLift = (plates: Plates, deltaTime: number, pointer: Pointer, params: Params): number => {
   // Plate centres are in domain units and the pointer is in world units, but createPlaneSurface maps the
   // domain onto the ground 1:1 (u = x/size + 0.5), so on the plane the two scales are the same number.
   // A curved surface would need a projection here.
@@ -66,6 +69,7 @@ export const updateLift = (plates: Plates, deltaTime: number, pointer: Pointer, 
   const rise = 1 - Math.exp(-params['liftRise'] * deltaTime);
   const fall = 1 - Math.exp(-params['liftFall'] * deltaTime);
 
+  let moved = 0;
   for (let i = 0; i < plates['count']; i++) {
     let target = 0;
     if (pointer['active']) {
@@ -76,6 +80,12 @@ export const updateLift = (plates: Plates, deltaTime: number, pointer: Pointer, 
       target = t * t * (3 - 2 * t);
     }
     const current = plates['lift'][i]!;
-    plates['lift'][i] = current + (target - current) * (target > current ? rise : fall);
+    const next = current + (target - current) * (target > current ? rise : fall);
+    // Exponential easing approaches its target but never arrives, so it would report movement forever.
+    // Snap the last sliver shut: below this the plate has moved less than a thousandth of its travel and
+    // nothing downstream can show the difference.
+    plates['lift'][i] = Math.abs(next - target) < 1e-4 ? target : next;
+    moved = Math.max(moved, Math.abs(plates['lift'][i]! - current));
   }
+  return moved;
 };

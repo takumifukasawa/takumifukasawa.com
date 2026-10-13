@@ -65,6 +65,10 @@ export const SCHEMA = {
   // shadow.intensity, which lifts the shadow without touching the fill lights -- raising `ambient` to the
   // same effect would also flatten every unlit face, which is the opposite of what a shallower shadow is for.
   'shadowStrength': { 'folder': 'light', 'min': 0, 'max': 1, 'step': 0.01 },
+  // Shadow map resolution, as a power of two (9 = 512 ... 12 = 4096). Rebuilds the map, so it is not live.
+  // It costs much less than it looks like it should: the map is only redrawn on frames where the field
+  // actually moves (see main.ts), so a still field pays for it once.
+  'shadowBits': { 'folder': 'light', 'min': 9, 'max': 12, 'step': 1 },
   'fogNear': { 'folder': 'light', 'min': 0.1, 'max': 6, 'step': 0.05 },
   'fogFar': { 'folder': 'light', 'min': 0.5, 'max': 12, 'step': 0.1 },
   // pointer (lift.ts) -- the interaction
@@ -96,6 +100,9 @@ export const SCHEMA = {
   'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
   'bloomScale': { 'folder': 'post', 'min': 0.1, 'max': 1, 'step': 0.05 }, // bloom resolution; rebuilds targets
   'bloomThreshold': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
+  // How softly brightness enters the bloom. three hardcodes this at 0.01, which is a step, and a step is
+  // what makes bloom flicker on a moving camera. Widen it until the shimmer stops.
+  'bloomKnee': { 'folder': 'post', 'min': 0.01, 'max': 1, 'step': 0.01 },
   'aberration': { 'folder': 'post', 'min': 0, 'max': 0.2, 'step': 0.002 }, // UV offset at the corners, so tiny
   // Depth of field. 0 aperture disables the pass entirely -- it costs a second geometry pass (see post.ts).
   'dofAperture': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.05 },
@@ -148,7 +155,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'keyLight', 'rimLight', 'ambient', 'shadowStrength', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
-  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'aberration',
+  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'bloomKnee', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio', 'autoQuality', 'qualityMs',
   // Materials and colours are assigned onto the existing objects every frame, so none of them rebuilds
   // the field. `emissive` used to: it was read once when the material was made, which meant the one knob

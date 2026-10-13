@@ -53,6 +53,10 @@ const params = loadParams();
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap; // PCFSoftShadowMap was removed in three r186
+// Redrawn only when the field actually moves; see the note in update(). three's default is to re-render
+// the shadow map every frame, which for a field that is standing still is a whole second geometry pass
+// producing a pixel-identical texture.
+renderer.shadowMap.autoUpdate = false;
 // Filmic, not linear: the emissive bars run well past 1.0 and linear clipping turns them into flat orange
 // blobs. OutputPass at the end of the composer is what actually applies this.
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -97,7 +101,6 @@ const target = new THREE.Vector3();
 
 const key = new THREE.DirectionalLight(0xffffff, 1);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
 scene.add(key);
 
 // Warm rim from the far side. Without it every block reads as one flat tone from the key light and the
@@ -120,10 +123,15 @@ const pointer = createPointer(canvas, camera);
 let field: Blocks[] = [];
 let plates: Plates | undefined;
 let flow: Flow | undefined;
+// Set by rebuild, cleared by the first update that follows it: new instances have no matrices yet and the
+// shadow map still holds the old field.
+let geometryDirty = true;
+let appliedLiftHeight = Number.NaN;
 
 // Called at startup and whenever a knob outside LIVE_KEYS changes. The footprints, heights, per-cell delays
 // and materials are all computed here, once -- never per frame.
 const rebuild = () => {
+  geometryDirty = true;
   for (const blocks of field) scene.remove(blocks['mesh']);
   disposeField(field);
 
@@ -146,6 +154,13 @@ const rebuild = () => {
   orbit['height'] = size * params['camHeight'];
   orbit['azimuth'] = Math.PI * 0.25;
 
+  // Resizing a shadow map means reallocating its render target, so it belongs here rather than per frame.
+  const shadowSize = 2 ** params['shadowBits'];
+  if (key.shadow.mapSize.x !== shadowSize) {
+    key.shadow.mapSize.set(shadowSize, shadowSize);
+    key.shadow.map?.dispose();
+    key.shadow.map = null;
+  }
   key.position.set(-1, 2.4, 1.6).multiplyScalar(size * 0.5);
   key.shadow.camera.left = -size * 0.8;
   key.shadow.camera.right = size * 0.8;
@@ -240,8 +255,26 @@ const update = (time: number, deltaTime: number) => {
   fog.far = params['size'] * params['fogFar'];
   post['apply'](params, tier);
   if (plates) {
-    updateLift(plates, deltaTime, pointer, params);
-    for (const blocks of field) updateBlocks(blocks, time, params, surface, plates);
+    const moved = updateLift(plates, deltaTime, pointer, params);
+    // With autoGrow off, growth() is the constant 1 and createPlaneSurface ignores time -- so once the
+    // lifts have settled the field is not merely slow-moving, it is IDENTICAL from frame to frame. Both
+    // of the things it feeds can then be skipped outright:
+    //
+    //   - the instance matrices (17k boxes of trigonometry-free but not free arithmetic)
+    //   - the SHADOW MAP, which is a second full pass over every one of those boxes
+    //
+    // The camera moving does not invalidate either: the instances are in world space and a directional
+    // light's shadow map does not depend on the viewer. This is the whole reason the piece can afford
+    // this many blocks on a phone.
+    //
+    // liftHeight is live and scales a settled lift, so a change to it has to count as movement even when
+    // nothing is easing. Anything else that moves geometry is a rebuild, which sets the flag directly.
+    if (moved > 1e-5 || params['autoGrow'] > 0 || params['liftHeight'] !== appliedLiftHeight || geometryDirty) {
+      appliedLiftHeight = params['liftHeight'];
+      geometryDirty = false;
+      for (const blocks of field) updateBlocks(blocks, time, params, surface, plates);
+      renderer.shadowMap.needsUpdate = true;
+    }
     flow?.['update'](deltaTime, plates, params);
   }
 };

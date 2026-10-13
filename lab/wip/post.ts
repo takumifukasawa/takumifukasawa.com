@@ -92,6 +92,11 @@ export const createPost = (
       bloom.strength = next['bloomStrength'];
       bloom.radius = next['bloomRadius'];
       bloom.threshold = next['bloomThreshold'];
+      // The soft knee of the high pass, which three hardcodes at 0.01 -- effectively a step. A pixel
+      // whose brightness crosses the threshold is therefore either fully in the bloom or fully out, and
+      // on a moving camera, specular highlights and thin emissive bars cross it constantly: that is what
+      // reads as bloom flickering. Widening the knee makes them fade in and out instead of switching.
+      bloom.highPassUniforms['smoothWidth']!.value = next['bloomKnee'];
       aberration.uniforms['uAmount']!.value = next['aberration'];
     },
   };

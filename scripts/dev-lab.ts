@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type Plugin } from 'vite';
+import { portConflictHint } from './lib/port.ts';
 
 const root = join(import.meta.dirname, '..');
 const args = process.argv.slice(2);
@@ -57,8 +58,9 @@ try {
 } catch (e) {
   if (!(e instanceof Error && e.message.includes('already in use'))) throw e;
   console.error(
-    `pnpm dev:lab: port ${port} is already in use. Find the owner with \`lsof -nP -iTCP:${port} -sTCP:LISTEN\`, ` +
-      `stop it if it is stale, or pick another port: pnpm dev:lab ${slug} --port ${port + 1}`,
+    `pnpm dev:lab: port ${port} is already in use.\n` +
+      `  Find the owner:  ${portConflictHint(port)}\n` +
+      `  Or use another:  pnpm dev:lab ${slug} --port ${port + 1}`,
   );
   process.exit(1);
 }

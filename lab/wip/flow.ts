@@ -141,15 +141,18 @@ export const createFlow = (params: Params): Flow => {
 
   const angle = () => (params['flowAngle'] * Math.PI) / 180;
 
-  // Spawn along the upstream edge, spread across the width of the field, at a random distance back so the
-  // stream does not arrive as a wavefront.
+  // `scatter` fills the field at startup; otherwise the particle waits somewhere upstream and drifts in.
+  //
+  // The upstream wait is what keeps the stream steady. Spawning everything on a narrow edge band means a
+  // cohort crosses together, leaves together and is reborn together -- the stream then arrives in clumps
+  // with gaps between them, forever, because nothing ever breaks the phase.
   const spawn = (i: number, scatter: boolean) => {
     const a = angle();
     const dirX = Math.cos(a);
     const dirZ = Math.sin(a);
     const half = size * 0.72;
     const across = (Math.random() - 0.5) * 2 * half;
-    const along = scatter ? Math.random() * 2 * half : half * (1 + Math.random() * 0.1);
+    const along = scatter ? (Math.random() * 2 - 1) * half : half + Math.random() * size;
     px[i] = -dirX * along - dirZ * across;
     pz[i] = -dirZ * along + dirX * across;
     vx[i] = dirX * params['flowSpeed'];
@@ -253,7 +256,12 @@ export const createFlow = (params: Params): Flow => {
       pz[i] = pz[i]! + vz[i]! * dt;
       age[i] = age[i]! + dt;
 
-      if (age[i]! > life[i]! || Math.abs(px[i]!) > bound || Math.abs(pz[i]!) > bound) spawn(i, false);
+      // Measured ALONG the flow, not from the origin. A radial bound kills particles that are still waiting
+      // upstream, which forces them all back onto the same narrow spawn band and rebuilds the clumping the
+      // staggered spawn exists to avoid.
+      const downstream = px[i]! * dirX + pz[i]! * dirZ;
+      const sideways = Math.abs(px[i]! * -dirZ + pz[i]! * dirX);
+      if (age[i]! > life[i]! || downstream > bound || sideways > bound) spawn(i, false);
 
       hist[(i * slots + head) * 2] = px[i]!;
       hist[(i * slots + head) * 2 + 1] = pz[i]!;

@@ -21,7 +21,7 @@ const GRID = 48;
 const COLOR = new THREE.Color(0x6fc8ff);
 
 export type Flow = {
-  'object': THREE.Points;
+  'object': THREE.Mesh;
   'update': (deltaTime: number, plates: Plates, params: Params) => void;
   'dispose': () => void;
 };
@@ -30,34 +30,51 @@ export const createFlow = (params: Params): Flow => {
   const count = Math.max(1, Math.floor(params['flowCount']));
   const size = params['size'];
 
-  // A trail is the particle's own recent positions, drawn as dimmer points -- not a line, so the look stays
-  // a point cloud. SLOTS is a ring buffer per particle, with the newest at `head`.
-  const trail = Math.max(0, Math.floor(params['flowTrail']));
-  const slots = trail + 1;
-  const drawn = count * slots;
+  // Each particle's trail is a ribbon, not a row of dots: its recent positions are the spine, and every
+  // spine sample carries two vertices offset perpendicular to the direction of travel. Drawing the history
+  // as separate points was legible but read as a dotted line, which is not what a trail looks like.
+  //
+  // The ribbon lies flat in the ground plane, like the flow itself.
+  const trail = Math.max(1, Math.floor(params['flowTrail']));
+  const slots = trail + 1; // spine samples per particle
+  const verts = count * slots * 2;
 
-  // Points, not stretched quads. A point has no orientation to get wrong and no winding to flip, and the
-  // position buffer is three floats per point instead of a sixteen-float matrix.
   const geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(drawn * 3);
-  const colors = new Float32Array(drawn * 3);
+  const positions = new Float32Array(verts * 3);
+  const colors = new Float32Array(verts * 3);
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-  // Additive, so fading is just a dimmer colour -- there is no per-vertex alpha on PointsMaterial, and
-  // against an additive blend black IS transparent. toneMapped off keeps them above the bloom threshold.
-  const material = new THREE.PointsMaterial({
-    size: 1,
-    sizeAttenuation: true,
+  // The index never changes -- only the vertices move -- so it is built once.
+  const indices = new Uint32Array(count * (slots - 1) * 6);
+  let w = 0;
+  for (let i = 0; i < count; i++) {
+    const base = i * slots * 2;
+    for (let s = 0; s < slots - 1; s++) {
+      const a0 = base + s * 2;
+      indices[w++] = a0;
+      indices[w++] = a0 + 1;
+      indices[w++] = a0 + 2;
+      indices[w++] = a0 + 1;
+      indices[w++] = a0 + 3;
+      indices[w++] = a0 + 2;
+    }
+  }
+  geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+  // Additive, so fading is just a dimmer colour -- there is no per-vertex alpha here, and against an
+  // additive blend black IS transparent. toneMapped off keeps the trail above the bloom threshold.
+  const material = new THREE.MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
     depthWrite: false,
+    side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending,
     toneMapped: false,
   });
 
-  const points = new THREE.Points(geometry, material);
-  points.frustumCulled = false;
+  const ribbon = new THREE.Mesh(geometry, material);
+  ribbon.frustumCulled = false;
 
   const px = new Float32Array(count);
   const pz = new Float32Array(count);
@@ -190,35 +207,66 @@ export const createFlow = (params: Params): Flow => {
       hist[(i * slots + head) * 2] = px[i]!;
       hist[(i * slots + head) * 2 + 1] = pz[i]!;
 
-      // Fade in and out at the ends of the life, or points appear and vanish as hard pops.
+      // Fade in and out at the ends of the life, or trails appear and vanish as hard pops.
       const t = age[i]! / life[i]!;
       const fade = Math.min(1, t * 6) * Math.min(1, (1 - t) * 4) * params['flowBrightness'];
+      const halfWidth = params['flowWidth'] / 2;
+      const base = i * slots * 2;
 
       for (let s = 0; s < slots; s++) {
         // s = 0 is now, s = slots - 1 is the oldest sample in the ring.
-        const src = (head - s + slots) % slots;
-        const k = (i * slots + s) * 3;
+        const at = (o: number) => (i * slots + ((head - o + slots * 2) % slots)) * 2;
+        const here = at(s);
+        // Direction of travel at this sample: from the older neighbour toward the newer one, clamped at the
+        // ends so the head and tail use the segment they actually have.
+        const ahead = at(Math.max(0, s - 1));
+        const behind = at(Math.min(slots - 1, s + 1));
+        let tx = hist[ahead]! - hist[behind]!;
+        let tz = hist[ahead + 1]! - hist[behind + 1]!;
+        const tl = Math.hypot(tx, tz);
+        if (tl < 1e-6) {
+          // Just spawned, or standing still: fall back to the velocity so the ribbon still has an axis.
+          const vl = Math.hypot(vx[i]!, vz[i]!) || 1;
+          tx = vx[i]! / vl;
+          tz = vz[i]! / vl;
+        } else {
+          tx /= tl;
+          tz /= tl;
+        }
+
+        // Taper to nothing at the tail. Squared, because a linear taper reads as a wedge, not a wake.
+        const taper = (1 - s / slots) ** 2;
+        const ox = -tz * halfWidth * taper;
+        const oz = tx * halfWidth * taper;
+
+        const x = hist[here]!;
+        const z = hist[here + 1]!;
         // The stream runs ABOVE the static greeble and below whatever the pointer has raised. That is what
         // makes the raised plates the obstacles: at floor level the fixed blocks would hide the stream and
         // the interaction would be invisible.
-        positions[k] = hist[(i * slots + src) * 2]!;
-        positions[k + 1] = params['flowAltitude'];
-        positions[k + 2] = hist[(i * slots + src) * 2 + 1]!;
+        const y = params['flowAltitude'];
+        const k = (base + s * 2) * 3;
+        positions[k] = x + ox;
+        positions[k + 1] = y;
+        positions[k + 2] = z + oz;
+        positions[k + 3] = x - ox;
+        positions[k + 4] = y;
+        positions[k + 5] = z - oz;
 
-        // Squared falloff: a linear tail reads as a dotted line of equals, a squared one as a trail.
-        const tail = slots === 1 ? 1 : (1 - s / slots) ** 2;
-        colors[k] = COLOR.r * fade * tail;
-        colors[k + 1] = COLOR.g * fade * tail;
-        colors[k + 2] = COLOR.b * fade * tail;
+        const lit = fade * taper;
+        for (let v = 0; v < 2; v++) {
+          colors[k + v * 3] = COLOR.r * lit;
+          colors[k + v * 3 + 1] = COLOR.g * lit;
+          colors[k + v * 3 + 2] = COLOR.b * lit;
+        }
       }
     }
-    material.size = params['flowSize'];
     geometry.getAttribute('position').needsUpdate = true;
     geometry.getAttribute('color').needsUpdate = true;
   };
 
   return {
-    'object': points,
+    'object': ribbon,
     'update': update,
     'dispose': () => {
       geometry.dispose();

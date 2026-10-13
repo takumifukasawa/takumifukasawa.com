@@ -42,14 +42,14 @@
   "liftHeight": 5.0,
   "liftRise": 9.0,
   "liftFall": 2.5,
-  "flowCount": 2200,
+  "flowCount": 1400,
   "flowSpeed": 9.0,
   "flowAngle": 0,
   "flowPush": 1.1,
   "flowSwirl": 1.6,
   "flowTurn": 8.0,
   "flowAltitude": 1.7,
-  "flowSize": 0.22,
-  "flowBrightness": 2.2,
-  "flowTrail": 8
+  "flowBrightness": 1.6,
+  "flowTrail": 14,
+  "flowWidth": 0.16
 }

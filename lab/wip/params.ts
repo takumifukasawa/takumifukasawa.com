@@ -32,6 +32,7 @@ export const SCHEMA = {
   'storeys': { 'folder': 'heights', 'min': 0, 'max': 24, 'step': 1 }, // quantise heights (0 = continuous)
   'gap': { 'folder': 'heights', 'min': 0, 'max': 0.4, 'step': 0.01 }, // shrink so neighbours do not touch
   // timing (growth.ts)
+  'autoGrow': { 'folder': 'motion', 'min': 0, 'max': 1, 'step': 0.01 }, // 0 = the field just stands there
   'loopPeriod': { 'folder': 'motion', 'min': 2, 'max': 30, 'step': 0.5 }, // seconds for one rise/hold/fall cycle
   'spread': { 'folder': 'motion', 'min': 0, 'max': 1, 'step': 0.01 }, // phase spread across the field
   'rise': { 'folder': 'motion', 'min': 0.02, 'max': 0.6, 'step': 0.01 }, // fraction of the period spent rising
@@ -94,7 +95,7 @@ export type Params = Record<ParamKey, number>;
 // rebuild (footprints, heights, per-cell delays, materials), so changing it has to rebuild the field.
 // `spread` looks like motion but feeds the precomputed delays, so it is deliberately absent.
 export const LIVE_KEYS: ParamKey[] = [
-  'loopPeriod', 'rise', 'fall', 'overshoot',
+  'autoGrow', 'loopPeriod', 'rise', 'fall', 'overshoot',
   'exposure', 'camSwing',
   'keyLight', 'rimLight', 'ambient', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',

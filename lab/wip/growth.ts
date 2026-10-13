@@ -31,6 +31,12 @@ export const cellDelay = (cell: Cell, params: Params): number => {
 
 // 0 at rest, 1 at full height. t is seconds since the sketch started.
 export const growth = (t: number, delay: number, params: Params): number => {
+  // autoGrow 0 means the field simply stands at its full height and only the pointer moves it. The
+  // animation is a property of the piece, not of the structure, so it has to be switchable off -- with it
+  // running, a still frame is never the same twice and the pointer's effect is hard to read.
+  const amount = params['autoGrow'];
+  if (amount <= 0) return 1;
+
   const local = fract(t / params['loopPeriod'] - delay);
   const rise = params['rise'];
   const fall = params['fall'];
@@ -41,13 +47,13 @@ export const growth = (t: number, delay: number, params: Params): number => {
     // whatever the overshoot is -- that identity is what keeps the loop seamless.
     const c1 = 1.70158 * params['overshoot'];
     const c3 = c1 + 1;
-    return 1 + c3 * (u - 1) ** 3 + c1 * (u - 1) ** 2;
+    return 1 + (1 + c3 * (u - 1) ** 3 + c1 * (u - 1) ** 2 - 1) * amount;
   }
 
   if (local > 1 - fall) {
     // Cubic back to 0, and shorter than the rise, so the field spends most of the loop standing.
     const u = (local - (1 - fall)) / fall;
-    return 1 - u * u * u;
+    return 1 + (1 - u * u * u - 1) * amount;
   }
 
   return 1;

@@ -27,7 +27,6 @@
 // - fixedUpdate: fixed 60 Hz (time/timeAccumulator.ts). update / render: capped at 60 fps (time/timeSkipper.ts).
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createField, disposeField, updateBlocks, type Blocks } from './blocks.ts';
 import { createFlow, type Flow } from './flow.ts';
@@ -69,16 +68,14 @@ scene.fog = new THREE.Fog(FOG_COLOR, 1, 2);
 // and from close up the identical geometry reads as architecture.
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
 
-// The camera orbits by a few degrees over the loop. A full revolution would read as a turntable; this reads
-// as parallax, which is what makes a field of boxes look like it has depth. sin() over the loop period is
-// periodic by construction, so it cannot be what breaks the loop.
-const orbit = { 'radius': 1, 'height': 1, 'azimuth': 0, 'auto': true };
-
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-// Dragging takes the camera over for the rest of the session: inspecting the footprints from another angle
-// is the whole reason the controls are here, and fighting the automatic motion would make that useless.
-controls.addEventListener('start', () => (orbit['auto'] = false));
+// No OrbitControls. Touch has no hover, so on a phone every interaction is a drag: with the camera on one
+// finger, raising a plate and spinning the scene become the same gesture and neither can be aimed. The
+// camera belongs to the sketch; the pointer belongs to the viewer.
+//
+// It still swings by a few degrees. A full revolution would read as a turntable, but a little parallax is
+// what makes a field of boxes look like it has depth.
+const orbit = { 'radius': 1, 'height': 1, 'azimuth': 0 };
+const target = new THREE.Vector3();
 
 const key = new THREE.DirectionalLight(0xdfefff, 1);
 key.castShadow = true;
@@ -119,12 +116,13 @@ const rebuild = () => {
 
   ground.scale.set(size * 4, size * 4, 1);
   ground.position.y = 0;
-  controls.target.set(0, 0, 0);
+  target.set(0, 0, 0);
 
-  // Higher than the pure greeble framing. The flow runs across the field, and from a low angle the raised
-  // plates hide the stream behind them -- the pattern of the flow has to be visible, not just its edge.
-  orbit['radius'] = size * 1.35;
-  orbit['height'] = size * 0.85;
+  // Close enough that the floor runs off every edge of the frame. A field that ends inside the frame reads
+  // as an object sitting in a void; one that overflows reads as a place, and leaves the eye no empty
+  // background to settle on. Still high enough to see the pattern of the flow rather than just its edge.
+  orbit['radius'] = size * 0.78;
+  orbit['height'] = size * 0.52;
   orbit['azimuth'] = Math.PI * 0.25;
 
   key.position.set(-1, 2.4, 1.6).multiplyScalar(size * 0.5);
@@ -176,14 +174,10 @@ const update = (time: number, deltaTime: number) => {
     appliedPixelRatio = params['pixelRatio'];
     setSize();
   }
-  if (orbit['auto']) {
-    const swing = Math.sin((time / params['loopPeriod']) * Math.PI * 2) * params['camSwing'];
-    const azimuth = orbit['azimuth'] + swing;
-    camera.position.set(Math.cos(azimuth) * orbit['radius'], orbit['height'], Math.sin(azimuth) * orbit['radius']);
-    camera.lookAt(controls.target);
-  } else {
-    controls.update();
-  }
+  const swing = Math.sin((time / params['loopPeriod']) * Math.PI * 2) * params['camSwing'];
+  const azimuth = orbit['azimuth'] + swing;
+  camera.position.set(Math.cos(azimuth) * orbit['radius'], orbit['height'], Math.sin(azimuth) * orbit['radius']);
+  camera.lookAt(target);
 
   renderer.toneMappingExposure = params['exposure'];
   key.intensity = params['keyLight'];

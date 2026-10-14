@@ -86,6 +86,10 @@ export const SCHEMA = {
   'flowAngle': { 'folder': 'flow', 'min': 0, 'max': 360, 'step': 1 },
   'flowPush': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // away from rising ground
   'flowSwirl': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.1 }, // along its contour -- this is "around"
+  // Particles steering away from each other (flow.ts), so converging streams stay side by side.
+  'flowJitter': { 'folder': 'flow', 'min': 0, 'max': 1, 'step': 0.01 }, // per-particle spread of push and swirl
+  'flowSeparate': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // 0 turns it off (and its cost)
+  'flowSeparateRadius': { 'folder': 'flow', 'min': 0.05, 'max': 3, 'step': 0.01 }, // world units
   'flowTurn': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // how fast a streak can change heading
   'flowTrail': { 'folder': 'flow', 'min': 1, 'max': 32, 'step': 1 }, // spine segments; rebuilds the geometry
   'flowWidth': { 'folder': 'flow', 'min': 0.01, 'max': 1.5, 'step': 0.01 }, // ribbon width at the head
@@ -94,6 +98,14 @@ export const SCHEMA = {
   // absolute so that narrowing the ribbon narrows the cap with it instead of leaving it mismatched.
   'flowHead': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 },
   'flowBrightness': { 'folder': 'flow', 'min': 0, 'max': 4, 'step': 0.05 },
+  // Extra brightness while a streak is bending (flow.ts glow): at full glow it is flowBrightness x (1 + this).
+  // Above the bloom threshold, so the bend is what blooms. 0 turns it off.
+  'flowGlow': { 'folder': 'flow', 'min': 0, 'max': 10, 'step': 0.05 },
+  'flowGlowTurn': { 'folder': 'flow', 'min': 0.1, 'max': 10, 'step': 0.05 }, // rad/s of turning that counts as full glow
+  'flowGlowDecay': { 'folder': 'flow', 'min': 0.02, 'max': 3, 'step': 0.01 }, // seconds the flare takes to fade after the bend
+  // Half-width of the region the stream lives in, as a fraction of size. Keep it just past the edge of the
+  // frame: everything outside is simulated and uploaded every frame for nothing (flow.ts BOUND).
+  'flowExtent': { 'folder': 'flow', 'min': 0.1, 'max': 1, 'step': 0.01 },
   'flowAltitude': { 'folder': 'flow', 'min': 0, 'max': 8, 'step': 0.05 }, // above the fixed greeble, below the raised
   // post (post.ts)
   'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
@@ -161,7 +173,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'exposure', 'camSwing', 'camPeriod', 'camDistance', 'camHeight', 'camFov',
   'keyLight', 'rimLight', 'ambient', 'shadowStrength', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
-  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
+  'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowJitter', 'flowSeparate', 'flowSeparateRadius', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowGlow', 'flowGlowTurn', 'flowGlowDecay', 'flowAltitude', 'flowExtent',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'bloomKnee', 'msaa', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio', 'autoQuality', 'qualityMs',
   // Materials and colours are assigned onto the existing objects every frame, so none of them rebuilds

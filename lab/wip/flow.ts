@@ -134,17 +134,45 @@ export const createFlow = (params: Params): Flow => {
   const vz = new Float32Array(count);
   const age = new Float32Array(count);
   const life = new Float32Array(count);
+  // Per-particle -1..1, rerolled at each respawn: how much harder or softer this one is pushed and turned
+  // than the knobs say (flowJitter). Identical particles in the same spot take identical paths; a little
+  // spread fans a converging stream out instead of letting it settle onto one line.
+  const varyPush = new Float32Array(count);
+  const varySwirl = new Float32Array(count);
+  // Which way round the current obstacle this particle goes: +1 / -1, 0 while it is in the open. Decided
+  // once on arrival and held until it is clear. Re-deciding every frame from the local gradient is what made
+  // a particle meeting an obstacle head-on twitch left and right: dead ahead, the sign flips with any noise.
+  const sideOf = new Int8Array(count);
+  // How lit up this particle is by its own turning, 0..1 (flowGlow). Kept per particle and eased rather
+  // than computed fresh each frame: the turn rate is a per-frame difference of headings and is noisy, so
+  // used raw it flickers -- and bloom amplifies flicker (post.ts). Rises fast, fades over flowGlowDecay,
+  // so a streak flares as it bends round a plate and carries the light a little way downstream.
+  const glow = new Float32Array(count);
   // x,z of the last `slots` positions of each particle. Altitude is constant, so it is not stored.
   const hist = new Float32Array(count * slots * 2);
   let head = 0;
 
   const field = new Float32Array(GRID * GRID);
 
+  // Separation: a bucket grid rebuilt every frame (counting sort), so finding the neighbours within the
+  // radius is a look at 3x3 buckets instead of every other particle. Sized lazily, because the bucket
+  // count depends on bound and the radius, both of them live.
+  const snapX = new Float32Array(count); // positions at the start of the frame: every particle reacts to
+  const snapZ = new Float32Array(count); // the same snapshot, whatever order the loop updates them in
+  const sorted = new Int32Array(count);
+  const bucketOf = new Int32Array(count);
+  let bucketStart = new Int32Array(1);
+  let bucketCount = new Int32Array(1);
+
   const angle = () => (params['flowAngle'] * Math.PI) / 180;
 
   // Where the stream enters and leaves. One number, so the spawn band, the kill test and the fade cannot
   // drift apart -- which is exactly how the stream broke before (see the lifetime note below).
-  const BOUND = () => size * 0.85;
+  //
+  // A knob because the camera sees a small part of the floor: at the old fixed 0.85 only ~8% of the
+  // particles were ever on screen, so most of the CPU time and the per-frame upload went to streaks nobody
+  // could see. Read live, so shrinking it retires the particles that end up outside on their next step.
+  const BOUND = () => size * params['flowExtent'];
 
   // `scatter` fills the field at startup; otherwise the particle re-enters just outside the upstream edge.
   //
@@ -175,6 +203,10 @@ export const createFlow = (params: Params): Flow => {
     // Startup only: spread the phases, or every particle fades in on the same frame and the first thing
     // the viewer sees is one synchronised pulse.
     age[i] = scatter ? Math.random() * life[i]! : 0;
+    varyPush[i] = Math.random() * 2 - 1;
+    varySwirl[i] = Math.random() * 2 - 1;
+    sideOf[i] = 0;
+    glow[i] = 0;
     // Collapse the whole history onto the new position. Without this the trail draws a line from wherever
     // the particle died to wherever it was reborn, straight across the field.
     for (let s = 0; s < slots; s++) {
@@ -233,6 +265,45 @@ export const createFlow = (params: Params): Flow => {
     const bound = BOUND(); // the one place the edge is defined (see spawn)
     const step = size / GRID;
 
+    // Bucket the particles for separation. Buckets are one radius wide, so every neighbour within the
+    // radius is in the 3x3 block around a particle's own bucket.
+    const sepRadius = Math.max(params['flowSeparateRadius'], 0.01);
+    const sepStrength = params['flowSeparate'];
+    // How many neighbours a particle would have within the radius if the stream were spread evenly. The
+    // separation only acts on crowding ABOVE this (see the loop): applied everywhere, it kept every streak
+    // weaving against the random spacing of its neighbours, and the straight stream turned into hair.
+    const expected = Math.max((count / (4 * bound * bound)) * Math.PI * sepRadius * sepRadius, 0.5);
+    // Particles just respawned sit slightly outside the bound (spawn band), so the grid is padded by one
+    // bucket and indices are clamped rather than trusted.
+    const B = Math.max(1, Math.min(512, Math.ceil((2 * bound) / sepRadius) + 2));
+    if (bucketStart.length !== B * B + 1) {
+      bucketStart = new Int32Array(B * B + 1);
+      bucketCount = new Int32Array(B * B);
+    }
+    const bucketIndex = (x: number, z: number) => {
+      const bi = Math.min(B - 1, Math.max(0, Math.floor((x + bound) / sepRadius) + 1));
+      const bj = Math.min(B - 1, Math.max(0, Math.floor((z + bound) / sepRadius) + 1));
+      return bj * B + bi;
+    };
+    if (sepStrength > 0) {
+      bucketCount.fill(0);
+      for (let i = 0; i < count; i++) {
+        snapX[i] = px[i]!;
+        snapZ[i] = pz[i]!;
+        const b = bucketIndex(px[i]!, pz[i]!);
+        bucketOf[i] = b;
+        bucketCount[b] = bucketCount[b]! + 1;
+      }
+      bucketStart[0] = 0;
+      for (let b = 0; b < B * B; b++) bucketStart[b + 1] = bucketStart[b]! + bucketCount[b]!;
+      bucketCount.fill(0); // reused as the fill cursor
+      for (let i = 0; i < count; i++) {
+        const b = bucketOf[i]!;
+        sorted[bucketStart[b]! + bucketCount[b]!] = i;
+        bucketCount[b] = bucketCount[b]! + 1;
+      }
+    }
+
     for (let i = 0; i < count; i++) {
       // Central differences on the obstacle field: the gradient points uphill.
       const gx = (sample(px[i]! + step, pz[i]!) - sample(px[i]! - step, pz[i]!)) / (2 * step);
@@ -241,6 +312,9 @@ export const createFlow = (params: Params): Flow => {
 
       let nvx = dirX;
       let nvz = dirZ;
+      // The way round the current obstacle, for the fallback below; the drift itself in the open.
+      let tx = dirX;
+      let tz = dirZ;
 
       if (gm > 1e-5) {
         // The gradient is NORMALISED before use, so push and swirl are multiples of the base flow rather
@@ -251,11 +325,109 @@ export const createFlow = (params: Params): Flow => {
         const nz = gz / gm;
         // Only deflect where there is something to deflect around. `gm * step` is the rise across one cell,
         // which is what makes the shoulder of the obstacle act before the particle is inside it.
-        const w = Math.min(1, sample(px[i]!, pz[i]!) + gm * step);
-        // Contour direction, turned so it carries the particle downstream rather than back into the flow.
-        const side = Math.sign(dirX * nz - dirZ * nx) || 1;
-        nvx += (-nx * push + -nz * side * swirl) * w;
-        nvz += (-nz * push + nx * side * swirl) * w;
+        const inside = sample(px[i]!, pz[i]!);
+        const w = Math.min(1, inside + gm * step);
+
+        // A river round a stone: the water never turns back, it slides sideways along the stone's face.
+        //
+        // The old rule pushed straight out along -n. Head-on, -n points UPSTREAM, so the push cancelled the
+        // drift (a stall) or beat it (a reversal), and after the speed was renormalised that came out as
+        // particles hovering and wobbling in front of the obstacle -- measured: 16% reversing, 32% stalled,
+        // 21 degrees of heading change per frame within 2 units of a raised plate. Now only the component
+        // of the drift that heads INTO the obstacle is removed, and what is left (plus the contour term)
+        // carries it round.
+        if (sideOf[i] === 0) {
+          // The contour direction is side * (-nz, nx); its component along the drift is -side * cross. So
+          // the side that carries the particle DOWNSTREAM is the opposite sign of cross. (The previous
+          // version had it the other way round and sent particles up the face of the obstacle -- hidden
+          // behind a push that was strong enough to make everything near an obstacle chaotic anyway.)
+          const cross = dirX * nz - dirZ * nx;
+          // Dead ahead the cross product is noise, so a near-zero one takes the particle's own coin
+          // instead: a head-on stream splits both ways rather than all turning the same way.
+          sideOf[i] = Math.abs(cross) > 0.2 ? (cross > 0 ? -1 : 1) : varySwirl[i]! >= 0 ? 1 : -1;
+        }
+        const side = sideOf[i]!;
+        const jitter = params['flowJitter'];
+        const into = nvx * nx + nvz * nz;
+        if (into > 0) {
+          nvx -= nx * into * w;
+          nvz -= nz * into * w;
+        }
+        tx = -nz * side;
+        tz = nx * side;
+        const sw = swirl * (1 + varySwirl[i]! * jitter) * w;
+        nvx += -nz * side * sw;
+        nvz += nx * side * sw;
+        // Pushed out only once it is actually over the obstacle, never as a wall in front of it.
+        const p = push * (1 + varyPush[i]! * jitter) * inside;
+        nvx -= nx * p;
+        nvz -= nz * p;
+      } else {
+        sideOf[i] = 0; // in the open: the next obstacle decides afresh
+      }
+
+      // Separation: steer away from neighbours, so streams that converge beside an obstacle stay side by
+      // side instead of collapsing onto one line. Without it, a still pointer leaves the stream piled onto a
+      // few lines -- one bin measured at 131x the mean density -- and those lines then repeat forever.
+      //
+      // Only the part ACROSS the current heading is used. Along the heading, the particle behind would be
+      // steered backwards, and after the speed is renormalised below that is a U-turn, not a gap.
+      if (sepStrength > 0) {
+        let sx = 0;
+        let sz = 0;
+        let near = 0;
+        const b = bucketOf[i]!;
+        const bi = b % B;
+        const bj = (b - bi) / B;
+        for (let dj = -1; dj <= 1; dj++) {
+          const nj = bj + dj;
+          if (nj < 0 || nj >= B) continue;
+          for (let di = -1; di <= 1; di++) {
+            const ni = bi + di;
+            if (ni < 0 || ni >= B) continue;
+            const nb = nj * B + ni;
+            for (let q = bucketStart[nb]!; q < bucketStart[nb + 1]!; q++) {
+              const o = sorted[q]!;
+              if (o === i) continue;
+              const dx = snapX[i]! - snapX[o]!;
+              const dz = snapZ[i]! - snapZ[o]!;
+              const d2 = dx * dx + dz * dz;
+              if (d2 >= sepRadius * sepRadius || d2 < 1e-12) continue;
+              const d = Math.sqrt(d2);
+              // Linear falloff to zero at the radius, so a neighbour drifting in or out of range does not
+              // switch the force on with a jolt.
+              const f = (1 - d / sepRadius) / d;
+              sx += dx * f;
+              sz += dz * f;
+              near++;
+            }
+          }
+        }
+        const hl = Math.hypot(vx[i]!, vz[i]!) || 1;
+        const hx = vx[i]! / hl;
+        const hz = vz[i]! / hl;
+        const along = sx * hx + sz * hz;
+        // 0 up to 1.5x the even-spread count, ramping to full at 2.5x: open stream untouched, a pile-up
+        // pushed apart.
+        const crowd = Math.min(1, Math.max(0, (near - expected * 1.5) / expected));
+        nvx += (sx - along * hx) * sepStrength * crowd;
+        nvz += (sz - along * hz) * sepStrength * crowd;
+      }
+
+      // Never upstream. Every term above can point back against the drift in some configuration -- the
+      // push on the front face of an obstacle (the grid is coarse, so a particle skimming the face already
+      // counts as over it), the separation once a particle's heading has turned sideways -- and any of
+      // them, renormalised, is a reversal. Measured with this off: 11% of particles near an obstacle
+      // reversing, mostly from the push. So the backward component is removed outright, and if almost
+      // nothing is left (pressed flat against the face) the particle takes the way round.
+      const ahead = nvx * dirX + nvz * dirZ;
+      if (ahead < 0) {
+        nvx -= dirX * ahead;
+        nvz -= dirZ * ahead;
+      }
+      if (Math.hypot(nvx, nvz) < 0.05) {
+        nvx = tx;
+        nvz = tz;
       }
 
       // Hold the speed constant: the deflection is about direction, and letting it change the pace makes
@@ -266,8 +438,27 @@ export const createFlow = (params: Params): Flow => {
 
       // Ease toward the new direction so a streak curves instead of snapping.
       const turn = 1 - Math.exp(-params['flowTurn'] * dt);
-      vx[i] = vx[i]! + (nvx - vx[i]!) * turn;
-      vz[i] = vz[i]! + (nvz - vz[i]!) * turn;
+      const ovx = vx[i]!;
+      const ovz = vz[i]!;
+      vx[i] = ovx + (nvx - ovx) * turn;
+      vz[i] = ovz + (nvz - ovz) * turn;
+
+      // Glow from bending: the angle the heading swung through this frame, per second. It is the turn
+      // itself that lights up, not proximity to an obstacle -- a streak sliding straight along a plate's
+      // face stays dim, one being bent round its corner flares. Measured against flowGlowTurn (rad/s at
+      // full glow) so the knob reads as "how sharp a bend counts as fully lit".
+      if (params['flowGlow'] > 0) {
+        const swung = Math.atan2(
+          Math.abs(ovx * vz[i]! - ovz * vx[i]!),
+          ovx * vx[i]! + ovz * vz[i]!,
+        );
+        const target = Math.min(1, swung / dt / Math.max(params['flowGlowTurn'], 1e-3));
+        // Fast attack, slow release: the flare starts on the bend and trails off after it.
+        const rate = target > glow[i]! ? 20 : 1 / Math.max(params['flowGlowDecay'], 1e-3);
+        glow[i] = glow[i]! + (target - glow[i]!) * (1 - Math.exp(-rate * dt));
+      } else {
+        glow[i] = 0;
+      }
 
       px[i] = px[i]! + vx[i]! * dt;
       pz[i] = pz[i]! + vz[i]! * dt;
@@ -304,7 +495,8 @@ export const createFlow = (params: Params): Flow => {
         Math.max(0, Math.min(1, u * 8)) *
         Math.max(0, Math.min(1, (1 - u) * 8)) *
         Math.max(0, Math.min(1, (1 - v) * 8)) *
-        params['flowBrightness'];
+        params['flowBrightness'] *
+        (1 + glow[i]! * params['flowGlow']);
       const halfWidth = params['flowWidth'] / 2;
       const base = i * slots * 2;
 

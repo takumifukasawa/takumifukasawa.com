@@ -1,12 +1,6 @@
-// wip — the workspace sketch
+// greeble-flow
 //
-// `wip` is not a title, it is the slug this sketch keeps WHILE it is being made. The slug becomes the URL
-// the moment `pnpm lab:add` runs and is permanent after that (decision 0007), so naming a piece before
-// knowing what it is produces a URL that lies -- which is exactly what happened when "greeble" turned into
-// a body and the name stopped meaning anything. Rename this directory to the real slug when publishing;
-// `pnpm lab:add` refuses to publish `wip` (docs/spec/publish-pipeline.md).
-//
-// What it currently is: a greeble floor that answers the pointer. Plates near the pointer rise; a flow
+// A greeble floor that answers the pointer. Plates near the pointer rise; a flow
 // crossing the field has to find its way around them.
 //
 //   subdivide.ts  footprints (recursive rectangular subdivision), grouped into plates
@@ -182,7 +176,7 @@ const rebuild = () => {
   field = createField(cells, params, surface, plates);
   for (const blocks of field) scene.add(blocks['mesh']);
   const placed = field.reduce((n, b) => n + b['cells'].length, 0);
-  console.log(`[wip] ${cells.length} cells -> ${placed} on the hull (${field[1]?.['cells'].length ?? 0} bars)`);
+  console.log(`[greeble-flow] ${cells.length} cells -> ${placed} on the hull (${field[1]?.['cells'].length ?? 0} bars)`);
 };
 
 const post = createPost(renderer, scene, camera, params);

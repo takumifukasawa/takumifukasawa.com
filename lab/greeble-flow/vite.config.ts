@@ -70,7 +70,7 @@ export default defineConfig({
   base: './',
   build: {
     // Output straight into public/lab/<slug>/ (committed; served by Pages as-is. decision 0001).
-    outDir: '../../public/lab/wip',
+    outDir: '../../public/lab/greeble-flow',
     emptyOutDir: true,
     target: 'esnext',
     // Sketches are a single chunk; the modulepreload polyfill is dead weight.

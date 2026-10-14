@@ -9,7 +9,7 @@
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
 最初の sketch は棚上げ済み（`lab-archives/mirror-sphere/`、決定 0006）。いま `lab/` には 2 件:
-**`greeble`**（平面に greeble。完成している）と **`wip`**（**ポインタで隆起する greeble の床を、流れが避けて渡る**。制作中）。
+**`greeble`**（平面に greeble。完成している）と **`greeble-flow`**（**ポインタで隆起する greeble の床を、流れが避けて渡る**。制作中。2026-10-14 に `wip` から改名、`lab:add` は未実行）。
 **日々の作業は `develop`、デプロイされるのは `main` だけ**（決定 0009）。
 **`lab:add` の本番初回はまだ通っていない。ここが唯一の未検証な一本道。**
 
@@ -51,30 +51,30 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **人間: `wip` の未コミット分を見て、develop にコミットするか決める**（下の「`wip` の現在地」）。
-   `pnpm dev:lab wip`（実機は `--host`）。**コミット前に `pnpm lab:build wip`**（`lab build in sync` 検査が要求する）。
-2. **`wip` の流れの発光を目で詰める**: `flowGlow` / `flowGlowTurn` / `flowGlowDecay`。滲みが足りなければ `bloomStrength`（0.13 と弱い）。
-3. `wip` の残り（どれも未着手。順不同）:
+1. **`greeble-flow` の流れの発光を目で詰める**（下の「`greeble-flow` の現在地」）。
+   `pnpm dev:lab greeble-flow`（実機は `--host`）。**コミット前に `pnpm lab:build greeble-flow`**（`lab build in sync` 検査が要求する）。
+   ノブは `flowGlow` / `flowGlowTurn` / `flowGlowDecay`。滲みが足りなければ `bloomStrength`（0.13 と弱い）。
+2. `greeble-flow` の残り（どれも未着手。順不同）:
    - 床の読みやすさ（葉 = パネル）: `massMetal` を下げる、`maxSide` 6〜10、`splitBias` 0.9〜1、`stopChance` を上げる、を提案済み
    - `flowExtent` をカメラの視錐台に合わせて自動で決める（縦長のスマホでは画面内の粒が 16〜20% しかない。**座標変換なので人間の領域**）
    - CPU → GPU 転送を減らす（20000 粒・尾 14 で CPU 7.7 ms/frame + 約 14 MB/frame。履歴を k フレームおきに記録 / 尾か計算を GPU 側へ、を提案済み）
-4. `greeble` を公開する: 録画して `pnpm lab:add greeble --video <mp4>`（まず `--dry-run`）。**これが `lab:add` の本番初回**。
+3. `greeble` を公開する: 録画して `pnpm lab:add greeble --video <mp4>`（まず `--dry-run`）。**これが `lab:add` の本番初回**。
    直前に `harness check`（`--fast` なし）で `artifacts run` を通す。公開は `main` へ（決定 0009）。
-5. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble`）を確かめる。下の実測表の残りもここで埋まる。
-6. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
-7. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
-8. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
+4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble`）を確かめる。下の実測表の残りもここで埋まる。
+5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
+6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
+7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
-## `wip` の現在地（2026-10-14）
+## `greeble-flow` の現在地（2026-10-14。旧 `wip`）
 
 **方向**: ポインタの周りの板が隆起し、横から流れてくる粒（リボンの尾 + 先端の円）がそれを川のように避けて渡る。
 船体（UV に貼る案）からは 2026-10-13 に作り替えた（`ea2ffa7`）。下の「2026-10-12 の 2 回目」の `wip` の記述は**歴史**。
 
 | 項目 | 状態 | 出典 |
 |---|---|---|
-| bloom のちらつき / 箱のエッジ | コミット済（`3732c56`）。合成先の MSAA、`bloomScale` 1、エッジは `edge.glsl` | `lab/wip/post.ts`, `edges.ts`, `edge.glsl` |
+| bloom のちらつき / 箱のエッジ | コミット済（`3732c56`）。合成先の MSAA、`bloomScale` 1、エッジは `edge.glsl` | `lab/greeble-flow/post.ts`, `edges.ts`, `edge.glsl` |
 | `dev:lab --host` / `--port` | コミット済。`--host` は LAN と Tailscale（`*.ts.net`）で http 配信 | `scripts/dev-lab.ts`, `spec/publish-pipeline.md` |
-| 流れ: `flowExtent`（範囲をノブに）、粒同士の分離、粒ごとのばらつき、川の回り込み、曲がると光る | **未コミット**（2026-10-14 時点）。検査は通っている | `git status`, `lab/wip/flow.ts` |
+| 流れ: `flowExtent`（範囲をノブに）、粒同士の分離、粒ごとのばらつき、川の回り込み、曲がると光る | コミット済（2026-10-14） | `lab/greeble-flow/flow.ts` |
 
 - **流れのモデルは「避ける」のまま**。渦（curl / stream function）に書き換えた版は**人間が却下**（2026-10-14。「タップしたところに磁場みたいに渦巻く」。避ける動きの方が良い）。再提案しない。
 - 川の回り込みは、障害物へ向かう成分だけを消す、回る向きを粒ごとに固定する、押し出しは障害物の上だけ、上流成分を最後に消す、の 4 つ。

@@ -77,7 +77,7 @@ export const SCHEMA = {
   'liftRise': { 'folder': 'pointer', 'min': 0.5, 'max': 30, 'step': 0.5 }, // per second; higher = snappier
   'liftFall': { 'folder': 'pointer', 'min': 0.2, 'max': 20, 'step': 0.1 }, // per second; lower = settles slowly
   // flow (flow.ts) -- the streaks crossing the field
-  'flowCount': { 'folder': 'flow', 'min': 0, 'max': 6000, 'step': 50 }, // rebuilds the instanced mesh
+  'flowCount': { 'folder': 'flow', 'min': 0, 'max': 20000, 'step': 100 }, // rebuilds the instanced mesh
   'flowSpeed': { 'folder': 'flow', 'min': 0.5, 'max': 30, 'step': 0.5 }, // world units per second
   // Degrees in the ground plane. 0 is what reads as upper-left to lower-right ON SCREEN at the default
   // camera azimuth. A world direction and a screen direction are not the same thing: setting this to the
@@ -98,7 +98,11 @@ export const SCHEMA = {
   // post (post.ts)
   'bloomStrength': { 'folder': 'post', 'min': 0, 'max': 3, 'step': 0.01 },
   'bloomRadius': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
-  'bloomScale': { 'folder': 'post', 'min': 0.1, 'max': 1, 'step': 0.05 }, // bloom resolution; rebuilds targets
+  // Bloom resolution; rebuilds targets. Below 1 the bright pass samples the frame sparsely, so a thin light
+  // is caught on one frame and missed on the next -- the flicker gets worse, not just softer.
+  'bloomScale': { 'folder': 'post', 'min': 0.1, 'max': 1, 'step': 0.05 },
+  // MSAA samples on the composer's target (post.ts). 0 / 2 / 4; steadies thin lights going into bloom.
+  'msaa': { 'folder': 'post', 'min': 0, 'max': 4, 'step': 2 },
   'bloomThreshold': { 'folder': 'post', 'min': 0, 'max': 2, 'step': 0.01 },
   // How softly brightness enters the bloom. three hardcodes this at 0.01, which is a step, and a step is
   // what makes bloom flicker on a moving camera. Widen it until the shimmer stops.
@@ -110,6 +114,8 @@ export const SCHEMA = {
   'dofMaxBlur': { 'folder': 'post', 'min': 0, 'max': 0.03, 'step': 0.001 },
   // Surfaces. Separate from the colours because roughness and metalness are what decide whether the
   // environment map is visible at all: at metalness 0 a standard material ignores it entirely.
+  'edgeWidth': { 'folder': 'material', 'min': 0, 'max': 0.1, 'step': 0.001 }, // world units; boxes are >= minSide
+  'edgeStrength': { 'folder': 'material', 'min': 0, 'max': 4, 'step': 0.01 },
   'massRough': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
   'massMetal': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
   'barRough': { 'folder': 'material', 'min': 0, 'max': 1, 'step': 0.01 },
@@ -123,6 +129,7 @@ export const SCHEMA = {
   // The palette. Every colour in the sketch is here; none is written in a .ts file.
   'bgColor': { 'folder': 'colour', 'view': 'color' }, // background AND fog -- they must match or a horizon appears
   'massColor': { 'folder': 'colour', 'view': 'color' },
+  'edgeColor': { 'folder': 'colour', 'view': 'color' }, // box edges (edges.ts / edge.glsl)
   'barColor': { 'folder': 'colour', 'view': 'color' }, // the bars' base colour, underneath the emission
   'barEmissive': { 'folder': 'colour', 'view': 'color' },
   'groundColor': { 'folder': 'colour', 'view': 'color' },
@@ -155,12 +162,12 @@ export const LIVE_KEYS: ParamKey[] = [
   'keyLight', 'rimLight', 'ambient', 'shadowStrength', 'fogNear', 'fogFar',
   'liftRadius', 'liftHeight', 'liftRise', 'liftFall',
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowAltitude',
-  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'bloomKnee', 'aberration',
+  'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'bloomKnee', 'msaa', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio', 'autoQuality', 'qualityMs',
   // Materials and colours are assigned onto the existing objects every frame, so none of them rebuilds
   // the field. `emissive` used to: it was read once when the material was made, which meant the one knob
   // the bloom threshold has to be balanced against was the one that cost a full rebuild to try.
-  'emissive', 'massRough', 'massMetal', 'barRough', 'barMetal', 'groundRough', 'groundMetal', 'envIntensity',
+  'emissive', 'edgeWidth', 'edgeStrength', 'edgeColor', 'massRough', 'massMetal', 'barRough', 'barMetal', 'groundRough', 'groundMetal', 'envIntensity',
   'bgColor', 'massColor', 'barColor', 'barEmissive', 'groundColor', 'flowColor',
   'keyColor', 'rimColor', 'skyColor', 'earthColor',
 ];

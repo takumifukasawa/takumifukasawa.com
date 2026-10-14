@@ -4,11 +4,10 @@
 // the sketch look better than the saved values -- which is the point: the saved values are the intent, and
 // this is the fallback for a device that cannot afford them.
 //
-// What it gives up, in the order it gives it up, is fill rate: resolution first, then the bloom pyramid,
-// then depth of field. That order is not arbitrary. Post is fill-rate bound (the DOF blur alone is 41 taps
-// per pixel), so resolution is the biggest lever per unit of visible change; the bloom pyramid is a blur
-// and its resolution is invisible; DOF is last because losing it is the only one of the three that changes
-// the composition rather than its sharpness.
+// What it gives up, in the order it gives it up, is fill rate: resolution first, then depth of field, then
+// the bloom resolution. Post is fill-rate bound (the DOF blur alone is 41 taps per pixel), so resolution is
+// the biggest lever per unit of visible change. Bloom resolution is last because lowering it does not
+// soften the image, it makes thin lights flicker (see TIERS).
 //
 // NOT geometry. flowTrail and flowCount would also help, but both rebuild buffers, and a device already
 // missing its frame deadline is the worst possible moment to allocate.
@@ -20,11 +19,16 @@ export type Tier = { 'pixel': number; 'bloom': number; 'dof': boolean };
 // resolution held at the step before it -- and with dofAperture at 0 that tier changed nothing at all, so
 // the ladder spent a second and a half of sustained slowness walking through a rung that did not exist.
 // Giving up the DOF pass is folded into the step that also drops resolution.
+//
+// Bloom resolution is held until the last rung. It used to go first, on the theory that a blur's
+// resolution is invisible -- true of the blur, not of the bright pass feeding it: below full resolution
+// that pass samples the frame sparsely, thin lights are caught and missed on alternate frames, and the
+// bloom flickers. That is a visible defect, not a softer image, so it is the last thing to give up.
 const TIERS: Tier[] = [
   { 'pixel': 1, 'bloom': 1, 'dof': true },
-  { 'pixel': 0.85, 'bloom': 0.75, 'dof': true },
-  { 'pixel': 0.7, 'bloom': 0.5, 'dof': false },
-  { 'pixel': 0.55, 'bloom': 0.4, 'dof': false },
+  { 'pixel': 0.85, 'bloom': 1, 'dof': true },
+  { 'pixel': 0.7, 'bloom': 1, 'dof': false },
+  { 'pixel': 0.55, 'bloom': 0.75, 'dof': false },
 ];
 
 export type Quality = {

@@ -26,7 +26,13 @@ export const createPost = (
   camera: THREE.Camera,
   params: Params,
 ): Post => {
-  const composer = new EffectComposer(renderer);
+  // An explicit target so it can carry MSAA. antialias is off on the canvas (main.ts), and the canvas only
+  // receives the final full-screen quad anyway -- the scene is drawn here, so this is where edges get
+  // smoothed or don't. It matters for bloom more than for edges: a 1-2 px streak that covers a pixel on one
+  // frame and misses it on the next feeds the bright pass a different amount of light every frame, and the
+  // bloom shows that as flicker. Half float, same as three's default target, so HDR survives into bloom.
+  const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: params['msaa'] });
+  const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
 
   // Depth of field, before bloom: in a real camera the lens defocuses and the sensor blooms, in that order.
@@ -38,9 +44,9 @@ export const createPost = (
   const bokeh = new BokehPass(scene, camera, { focus: 1, aperture: 0, maxblur: 0.01 });
   composer.addPass(bokeh);
 
-  // The bloom pyramid runs at a fraction of the frame. It is a blur, so its resolution is invisible, and on
-  // a phone this is one of the cheapest things to give up (gamedev:mobile-audio-render). The fraction
-  // arrives through setSize rather than being captured here, because quality.ts lowers it further.
+  // The bloom resolution arrives through setSize rather than being captured here, because quality.ts can
+  // lower it. Keep it at 1 where possible: below that the bright pass samples the frame sparsely and thin
+  // lights flicker (mobile-audio-render skill, references/render-cost.md).
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(1, 1),
     params['bloomStrength'],
@@ -88,6 +94,14 @@ export const createPost = (
         uniforms['focus']!.value = next['size'] * next['dofFocus'];
         uniforms['aperture']!.value = (next['dofAperture'] * next['dofMaxBlur']) / (next['size'] * 0.85);
         uniforms['maxblur']!.value = next['dofMaxBlur'];
+      }
+      // Live: the sample count can change on existing targets, but only takes effect once they are
+      // reallocated, which dispose() arranges for the next render.
+      if (composer.renderTarget1.samples !== next['msaa']) {
+        for (const rt of [composer.renderTarget1, composer.renderTarget2]) {
+          rt.samples = next['msaa'];
+          rt.dispose();
+        }
       }
       bloom.strength = next['bloomStrength'];
       bloom.radius = next['bloomRadius'];

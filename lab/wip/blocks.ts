@@ -1,6 +1,7 @@
 // Cell[] -> InstancedMesh, and the per-frame matrix update. Plumbing: this file only moves numbers that
 // subdivide / height / growth decided, and splits the field into the two materials it is drawn with.
 import * as THREE from 'three';
+import { applyEdges, withEdges } from './edges.ts';
 import { cellDelay, growth } from './growth.ts';
 import { hashCell } from './hash.ts';
 import { cellHeight } from './height.ts';
@@ -108,6 +109,7 @@ export const createField = (cells: Cell[], params: Params, surface: Surface, pla
   // Nothing about the look is decided here: both materials are built empty and then written every frame
   // by applyMaterials from params, so colour, roughness and metalness are knobs rather than code.
   const massMaterial = new THREE.MeshStandardMaterial();
+  withEdges(massMaterial); // the mass only: the bars already read by their glow
   const barMaterial = new THREE.MeshStandardMaterial();
 
   // Bars are kept flat. Given the same height as everything else they come out as thin glowing *walls*,
@@ -123,6 +125,7 @@ export const createField = (cells: Cell[], params: Params, surface: Surface, pla
 // nothing to reflect renders black, so its usable range depends entirely on the environment map, and
 // finding the pair by eye is the only way.
 export const applyMaterials = (field: Blocks[], params: Params) => {
+  applyEdges(params);
   for (const blocks of field) {
     const material = blocks['mesh'].material as THREE.MeshStandardMaterial;
     if (blocks['bar']) {

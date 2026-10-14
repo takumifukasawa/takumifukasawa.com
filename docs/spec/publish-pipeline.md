@@ -17,7 +17,7 @@ repo は 1 つ。push も 1 回（決定 0001）。
 **ブランチ**: 日々の commit と端末間の同期は `develop`。**`main` だけが Cloudflare に配信される**
 （決定 0009）。公開は `develop` を `main` にマージする行為で、`pnpm lab:add` は `main` 以外では止まる。
 
-制作中の確認は Tailscale / ローカル Wi-Fi、または `develop` の Branch Preview URL
+制作中の確認は Tailscale / ローカル Wi-Fi（`pnpm dev:lab <slug> --host`。MagicDNS の `*.ts.net` 名でも開ける）、または `develop` の Branch Preview URL
 （`develop-takumifukasawa-com.<subdomain>.workers.dev`）。**本番には出ない。**
 
 **注意**: `lab/<slug>/` をビルドすると `public/lab/<slug>/` に出て、それは commit され配信される。

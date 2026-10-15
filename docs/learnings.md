@@ -5,6 +5,19 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-15 `artifacts run` はシェーダーのコンパイル失敗を見逃す（ビルドが three のエラー出力を消している）
+
+- 症状: `lab/wip/grid.ts` の GLSL で予約語 `half` を変数名にして、フラグメントシェーダーのコンパイルに失敗した。
+  dev では `THREE.WebGLProgram: Shader Error ... 'half' : Illegal use of reserved word` が出ていたのに、
+  `harness check` の `artifacts run` は `wip: ok` で通った。
+- 原因: 作品の `vite.config.ts` の terser 設定 `drop_console: true` が、作品のコードだけでなく **three 内部の
+  `console.error` まで消す**。three はシェーダーエラーを自前の `error()` で出しているが、ビルド後はその中身が空になる
+  （成果物の中では `function N(...t){(t=D(t)).shift()}`）。そのため検査が拾うものがない。全作品に共通の穴。
+- 対処 / 再発したら: シェーダーを変えたら、**dev（`pnpm dev:lab`）のコンソールで `Shader Error` を見る**。
+  `artifacts run` の ok は、シェーダーがコンパイルできたことの根拠にならない。根本対応は `tech-debt.md` の #3。
+- ついでに踏んだもの: シェーダーを JS のテンプレート文字列に直書きしているとき、GLSL のコメントにバッククォートを書くと
+  文字列がそこで閉じてビルドが落ちる（こちらはビルドが落ちるので気付ける）。
+
 ## 2026-10-12 [harness候補] 自動操作で開いたタブは `requestAnimationFrame` が止まるので、アニメーションが「動いていない」ように見える
 
 - 症状: ブラウザ自動操作でページを開き、数秒待って 2 枚スクリーンショットを撮ると**1 ピクセルも違わない**。

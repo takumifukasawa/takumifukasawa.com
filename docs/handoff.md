@@ -47,7 +47,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | **`greeble-flow` の 1 件のみ**（公開済み。`/lab/greeble-flow/`）。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
+| `lab/` の中身 | **`greeble-flow`**（公開済み。`/lab/greeble-flow/`）と **`grid-line-timer`（制作中。2026-10-15 着手、同日 `wip` から改名。未公開）**。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
@@ -64,6 +64,27 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 7. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
 8. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 9. `greeble-flow` は完成形（見た目の詰めは再開しない）。保留 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は下の節。
+
+## `grid-line-timer` の現在地（2026-10-15 着手。旧 `wip`）
+
+グリッドの上のデジタル時計。時計は常に点いていて、毎秒**変わる桁だけ、その桁の新しい数字の全セグメント**が画面外からグリッド線に沿って縦横に曲がりながら来て、
+秒の境目ちょうどに着く。その桁の古い数字はその場でフェード。bloom あり。カメラは常にゆっくり動く（yaw と pitch を割り切れない周期で揺らす）。three.js（カメラを少し斜めにするため。pixi は落選）。
+
+人間と合意した仕様（2026-10-15）:
+- 24 時間・ローカル時刻。**`HH:MM:SS`**（最初は `HH:MM` だったが「秒がないと毎秒来る意味がない」で秒を足した）。
+- 1 桁 ＝ 1×2 セル、セグメント ＝ セルの辺。グリッドは薄く見せる。
+- 配置は `layout` ノブ（`auto` / `row` / `column`）。`auto` は横長で `HH MM SS` 横並び（桁間 1 セル・組間 2 セル）、縦長で 3 段（段間 1 セル）。
+  **PC も縦積みにするかは実物を見て決める**（未決）。カメラは時計の外接矩形が画面の `camFit` を占めるように引く。
+- **変わる桁を丸ごと入れ替える**（2026-10-15。最初は毎秒全セグメント →「目にうるさい」で変わるセグメントだけ →
+  `8→9` が棒が 1 本消えるだけでバグに見えるので桁単位に。桁の繰り上がりがそのまま演出の強弱になる）。
+  毎分 0 秒に全部飛ばし直す案は入れていない。短い尾。線同士の重なりは許す。
+- **AI との分担: 今回は全部 AI が書く**（人間の明示的な許可、2026-10-15「今回も一旦全部あなたが書く感じで」）。greeble-flow と同じく例外で、方針変更ではない。
+
+構成: `clock.ts`（7 セグ表と配置）/ `route.ts`（経路。セグメントから逆向きに歩いて画面外へ出す。秒ごとに seed 固定）/
+`lines.ts`（秒ごとのバッチと instanced quad）/ `grid.ts` / `post.ts`（bloom: `bloomScale` 0.5 + MSAA 4 + 動的解像度）。
+`quality.ts` / `capture.ts` / `debug.ts` は greeble-flow からのコピー（2 件目。**3 件目で `lab/core/` を判断**）。
+
+次: 見た目の調整（ノブは `?debug`）と、PC の配置（横か縦か）の決定。
 
 ## `greeble-flow` の現在地（2026-10-14。旧 `wip`）
 

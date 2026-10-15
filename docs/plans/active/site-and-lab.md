@@ -86,5 +86,6 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-11: **sketch の識別子から連番を外した**（決定 0007）。`lab/<slug>/`。きっかけは 0006 で「棚上げした sketch が番号を持ち続けるか」の判断が同じ日に 2 回変わったこと。前提に戻ると、索引の並びは `date`、一意性はディレクトリ名で、番号はどちらも担っていなかった。公開済み sketch が 0 件＝ URL を変えられる最後の地点だったので、ここで決めた。`numberOwner()` は削除
 - 2026-10-11: 0-7 完了。**Pages ではなく Workers Static Assets** で公開（上の決定ログ）。`takumifukasawa.com` が応答するようになった（それまでは旧 A レコード削除後、向き先が無く NXDOMAIN だった）。`/_shell.js` は 200 + `max-age=300`、`/` は 404（P0 はページ 0 枚なので正常）。初回ビルド 48 秒、差分アップロードは**される**。残った宿題 2 件は `../../tech-debt.md`（workers.dev の本番 URL を塞ぐ / Always Use HTTPS）
 - 2026-10-14: `wip` を **`greeble-flow`** に改名し、**現状を完成形とした**（人間の判断）。`params.json` の `flowGlow = 0`（発光オフ）は意図どおり。残っていた 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送）は保留。**`greeble` は没**にして決定 0006 の手順で `lab-archives/greeble/` へ棚上げ（`public/lab/greeble/` と `lab/.build-meta/greeble.json` は削除）。これで `lab:add` の本番初回は `greeble-flow` になった。あわせてデバッグ画面を `?debug` 方式に変更し、`docs/learnings.md` に 1 件（Windows で `strictPort` が古い dev サーバーを検知しない）。`harness check` は pass=9 fail=0。
+- 2026-10-15: **`greeble-flow` を公開**（撮影モード `?capture` の静止画を poster に。`lab:add` の本番初回。git commit だけ pre-commit のテストのバグで落ち、直した）。サイトに `/about/`（事実だけ）・共通レイアウト・プロフィールのリンク・M PLUS 1 Code を入れ、作品のカードを同じタブにした。ハーネスを 0.11.1 に。`tests green` が `FORCE_COLOR` で誤判定するのを直した。いずれも spec / learnings に書き戻し済み。
 
 ## 未確定事項（人間の判断待ち）

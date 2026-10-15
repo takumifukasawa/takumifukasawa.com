@@ -8,12 +8,10 @@
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-いま `lab/` には **`greeble-flow` の 1 件だけ**（**ポインタで隆起する greeble の床を、流れが避けて渡る**。
-2026-10-14 に `wip` から改名し、**同日に現状を完成形とした**。`lab:add` は未実行）。
-棚上げは 2 件（`lab-archives/mirror-sphere/` と `lab-archives/greeble/`。どちらも決定 0006 の手順）。
-**`greeble` は 2026-10-14 に没にした**（人間の判断）ので、`lab:add` の本番初回は `greeble-flow` で通すことになる。
+**最初の sketch `greeble-flow` を公開した**（2026-10-15。`lab:add` の本番初回も通った）。サイトは `/`（作品のグリッド + プロフィールのリンク）と
+`/about/`（事実だけ）の 2 ページ。**次の本題は sketch を積むこと**（P1 に入るのは 5〜10 件たまってから）。
+棚上げは 2 件（`lab-archives/mirror-sphere/` と `lab-archives/greeble/`。決定 0006）。
 **日々の作業は `develop`、デプロイされるのは `main` だけ**（決定 0009）。
-**`lab:add` の本番初回はまだ通っていない。ここが唯一の未検証な一本道。**
 
 ## 別の PC で再開するとき（最初にやること）
 
@@ -40,31 +38,32 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 検査 | **全部 pass。件数は叩いて確かめる**（ここに書くと腐る）。`artifacts run` だけ `fast` ではない = **pre-commit では走らない**ので、公開前に `harness check`（`--fast` なし）を 1 回通すこと | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
-| `/` の OGP | 入れた（2026-10-15、P1 から前倒し）。`og:image` は最新の公開 sketch の `poster`、無ければ出さない。捨てデータで両方の分岐を確認済み（画像あり → `summary_large_image` + `og:image:width/height`、無し → `summary`）。**トップの URL を人に貼るのは `greeble-flow` の公開後** | `src/pages/index.astro`、`spec/site-v0.md` |
-| Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
+| サイト（Astro）| **`/` と `/about/` の 2 ページ**。共通の head・ヘッダー（名前 + About / X / GitHub / Shadertoy / Hatena Blog）は `src/layouts/Base.astro`。フォントは M PLUS 1 Code（Google Fonts）。見た目は暫定（P1 で決める）。`/about/` は事実だけ（名前・所属・職種・技術）。作品のカードは**行き先でタブを決める**（このサイトの作品は同じタブ） | `src/layouts/`、`src/pages/`、`spec/site-v0.md` |
+| `/` の OGP | `og:image` は最新の公開 sketch の `poster`（いまは `greeble-flow`）、無ければ出さない。`/about/` は画像なし（`summary`）。**トップの URL は人に貼ってよい** | `curl -s https://takumifukasawa.com/ \| grep og:image` |
+| `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認 | 計画 0-9 |
 | `pnpm lab:add` | **本番初回を通した（2026-10-15、`greeble-flow`、`59dbc32`）**。R2 の put と md / manifest は自動で通り、git commit だけ pre-commit のテストが index を汚して落ちた（手でコミットして push）。原因はテストの `GIT_INDEX_FILE` 継承で、修正済み（`learnings.md`） | `git log --oneline main`、計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
 | R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | **`greeble-flow` の 1 件のみ**（完成形・未公開）。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
+| `lab/` の中身 | **`greeble-flow` の 1 件のみ**（公開済み。`/lab/greeble-flow/`）。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **`greeble-flow` は完成形（2026-10-14 の人間の判断）。見た目の詰めは再開しない。**
-   触るときは `pnpm dev:lab greeble-flow`（実機は `--host`）。**コミット前に `pnpm lab:build greeble-flow`**（`lab build in sync` 検査が要求する）。
-2. 保留（完成形の判断に含めない。再開するなら順不同）:
-   - 床の読みやすさ（葉 = パネル）: `massMetal` を下げる、`maxSide` 6〜10、`splitBias` 0.9〜1、`stopChance` を上げる、を提案済み
-   - `flowExtent` をカメラの視錐台に合わせて自動で決める（縦長のスマホでは画面内の粒が 16〜20% しかない。**座標変換なので人間の領域**）
-   - CPU → GPU 転送を減らす（20000 粒・尾 14 で CPU 7.7 ms/frame + 約 14 MB/frame。履歴を k フレームおきに記録 / 尾か計算を GPU 側へ、を提案済み）
-3. ~~`greeble-flow` を公開する~~ → **済（2026-10-15、`59dbc32`）**。poster は撮影モードの静止画、動画はまだ出していない（出すなら録画して `pnpm lab:add greeble-flow --video <mp4>`。既存の poster key はスキップされる）。**トップの URL を人に貼ってよい状態**。
-4. 公開後の実測: 末尾スラッシュは済（307）。残りは下の実測表の repo サイズと R2 の Class B。
-5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。`/about/` の OGP（ページ自体が P1 なのでまだ無い）。
-6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
-7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
+1. **次の sketch を作る**。これが本題（評価軸は制作量。`AGENTS.md`）。`pnpm new <slug>`（制作中は `wip`）→ 制作 → 撮影モード（`?capture` → `s`）で poster →
+   `main` に `develop` をマージして `pnpm lab:add <slug> --poster <png>`（まず `--dry-run`）。撮影の約束は `spec/publish-pipeline.md` の「撮影のときだけ高品質にする」。
+   撮影モードは作品ごとのコピー（`lab/greeble-flow/capture.ts` が 1 件目）。**3 件目で `lab/core/` に出すかを判断**。
+2. 動画も出すなら: 録画の仕組みはまだ無い（OBS で画面ごと録るなら `?capture&clean`）。`canvas.captureStream` で撮る仕組みを作るなら、作品 2〜3 件で必要になってから。
+3. `_shell.js` の `←` を「直前がこのサイトのトップなら `history.back()`」にする（**提案だけ、未着手**）。カードが同じタブになったので、作品が増えると `href="/"` ではトップのスクロール位置を失う。作品 1 件のいまは実害なし。
+4. 公開後の実測の残り: repo サイズ、R2 の Class B（下の実測表）。
+5. `[harness候補]` を agent-harness に戻す（`harness-maintain` の手順）: **`tests green` の `FORCE_COLOR`**（雛形の検査そのものの不具合。最優先）、テストの `GIT_INDEX_FILE` 継承（`learnings.md` 2026-10-15）。
+6. local branch `chore/close-workers-dev`（`af328fa`）が**どこにもマージされていない**のにリモートは削除済み。中身は `tech-debt.md` の宿題（workers.dev の本番 URL を塞ぐ）。取り込むか捨てるかを決める。
+7. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
+8. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
+9. `greeble-flow` は完成形（見た目の詰めは再開しない）。保留 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は下の節。
 
 ## `greeble-flow` の現在地（2026-10-14。旧 `wip`）
 
@@ -168,7 +167,11 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 ## 未確定事項（人間の判断待ち）
 
 - 「説明の文章を書かない」を agent-harness へ昇格させるか（2026-10-11 保留）。いまはこの repo の `AGENTS.md` のみ。昇格させるなら断定形ではなく条件つき（成果物が「説明の要るもの」か「現物が語るもの」かを先に確認する形）に書き換える
-- フォント・配色・レイアウトの方向性（P1 着手時に決める）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
+- **`AGENTS.md` の「このプロジェクトの目的」の書き方**（2026-10-15 に提案、返事待ち）: いまの「作品を束ねるハブ」だと、サイトに載せるものを作品に限ると読める
+  （AI が実際にそう読み違えた）。本人の意図は「作品・ブログ・プロフィールを束ねる個人のページ。ただし評価軸は制作量で、サイトの作り込みは下位」
+- `/about/` に PaleGL へのリンクを載せるか（spec にはあった。2026-10-15 時点で未定）。受賞歴は「いったん無し」で確定（枠だけある）
+- `greeble` を没にした理由（docs には「人間の判断」とだけある。`lab-archives/` は見返す棚なので一言あると効く）
+- フォント・配色・レイアウトの方向性（P1 着手時に決める。フォントだけ M PLUS 1 Code に先行決定）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
 
 ### 2026-10-11〜12 に決めたことの置き場（本文はそれぞれの doc にある）
 
@@ -241,6 +244,9 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
   **`docs/setup.md` には書かない** — `cosense` は takumifukasawa.com のビルドにも検査にも要らない（語彙は別の箱）
 
 ## 確認したが意図的に更新しなかったもの（次のセッションが同じ確認を繰り返さないため）
+
+- **2026-10-15 の決定（`/about/` の中身・カードのタブ・フォント・撮影モード）は決定ファイルを作らなかった**。どれも spec の変更として`spec/site-v0.md` / `spec/publish-pipeline.md` に理由ごと書いた。決定 0001 には「タブは行き先で決める」の追記だけ
+- `docs/README.md`（索引）— 新しい doc は足していない。`docs/architecture.md` — 構造の変更なし（`src/layouts/` はサイトの内側の話）
 
 - `docs/tech-debt.md` — 2 件とも返済済。行は残してある（新規の負債は無い）
 - `docs/roles/` — harness の seed のまま。`task-orchestrate` を回す段階になったら読む

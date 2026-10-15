@@ -3,13 +3,15 @@
 <!-- 最終更新は絶対日付で。session-handoff が更新し、session-catchup が最初に読む。
      長期タスクの機械可読な進行状態は .harness/state/ に置き、ここには人間向けの要約だけ書く。 -->
 
-最終更新: 2026-10-14
+最終更新: 2026-10-15
 
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-最初の sketch は棚上げ済み（`lab-archives/mirror-sphere/`、決定 0006）。いま `lab/` には 2 件:
-**`greeble`**（平面に greeble。完成している）と **`greeble-flow`**（**ポインタで隆起する greeble の床を、流れが避けて渡る**。制作中。2026-10-14 に `wip` から改名、`lab:add` は未実行）。
+いま `lab/` には **`greeble-flow` の 1 件だけ**（**ポインタで隆起する greeble の床を、流れが避けて渡る**。
+2026-10-14 に `wip` から改名し、**同日に現状を完成形とした**。`lab:add` は未実行）。
+棚上げは 2 件（`lab-archives/mirror-sphere/` と `lab-archives/greeble/`。どちらも決定 0006 の手順）。
+**`greeble` は 2026-10-14 に没にした**（人間の判断）ので、`lab:add` の本番初回は `greeble-flow` で通すことになる。
 **日々の作業は `develop`、デプロイされるのは `main` だけ**（決定 0009）。
 **`lab:add` の本番初回はまだ通っていない。ここが唯一の未検証な一本道。**
 
@@ -39,33 +41,38 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
-| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（`lab/greeble/`）で commit / push まで通すのが残り** | 計画 0-8 |
+| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（`lab/greeble-flow/`）で commit / push まで通すのが残り**（2026-10-14 に対象が `greeble` から移った） | 計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
 | R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | `greeble`（完成）と `wip`（制作中）。棚上げ分は `lab-archives/mirror-sphere/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`） | `ls lab/`、決定 0007 |
+| `lab/` の中身 | **`greeble-flow` の 1 件のみ**（完成形・未公開）。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **`greeble-flow` の流れの発光を目で詰める**（下の「`greeble-flow` の現在地」）。
-   `pnpm dev:lab greeble-flow`（実機は `--host`）。**コミット前に `pnpm lab:build greeble-flow`**（`lab build in sync` 検査が要求する）。
-   ノブは `flowGlow` / `flowGlowTurn` / `flowGlowDecay`。滲みが足りなければ `bloomStrength`（0.13 と弱い）。
-2. `greeble-flow` の残り（どれも未着手。順不同）:
+1. **`greeble-flow` は完成形（2026-10-14 の人間の判断）。見た目の詰めは再開しない。**
+   触るときは `pnpm dev:lab greeble-flow`（実機は `--host`）。**コミット前に `pnpm lab:build greeble-flow`**（`lab build in sync` 検査が要求する）。
+2. 保留（完成形の判断に含めない。再開するなら順不同）:
    - 床の読みやすさ（葉 = パネル）: `massMetal` を下げる、`maxSide` 6〜10、`splitBias` 0.9〜1、`stopChance` を上げる、を提案済み
    - `flowExtent` をカメラの視錐台に合わせて自動で決める（縦長のスマホでは画面内の粒が 16〜20% しかない。**座標変換なので人間の領域**）
    - CPU → GPU 転送を減らす（20000 粒・尾 14 で CPU 7.7 ms/frame + 約 14 MB/frame。履歴を k フレームおきに記録 / 尾か計算を GPU 側へ、を提案済み）
-3. `greeble` を公開する: 録画して `pnpm lab:add greeble --video <mp4>`（まず `--dry-run`）。**これが `lab:add` の本番初回**。
+3. **`greeble-flow` を公開する**: 録画して `pnpm lab:add greeble-flow --video <mp4>`（まず `--dry-run`）。**これが `lab:add` の本番初回**。
    直前に `harness check`（`--fast` なし）で `artifacts run` を通す。公開は `main` へ（決定 0009）。
-4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble`）を確かめる。下の実測表の残りもここで埋まる。
+   **2026-10-14 まではここが `greeble` だった**（没にしたので入れ替わった）。配管の初回検証と作品が同時になる懸念は下の「解決済」の最後の行のとおり残る。
+4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble-flow`）を確かめる。下の実測表の残りもここで埋まる。
 5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
 6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
 ## `greeble-flow` の現在地（2026-10-14。旧 `wip`）
+
+**2026-10-14、人間の判断で現状を完成形とした。** 見た目の詰めはここで止める。
+`params.json` の **`flowGlow` が `0`（= 発光オフ）は意図どおり**（`flow.ts:450` が `> 0` で短絡する）。上げ忘れではないので戻さない。
+下の「流れの発光」の実装はそのまま残してあり、使うかどうかはノブの値だけで決まる。
+**残っていた 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は未着手のまま保留**。完成形の判断に含めない。
 
 **方向**: ポインタの周りの板が隆起し、横から流れてくる粒（リボンの尾 + 先端の円）がそれを川のように避けて渡る。
 船体（UV に貼る案）からは 2026-10-13 に作り替えた（`ea2ffa7`）。下の「2026-10-12 の 2 回目」の `wip` の記述は**歴史**。
@@ -75,6 +82,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | bloom のちらつき / 箱のエッジ | コミット済（`3732c56`）。合成先の MSAA、`bloomScale` 1、エッジは `edge.glsl` | `lab/greeble-flow/post.ts`, `edges.ts`, `edge.glsl` |
 | `dev:lab --host` / `--port` | コミット済。`--host` は LAN と Tailscale（`*.ts.net`）で http 配信 | `scripts/dev-lab.ts`, `spec/publish-pipeline.md` |
 | 流れ: `flowExtent`（範囲をノブに）、粒同士の分離、粒ごとのばらつき、川の回り込み、曲がると光る | コミット済（2026-10-14） | `lab/greeble-flow/flow.ts` |
+| デバッグ画面（Tweakpane）を **`?debug` のときだけ出す**ように変えた（2026-10-14。既定は非表示。dev も同じ＝`http://localhost:5173/?debug`）。雛形のコメントと spec も直した | コミット済（2026-10-15） | `lab/greeble-flow/debug.ts`、`scripts/templates/sketch/main.ts`、`spec/publish-pipeline.md` |
 
 - **流れのモデルは「避ける」のまま**。渦（curl / stream function）に書き換えた版は**人間が却下**（2026-10-14。「タップしたところに磁場みたいに渦巻く」。避ける動きの方が良い）。再提案しない。
 - 川の回り込みは、障害物へ向かう成分だけを消す、回る向きを粒ごとに固定する、押し出しは障害物の上だけ、上流成分を最後に消す、の 4 つ。
@@ -115,10 +123,13 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 
 **没にするのも正しい**（決定 0006）。`greeble`（床版）は完成していて公開できる状態なので、
 そちらを `lab:add` の本番初回に使い、`wip` は棚上げ、という畳み方がある。
+→ **実際は逆になった**: `wip` が残って `greeble-flow` として完成し、`greeble` が没になった（2026-10-14）。
 
-## greeble の現在地
+## greeble（2026-10-14 に没。`lab-archives/greeble/`）
 
-動いていて、ビルド成果物も `artifacts run` を通っている。**残っているのは人間の目での確認と詰め。**
+**出さないと決めた**（人間の判断、2026-10-14）。決定 0006 の手順どおり `lab-archives/greeble/` へ移し、
+`public/lab/greeble/` と `lab/.build-meta/greeble.json` を消した（`harness check` は pass=9 fail=0）。
+以下は**歴史**。戻すときは `git mv` を逆にして `pnpm lab:build greeble`。
 
 | ファイル | 役割 |
 |---|---|
@@ -134,7 +145,7 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 **この sketch については人間の明示的な指示（「一旦作り切ってみてほしい」）で AI が書き切った**。
 例外であって方針変更ではない。3 本は独立したファイルなので、任意の 1 本だけ自分で書き直せる形にしてある。
 
-### 確認できていないこと（ここから始める）
+### 確認できていなかったこと（没にしたので宿題ではない）
 
 - **動いているところを人間が見ていない。** ロジックは Node で数値的に検証した（ループ誤差 6.7e-15、
   周期を 240 分割して静止する瞬間が 0%）が、自動操作で開いたタブは `requestAnimationFrame` が止まるので
@@ -143,7 +154,7 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
   ボタン → fetch → Vite のリロードという一連は未確認
 - 参照元（Unity 6 の起動画面）の発光バー・被写界深度・色収差は入れた（2026-10-12 の 2 回目）。速度方向ストレッチのパーティクルは greeble には入れていない
 
-### P0 で必ず実測するもの（未確認のまま進めている前提）
+## P0 で必ず実測するもの（未確認のまま進めている前提。greeble の節とは独立）
 
 | 測るもの | なぜ | 書き戻す先 |
 |---|---|---|
@@ -222,7 +233,7 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
   **公式が「あくまで内部 API です。API は予告なく変更を行います」と明言**しているもの。
   公式 CLI には `list2hopLinks` / `browseRelatedPages` があるので、**2 hop は人間だけでなく AI 側からも引ける**
   （Cosense を選んだ理由がそのまま AI にも効く）。`previewEdit` → `submitEdit` の dry-run 二段は `lab:add` と同じ流儀
-- greeble を次の sketch にするか → **する**（人間の決定、2026-10-11）。AI 側は「`lab:add` の本番初回検証と重い題材を
+- greeble を次の sketch にするか → **した**（人間の決定、2026-10-11）。**ただし 2026-10-14 に没**（`lab-archives/greeble/`）。以下は当時の記録。AI 側は「`lab:add` の本番初回検証と重い題材を
   同時に走らせると、壊れたとき作品側か配管側か切り分けられない」として軽い題材を勧めたが、採らなかった。
   **懸念自体は残る** — 公開で詰まったら、まず配管（`--dry-run`）と作品を分けて切り分ける
 - Cosense の立ち上げ → 済（2026-10-11）。public の `poc-input`、公式 plugin + CLI、login 済み。

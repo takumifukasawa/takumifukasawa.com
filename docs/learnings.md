@@ -218,3 +218,21 @@
   それで直らなければ compress オプションを二分探索する（`minify: false` で通ることを先に確認してから。
   オプションを 1 つずつ戻してビルド → `node scripts/check-artifacts.ts <slug>` を回す）。
   この手の壊れ方は dev では絶対に出ないので、判定は必ず成果物側で行う（決定 0008）。
+
+## 2026-10-14 [harness候補] Windows では `strictPort` が古い dev サーバーを検知せず、同じポートに 2 本立つ
+
+- 症状: `pnpm dev:lab <slug>` が正常に起動して URL まで出すのに、`http://localhost:5173/` が **404**。
+  `index.html` も `main.ts` も 404 で、`/_shell.js` だけ 200 なので「成果物の構成が壊れた」ように見える。
+  別のポート（`--port 5175`）で同じ sketch を立てると 200 で動く。
+- 原因: 前のセッションの dev サーバーが生き残っていた。`--host` 無しで立てた古い方は `[::1]:5173`（localhost 限定）に
+  バインドし、新しい方は `--host` で `0.0.0.0:5173` / `[::]:5173` にバインドする。**Windows ではワイルドカード bind と
+  `[::1]` 限定 bind が衝突しない**ので `strictPort: true` が EADDRINUSE を出さず、2 本が同じポート番号で共存する。
+  `localhost` は `::1` を先に引くため、ブラウザは**古い方**に繋がる。古い方の root（改名前の `lab/wip`）は
+  既に存在しないので、全部 404 になっていた。
+- 対処 / 再発したら: **`netstat -ano | grep LISTENING | grep :5173` で LISTENING が 2 行無いかを見る。**
+  あれば `powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'ProcessId=<pid>' | Select-Object -ExpandProperty CommandLine"`
+  でどの sketch のサーバーか確かめ、古い方を `taskkill //PID <pid> //F` で落とす。
+  見分け方は「`/_shell.js` だけ 200」— これは `dev-lab.ts` の middleware なのでどのサーバーでも返る。
+  **`--host` の有無でバインド先が変わるので、同じポートに立て直すときは `--host` を揃える**（揃えていれば衝突して
+  `strictPort` が止めてくれる）。`dev-lab.ts` のコメントにある「古いサーバーが 5173 を掴んで別の sketch を見てしまう」の
+  変種で、**`strictPort` が守ってくれない**のがこちら（2026-10-14、`wip` → `greeble-flow` の改名後に踏んだ）。

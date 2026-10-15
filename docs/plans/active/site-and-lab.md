@@ -67,6 +67,8 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 
 - 2026-10-11: 計測を **Cloudflare Web Analytics から Google Analytics 4 に変更**し、P1 ではなく P0 で入れた（`spec/site-v0.md` の「計測」）。作品ページには `_shell.js` 経由で載せる（決定 0004 の追記）。成果物をコミットする方式なので、作品側に直接足すと全件の再ビルドが要るため。落選案: Cloudflare Web Analytics のまま（Cookie 不要で軽いが流入元の粒度が粗い）、両方入れる（必要になってから足せる）、作品ページには入れずトップだけ計測する（どの sketch が見られたか分からず、入れる意味が半減する）。
 
+- 2026-10-14: **デバッグ画面（Tweakpane）は既定で出さず、URL に `?debug` が付いているときだけ出す**ことにした（`spec/publish-pipeline.md` の雛形生成の行、`lab/greeble-flow/debug.ts`、`scripts/templates/sketch/main.ts`）。理由: 作品を公開するとノブが訪問者に見えるのと、録画のたびにフラグを付け忘れると写ること。opt-in なら何も付けない側が常に正しい絵になる。落選案: `?clean` で隠す従来方式のまま（付け忘れが残る。`?clean` はサイトへの導線を隠すフラグで、pane と抱き合わせにする理由が無い）、dev だけ既定で出す（dev と本番で挙動が変わり、いま何を見ているのか分からなくなる）。
+
 ## 進捗ログ（セッションごとに 1〜3 行）
 
 - 2026-10-08: 計画を作成。0-1 / 0-2 を実施（`package.json` / `.nvmrc` / `.gitignore` / `media/manifest.json`）。依存はまだ入れていない（0-4 で Vite、0-9 で Astro）。
@@ -81,6 +83,6 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 - 2026-10-11: sketch mirror-sphere を制作したが**出さないと決め**、`lab-archives/` へ棚上げ（決定 0006）。あわせて決定 0005（AI にどこまで書かせるか）を記録
 - 2026-10-11: **sketch の識別子から連番を外した**（決定 0007）。`lab/<slug>/`。きっかけは 0006 で「棚上げした sketch が番号を持ち続けるか」の判断が同じ日に 2 回変わったこと。前提に戻ると、索引の並びは `date`、一意性はディレクトリ名で、番号はどちらも担っていなかった。公開済み sketch が 0 件＝ URL を変えられる最後の地点だったので、ここで決めた。`numberOwner()` は削除
 - 2026-10-11: 0-7 完了。**Pages ではなく Workers Static Assets** で公開（上の決定ログ）。`takumifukasawa.com` が応答するようになった（それまでは旧 A レコード削除後、向き先が無く NXDOMAIN だった）。`/_shell.js` は 200 + `max-age=300`、`/` は 404（P0 はページ 0 枚なので正常）。初回ビルド 48 秒、差分アップロードは**される**。残った宿題 2 件は `../../tech-debt.md`（workers.dev の本番 URL を塞ぐ / Always Use HTTPS）
+- 2026-10-14: `wip` を **`greeble-flow`** に改名し、**現状を完成形とした**（人間の判断）。`params.json` の `flowGlow = 0`（発光オフ）は意図どおり。残っていた 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送）は保留。**`greeble` は没**にして決定 0006 の手順で `lab-archives/greeble/` へ棚上げ（`public/lab/greeble/` と `lab/.build-meta/greeble.json` は削除）。これで `lab:add` の本番初回は `greeble-flow` になった。あわせてデバッグ画面を `?debug` 方式に変更し、`docs/learnings.md` に 1 件（Windows で `strictPort` が古い dev サーバーを検知しない）。`harness check` は pass=9 fail=0。
 
 ## 未確定事項（人間の判断待ち）
-

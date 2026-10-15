@@ -87,7 +87,7 @@ v0 で意図的に落としたもの。判断基準は「**後から足せるか
                無ければ poster の画像
 ```
 
-全部「**別タブで原寸を開く**」という同じ挙動なので、JS が要らない（決定 0001）。
+全部「**原寸を開く**」という同じ挙動なので、JS が要らない（決定 0001）。（どのタブで開くかは行き先で決める。`site-v0.md` の「カードのクリック先」）
 
 ### 「重さ」のカテゴリは持たない
 
@@ -175,7 +175,7 @@ Notes / Works の執筆のために入れるもの（いずれも設定数行）
 
 - [ ] `astro check` が通る（`astro sync` の生成型を含む）
 - [ ] `video` がある sketch は `<video autoplay muted loop playsinline>` で再生され、無いものは `poster` 画像が出る
-- [ ] `public/lab/<slug>/index.html` がある sketch は `/lab/<slug>/` への別タブリンクが出る（v0 では iframe を生成しない）
+- [ ] `public/lab/<slug>/index.html` がある sketch は `/lab/<slug>/` へのリンクが出る（同じタブ）（v0 では iframe を生成しない）
 - [ ] frontmatter に `embedUrl` を持たない（存在から導出する）
 - [ ] frontmatter の全 mediaKey が `media/manifest.json` に存在することを検査する（`harness check` の `media keys resolve`、ネットワークに触らない）
 - [ ] `tags` に既知語の表記ゆれ（`three.js` / `ThreeJS` など）が無いことを検査する（`harness check` の `tag normalization`）。**未知語は通す**

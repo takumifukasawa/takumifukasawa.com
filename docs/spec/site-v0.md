@@ -35,17 +35,19 @@ P0 は**サイトのページを `/` の 1 枚だけに留める**（残りは `
 
 | URL | 内容 |
 |---|---|
-| `/` | **全 sketch のグリッド。これが索引も詳細も兼ねる。** 年別セクション（`/#2026`）。カードは正方形固定 + `object-fit: cover`（縦横混在でも崩れない）。カードに出すのは `title` / `date` / `tags`。**クリックで別タブに実物を開く**（下記）。**P0 で暫定版を置いた**（`src/pages/index.astro`。グリッド・正方形カード・`draft` 除外・日付降順まで。年別セクションと下のフォールバック表は P1） |
+| `/` | **全 sketch のグリッド。これが索引も詳細も兼ねる。** 年別セクション（`/#2026`）。カードは正方形固定 + `object-fit: cover`（縦横混在でも崩れない）。カードに出すのは `title` / `date` / `tags`。**クリックで実物を開く**（タブは行き先で決める。下記）。**P0 で暫定版を置いた**（`src/pages/index.astro`。グリッド・正方形カード・`draft` 除外・日付降順まで。年別セクションと下のフォールバック表は P1） |
 | `/about/` | **事実だけ**（2026-10-15 に合意。自己紹介文は書かない）: 名前（日本語 / 英語）・所属（面白法人カヤック。会社のプロフィールへリンク）・職種（Frontend Engineer / Game Developer）・扱う技術（webgl / shader / unity / unreal engine）。受賞歴・展示・登壇は**いったん載せない**（枠はあり、配列に 1 行足せば節ごと出る。`src/pages/about.astro`）。PaleGL へのリンクは未定。Links はサイト共通のヘッダー（`src/layouts/Base.astro`）にあり、About もそこから入る。**メールは置かない**。note は後で足す予定 |
 | `/404` | |
 
 ### カードのクリック先はフォールバックで決まる
 
-詳細ページを作らない。全部「**別タブで原寸を開く**」という同じ挙動にするので、JS が要らない。
+詳細ページを作らない。全部「**原寸を開く**」という同じ挙動にするので、JS が要らない。
+
+**どのタブで開くかは行き先から導出する**（2026-10-15 に「全部別タブ」から変更）: このサイトの作品（`/lab/<slug>/`）は**同じタブ**（作品ページに `_shell.js` の戻る導線があり、スマホでタブが増え続けない）。サイトの外に出るもの（`externalUrl`、動画・画像そのもの）は**別タブ**（行った先に戻る手段が無い）。作品ごとの欄は持たない。例外が要る作品が実際に出たら、そのとき frontmatter に足す。
 
 | 条件 | 行き先 |
 |---|---|
-| `public/lab/<slug>/index.html` がある | `takumifukasawa.com/lab/<slug>/`（実物が動く。同一ドメインだが別タブで開く） |
+| `public/lab/<slug>/index.html` がある | `takumifukasawa.com/lab/<slug>/`（実物が動く。同じタブで開く。戻る導線は `_shell.js`） |
 | 無く `externalUrl` がある | その URL（独立 repo の作品。決定 0003） |
 | 上のどちらも無く `video` がある | `media.takumifukasawa.com/.../clip.mp4`（ブラウザのプレイヤー） |
 | いずれも無い | `media.takumifukasawa.com/.../poster.webp` |
@@ -136,7 +138,7 @@ Worker スクリプトも置かない（assets だけの Worker）。全リク�
 | 日付密度グリッド | sketch 10 件で出すと空白だらけで逆効果。50 件くらい溜まってから意味が出る | P2 |
 | Notes 一式（記事ページ / MDX / Shiki / KaTeX / RSS） | 記事が 0 本の段階で記事基盤を作るのは早い。空ページができるだけ。書く対象の sketch が溜まってから作る | P1.5 |
 | Works の一覧・詳細ページ | 代表作が出来てから。今あるのは PaleGL だけで、`/about` からリンクすれば足りる | P2 |
-| サイト内 embed（iframe） | 実物へは別タブで開くリンクにする（決定 0001）。P2 の形は three.js examples / atlab.io と同じ: **直接開けば作品だけ**（+ `_shell.js` のリンク）、**一覧から開けばハブの中に iframe で出す**。作品も URL も変わらないので P1 の成果物は壊れない（`_shell.js` は iframe の中では出ない。決定 0004）。**カメラ・センサー系の作品**は iframe の中で動かない恐れがある（iOS Safari。決定 0004）。P2 では (1) 同一オリジン + `allow` 属性で実機確認し、(2) 動かなければ `lab:build` がソースの `getUserMedia` / `DeviceMotionEvent` / `DeviceOrientationEvent` を検出して build-meta に書き、ハブはその作品だけ iframe ではなくページ遷移で開く（導出できるので frontmatter に持たない）。直接開く URL は常に動く | P2 |
+| サイト内 embed（iframe） | 実物へは原寸を開くリンクにする（決定 0001）。P2 の形は three.js examples / atlab.io と同じ: **直接開けば作品だけ**（+ `_shell.js` のリンク）、**一覧から開けばハブの中に iframe で出す**。作品も URL も変わらないので P1 の成果物は壊れない（`_shell.js` は iframe の中では出ない。決定 0004）。**カメラ・センサー系の作品**は iframe の中で動かない恐れがある（iOS Safari。決定 0004）。P2 では (1) 同一オリジン + `allow` 属性で実機確認し、(2) 動かなければ `lab:build` がソースの `getUserMedia` / `DeviceMotionEvent` / `DeviceOrientationEvent` を検出して build-meta に書き、ハブはその作品だけ iframe ではなくページ遷移で開く（導出できるので frontmatter に持たない）。直接開く URL は常に動く | P2 |
 
 ## 受け入れ条件
 
@@ -144,7 +146,7 @@ Worker スクリプトも置かない（assets だけの Worker）。全リク�
       ※ `src/data/tech.ts`（技術タグの正規名と alias）は**空から作らず、P0 で積んだ sketch 5〜10 件で実際に使った語**を初期値にする
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/` の初期転送 1.5 MB 以内
-- [ ] サイトは **iframe を 1 つも生成しない**（実物へは別タブで開くリンク。決定 0001）
+- [ ] サイトは **iframe を 1 つも生成しない**（実物へは原寸を開くリンク。決定 0001）
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
 - [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れない（カードは正方形 + `object-fit: cover`）
@@ -162,7 +164,7 @@ Lighthouse までは測らない — iframe を外し画像を R2 に出した�
 
 ## 範囲外（P1 でやらないと明記するもの）
 
-- **サイト内 embed（iframe）**。実物へは別タブで開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
+- **サイト内 embed（iframe）**。実物へは原寸を開くリンクにする（決定 0001。移行は URL を変えずリンクを差し替えるだけ）
 - Works 一覧 / 詳細ページ、Major Work の専用ページ
 - tag / tech でのフィルタ・検索 UI（件数が 100 を超えてから。それまでは `/` の年別セクションで足りる）
 - 動的 OGP 画像生成（`poster` をそのまま `og:image` に使う）

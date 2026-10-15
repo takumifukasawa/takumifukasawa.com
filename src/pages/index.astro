@@ -20,6 +20,12 @@ const sketches = (await getCollection('lab', ({ data }) => !data.draft)).sort(
 // in lab/ is a built runtime work under /lab/<slug>/.
 const hrefFor = (id: string, externalUrl?: string) => externalUrl ?? `/lab/${id}/`;
 
+// How it opens is derived from where it goes, never stored per sketch. A work on this site opens in the
+// same tab: its page carries the way back (_shell.js), and on a phone a new tab per sketch just piles up.
+// Anything that leaves the site -- another repo's work, later a bare video or image -- has no way back, so
+// it gets its own tab. Add a frontmatter field only if a real sketch ever needs to break this.
+const opensInNewTab = (externalUrl?: string) => externalUrl !== undefined;
+
 const dateLabel = (d: Date) =>
   `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 
@@ -44,7 +50,11 @@ const ogImage = sketches.length > 0 ? resolveMedia(sketches[0]!.data.poster) : u
           const poster = resolveMedia(sketch.data.poster);
           return (
             <li>
-              <a href={hrefFor(sketch.id, sketch.data.externalUrl)} target="_blank" rel="noopener">
+              <a
+                href={hrefFor(sketch.id, sketch.data.externalUrl)}
+                target={opensInNewTab(sketch.data.externalUrl) ? '_blank' : undefined}
+                rel={opensInNewTab(sketch.data.externalUrl) ? 'noopener' : undefined}
+              >
                 <img
                   src={poster.url}
                   width={poster.width}

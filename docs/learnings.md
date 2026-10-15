@@ -263,3 +263,17 @@
 - 対処 / 再発したら: リサイズのたびに `composer.setPixelRatio(renderer.getPixelRatio())` してから `composer.setSize`
   （`lab/greeble-flow/post.ts`）。確かめ方は `composer.renderTarget1.width` と `canvas.width` が一致するかを見る。
   **post を使う sketch を作ったら最初に見る**。`?capture` の supersampling を入れようとして見つけた。
+
+## 2026-10-15 [harness候補] pre-commit から走るテストが、一時 repo の `git add` で本物のコミットの index を汚す
+
+- 症状: `pnpm lab:add` の本番初回で、R2 への put と md の書き込みまで済んだあと
+  `error: invalid object 100644 ... for 'public/lab/alpha/texture.png'` / `Error building trees` で git commit が落ちた。
+  `texture.png` も `alpha` もこの repo には無い（テストのデータ）。普段の `git commit` では一度も起きていなかった。
+- 原因: パスを指定したコミット（`git commit -- <paths>`。`lab:add` がこれ）では git が一時 index を作り、
+  フックに**絶対パスの `GIT_INDEX_FILE`** を渡す。pre-commit のテストは一時ディレクトリの repo で `git add` するが、
+  `cwd` を変えても `GIT_INDEX_FILE` は引き継がれるので、**テストの blob のエントリが本物のコミットの index に書かれ**、
+  blob 本体は一時 repo 側にしか無いので壊れる。パス指定なしのコミットでは表に出ない。
+- 対処 / 再発したら: テストから git を呼ぶときは **`GIT_*` の環境変数を全部外す**（`scripts/lib/checks.test.ts` の `scratchEnv`。
+  テスト対象のコードが自分で git を呼ぶなら `process.env` からも消す）。
+  フックの中で落ちる・フックの中でだけ挙動が変わるテストを見たら、まず `env | grep ^GIT_` を疑う。
+  確かめ方は、そのテストを含む変更を `git commit -m x -- <path>` のパス指定でコミットしてみること。

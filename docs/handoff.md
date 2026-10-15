@@ -42,7 +42,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | `/` の OGP | 入れた（2026-10-15、P1 から前倒し）。`og:image` は最新の公開 sketch の `poster`、無ければ出さない。捨てデータで両方の分岐を確認済み（画像あり → `summary_large_image` + `og:image:width/height`、無し → `summary`）。**トップの URL を人に貼るのは `greeble-flow` の公開後** | `src/pages/index.astro`、`spec/site-v0.md` |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
-| `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（`lab/greeble-flow/`）で commit / push まで通すのが残り**（2026-10-14 に対象が `greeble` から移った） | 計画 0-8 |
+| `pnpm lab:add` | **本番初回を通した（2026-10-15、`greeble-flow`、`59dbc32`）**。R2 の put と md / manifest は自動で通り、git commit だけ pre-commit のテストが index を汚して落ちた（手でコミットして push）。原因はテストの `GIT_INDEX_FILE` 継承で、修正済み（`learnings.md`） | `git log --oneline main`、計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
 | R2 `takumifukasawa-media` / `media.takumifukasawa.com` | 設定済み・確認済み。CORS `*`（GET / HEAD）、r2.dev 無効 | 計画の進捗ログ |
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |

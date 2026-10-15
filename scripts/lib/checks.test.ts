@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, test } from 'node:test';
@@ -13,7 +13,14 @@ const write = (path: string, content: string | Buffer) => {
   mkdirSync(dirname(join(root, path)), { recursive: true });
   writeFileSync(join(root, path), content);
 };
-const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe' });
+// Every GIT_* variable stripped, per call: when a hook runs these tests, git points GIT_INDEX_FILE (and
+// can point GIT_DIR / GIT_WORK_TREE) at the real repository, and `cwd` alone does not override them.
+const scratchEnv = () =>
+  Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe', env: scratchEnv() });
+// The checks under test run git themselves (ls-files / cat-file) and inherit process.env, so the hook's
+// variables have to go for them too, or they read the real commit's index instead of the scratch repo's.
+for (const key of Object.keys(process.env)) if (key.startsWith('GIT_')) delete process.env[key];
 
 const SHELL = '<script src="/_shell.js" defer></script>';
 
@@ -31,6 +38,25 @@ beforeEach(() => {
   write('.gitignore', '.DS_Store\nlab/*/.vite/\n');
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+// pre-commit runs these tests from inside `git commit`. A commit with a pathspec (`git commit -- <paths>`,
+// which is what lab:add does) builds a temporary index and hands it to the hook as an ABSOLUTE
+// GIT_INDEX_FILE; a `git add` in the scratch repo then wrote its blobs' entries into the real commit's
+// index and the commit died with "invalid object ... public/lab/alpha/texture.png" (docs/learnings.md).
+describe('isolation from the git hook that runs these tests', () => {
+  test('a GIT_INDEX_FILE inherited from the hook is not written to', () => {
+    const leak = join(mkdtempSync(join(tmpdir(), 'checks-leak-')), 'index');
+    process.env['GIT_INDEX_FILE'] = leak;
+    try {
+      write('a.txt', 'x');
+      git('add', 'a.txt');
+      assert.equal(existsSync(leak), false);
+    } finally {
+      delete process.env['GIT_INDEX_FILE'];
+      rmSync(dirname(leak), { recursive: true, force: true });
+    }
+  });
+});
 
 describe('lab build in sync', () => {
   test('passes when the output was built from the current source', () => {

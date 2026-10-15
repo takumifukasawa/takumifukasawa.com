@@ -253,6 +253,16 @@ Card Validator が廃止されているので強制更新もできない。`pnpm
 - **共通化はまだしない**。実装は作品ごとのコピー（`lab/greeble-flow/capture.ts` が最初の 1 件）。3 件目で `lab/core/` に出すかを判断する（`lab/core/AGENTS.md`）
 1080p60 / 10 秒で mp4 は 4〜6 MB になるため、500 件での R2 ストレージは約 2.6 GB（mp4 のみ）（無料枠 10 GB の内側。`../references/cloudflare-limits.md`）。
 
+## 音のある作品（2026-10-16 合意）
+
+作品が音を出すときの約束。最初の例は `lab/grid-digital-clock/`（`sound.ts` / `mute.ts`）。
+
+- **既定は on**（2026-10-16 に「既定はミュート」から変更）。ただしブラウザは操作前の再生を拒むので、**ページ上の最初の操作（タップ・クリック・キー）で鳴り始める**。`AudioContext` の resume はその操作の中で行う（iOS は `pointerdown` ではなく `touchend` で解錠されるので、running になるまで待ち受けを外さない）。
+- **ミュートボタンを右上に置く**（左上の ← と対になる）。見た目は `_shell.js` の ← と同じ（枠線の丸 + アイコン、文字なし、`mix-blend-mode: difference`）。読み上げ用の名前は `aria-label`。
+  `?clean`（画面録画）と `?capture` では出さない。
+- **タブが見えていない間は止める**（`visibilitychange` で `AudioContext` を suspend、戻ったら on のときだけ resume）。
+- 共通化はまだしない。ボタンも音の制御も作品ごとのコピーで、`lab/core/` に出すかは 3 件目で判断する（下の共通化ルール）。
+
 ## core/ への共通化ルール
 
 `lab/` 配下の `core/` は**最初は空**にする。「作品 → 共通化 → 小さな framework」の順を守るため、

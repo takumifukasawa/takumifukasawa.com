@@ -59,6 +59,16 @@ export const SCHEMA = {
   // drifts without visibly repeating.
   'camPitchSwing': { 'folder': 'camera', 'min': 0, 'max': 20, 'step': 0.1 },
   'camPitchPeriod': { 'folder': 'camera', 'min': 4, 'max': 180, 'step': 1 },
+  // pointer.ts -- the pointer's push on the camera, added on top of the swing
+  'camPointerYaw': { 'folder': 'camera', 'min': 0, 'max': 30, 'step': 0.5 }, // degrees at the edge of the window
+  'camPointerPitch': { 'folder': 'camera', 'min': 0, 'max': 30, 'step': 0.5 },
+  'camPointerRate': { 'folder': 'camera', 'min': 0.5, 'max': 20, 'step': 0.5 }, // how quickly the camera follows; per second
+  // sound.ts
+  'tickVolume': { 'folder': 'sound', 'min': 0, 'max': 1, 'step': 0.01 },
+  'tickHigh': { 'folder': 'sound', 'min': 200, 'max': 12000, 'step': 10 }, // Hz, on even seconds
+  'tickLow': { 'folder': 'sound', 'min': 200, 'max': 12000, 'step': 10 }, // Hz, on odd seconds
+  'tickBright': { 'folder': 'sound', 'min': 1, 'max': 6, 'step': 0.1 }, // low-pass cutoff as a multiple of the pitch
+  'tickDecay': { 'folder': 'sound', 'min': 0.005, 'max': 0.3, 'step': 0.005 }, // seconds
   // colour
   'bgColor': { 'folder': 'colour', 'view': 'color' },
   'lineColor': { 'folder': 'colour', 'view': 'color' },

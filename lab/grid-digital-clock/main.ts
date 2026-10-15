@@ -18,12 +18,15 @@
 import * as THREE from 'three';
 import { capture, captureView, clockOffset, createShutter, takeShot } from './capture.ts';
 import { pickLayout, type Vec2 } from './clock.ts';
-import { createDebug } from './debug.ts';
+import { createDebug, type Monitor } from './debug.ts';
 import { createGrid } from './grid.ts';
 import { createLines } from './lines.ts';
+import { createMuteButton } from './mute.ts';
 import { loadParams } from './params.ts';
+import { createPointer } from './pointer.ts';
 import { createPost } from './post.ts';
 import { createQuality } from './quality.ts';
+import { createSound } from './sound.ts';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 
@@ -47,8 +50,21 @@ scene.add(lines['mesh']);
 
 const post = createPost(renderer, scene, camera, params);
 const quality = createQuality();
-const debug = createDebug(params, quality);
+const monitor: Monitor = { 'pointerX': 0, 'pointerY': 0, 'audio': '', 'event': '' };
+const debug = createDebug(params, quality, monitor);
+if (new URLSearchParams(location.search).has('debug')) {
+  for (const type of ['pointerdown', 'pointermove', 'pointercancel', 'touchstart', 'touchend']) {
+    window.addEventListener(
+      type,
+      (event) => (monitor['event'] = `${type} -> ${(event.target as Element).tagName?.toLowerCase() ?? '?'}`),
+      true,
+    );
+  }
+}
 const shutter = createShutter();
+const pointer = createPointer(canvas);
+const sound = createSound();
+createMuteButton(() => sound['on'], sound['toggle']);
 
 type Frame = { 'width': number; 'height': number; 'pixelRatio': number; 'bloomScale': number };
 
@@ -80,6 +96,20 @@ const setSize = () => {
 };
 
 const DEG = Math.PI / 180;
+
+// A click or tap sends a ring out from the point of the grid under it.
+const raycaster = new THREE.Raycaster();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const hit = new THREE.Vector3();
+canvas.addEventListener('pointerdown', (event) => {
+  const rect = canvas.getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1,
+  );
+  raycaster.setFromCamera(ndc, camera);
+  if (raycaster.ray.intersectPlane(groundPlane, hit)) grid['tap'](hit.x, hit.y, wallTime());
+});
 const target = new THREE.Vector3();
 // Wall-clock seconds. The lines land on real second boundaries, so this has to be the epoch, not page time.
 // clockOffset is 0 except under ?capture&time=... (capture.ts).
@@ -115,8 +145,18 @@ const update = (time: number, deltaTime: number) => {
   const tan = Math.tan((params['camFov'] * DEG) / 2);
   const fit = params['camFit'];
   const distance = Math.max(halfH / (tan * fit), halfW / (tan * aspect * fit));
-  const pitch = (params['camPitch'] + Math.sin((time / params['camPitchPeriod']) * Math.PI * 2) * params['camPitchSwing']) * DEG;
-  const yaw = (params['camYaw'] + Math.sin((time / params['camPeriod']) * Math.PI * 2) * params['camSwing']) * DEG;
+  // ?capture holds the pointer still: a take should not depend on where the mouse happened to be.
+  if (!capture) pointer['update'](deltaTime, params['camPointerRate']);
+  const pitch =
+    (params['camPitch'] +
+      Math.sin((time / params['camPitchPeriod']) * Math.PI * 2) * params['camPitchSwing'] +
+      pointer['y'] * params['camPointerPitch']) *
+    DEG;
+  const yaw =
+    (params['camYaw'] +
+      Math.sin((time / params['camPeriod']) * Math.PI * 2) * params['camSwing'] -
+      pointer['x'] * params['camPointerYaw']) *
+    DEG;
   target.set(center[0], center[1], 0);
   camera.position.set(
     center[0] + Math.sin(yaw) * Math.cos(pitch) * distance,
@@ -135,6 +175,10 @@ const update = (time: number, deltaTime: number) => {
   const now = wallTime();
   grid['update'](now, layout, center, params);
   lines['update'](now, layout, bound, params);
+  sound['update'](now, params);
+  monitor['pointerX'] = pointer['x'];
+  monitor['pointerY'] = pointer['y'];
+  monitor['audio'] = `${sound['on'] ? 'on' : 'off'} / ${sound['state']()}`;
   post['apply'](view);
 };
 

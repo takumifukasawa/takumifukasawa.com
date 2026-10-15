@@ -11,7 +11,11 @@ export type Debug = { 'tick': (deltaTime: number) => void };
 
 const NOOP: Debug = { 'tick': () => {} };
 
-export const createDebug = (params: Params, quality: Quality): Debug => {
+// Live readouts for checking a device by eye (?debug on a phone): where the pointer is, what state the audio
+// is in, and the last input event that reached the page and what it landed on.
+export type Monitor = { 'pointerX': number; 'pointerY': number; 'audio': string; 'event': string };
+
+export const createDebug = (params: Params, quality: Quality, monitor: Monitor): Debug => {
   if (!new URLSearchParams(location.search).has('debug')) return NOOP;
 
   const pane = new Pane({ title: 'grid-digital-clock' });
@@ -29,6 +33,10 @@ export const createDebug = (params: Params, quality: Quality): Debug => {
   // Which tier it settled on. 0 is the saved params; anything else means the device could not hold them,
   // and that is the single most useful thing to see on a phone.
   perfFolder.addBinding(quality, 'tier', { readonly: true, format: (v: number) => v.toFixed(0) });
+  perfFolder.addBinding(monitor, 'pointerX', { readonly: true, format: (v: number) => v.toFixed(2) });
+  perfFolder.addBinding(monitor, 'pointerY', { readonly: true, format: (v: number) => v.toFixed(2) });
+  perfFolder.addBinding(monitor, 'audio', { readonly: true });
+  perfFolder.addBinding(monitor, 'event', { readonly: true });
 
   // Seeded with the folder just built, so the schema's own `perf` knobs (pixelRatio, autoQuality,
   // qualityMs) land next to the frame time they exist to control instead of in a second folder with the

@@ -15,6 +15,8 @@ export type Grid = {
   'object': THREE.Group;
   // now: wall-clock epoch seconds, the same clock the lines land on.
   'update': (now: number, layout: Layout, center: [number, number], params: Params) => void;
+  // A ring from a point on the grid plane, starting now -- a click or tap. Full reach, like an 8.
+  'tap': (x: number, y: number, now: number) => void;
 };
 
 const lineVertex = `
@@ -144,6 +146,8 @@ export const createGrid = (): Grid => {
   const object = new THREE.Group();
   object.add(plane, lines);
   let built = -1;
+  // Taps still inside rippleLife: x, y, and the wall-clock time they started.
+  let taps: [number, number, number][] = [];
 
   return {
     'object': object,
@@ -176,6 +180,12 @@ export const createGrid = (): Grid => {
       // One ring per digit that changes, for every second whose ring is still inside rippleLife, newest
       // first. A ring starts rippleLead seconds BEFORE its second, while the lines are still gathering.
       let count = 0;
+      // Taps first: a ring the viewer asked for should never be the one dropped when the slots run out.
+      taps = taps.filter(([, , t]) => now - t < params['rippleLife']);
+      for (let i = taps.length - 1; i >= 0 && count < MAX_RIPPLES; i--) {
+        const [x, y, t] = taps[i]!;
+        ripples[count++]!.set(x, y, now - t, 1);
+      }
       const lead = params['rippleLead'];
       for (let t = Math.floor(now + lead); t - lead > now - params['rippleLife'] && count < MAX_RIPPLES; t--) {
         const digits = digitsAt(new Date(t * 1000));
@@ -190,6 +200,9 @@ export const createGrid = (): Grid => {
         });
       }
       for (let i = count; i < MAX_RIPPLES; i++) ripples[i]!.z = -1;
+    },
+    'tap': (x, y, now) => {
+      taps.push([x, y, now]);
     },
   };
 };

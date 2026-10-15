@@ -1,4 +1,4 @@
-// grid-digital-clock
+// grid-ray-clock
 //
 // A digital clock on a grid. Every second, one line per segment that comes on in HH:MM:SS flies in
 // from off screen along the grid and lands exactly on the second. Unchanged digits stay still.
@@ -186,7 +186,7 @@ const render = (_time: number, _deltaTime: number) => {
   post['composer'].render();
   if (shutter['pending']) {
     shutter['pending'] = false;
-    takeShot(canvas, applied['width'], applied['height'], 'grid-digital-clock');
+    takeShot(canvas, applied['width'], applied['height'], 'grid-ray-clock');
   }
 };
 

@@ -65,7 +65,7 @@ export default defineConfig({
   base: './',
   build: {
     // Output straight into public/lab/<slug>/ (committed; served by Pages as-is. decision 0001).
-    outDir: '../../public/lab/grid-digital-clock',
+    outDir: '../../public/lab/grid-ray-clock',
     emptyOutDir: true,
     target: 'esnext',
     // Sketches are a single chunk; the modulepreload polyfill is dead weight.

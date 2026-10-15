@@ -18,10 +18,10 @@ export type Monitor = { 'pointerX': number; 'pointerY': number; 'audio': string;
 export const createDebug = (params: Params, quality: Quality, monitor: Monitor): Debug => {
   if (!new URLSearchParams(location.search).has('debug')) return NOOP;
 
-  const pane = new Pane({ title: 'grid-digital-clock' });
+  const pane = new Pane({ title: 'grid-ray-clock' });
 
   // Frame time first, and expanded. The reason it exists is that "is this too heavy on a phone?" is not a
-  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab grid-digital-clock
+  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab grid-ray-clock
   // --https` and read the number. ms is the honest unit: 16.7 is the 60 fps budget, and unlike fps it does
   // not compress the interesting part of the range into a few pixels.
   //
@@ -77,7 +77,7 @@ export const createDebug = (params: Params, quality: Quality, monitor: Monitor):
       body: JSON.stringify(toJSON(params)),
     });
     if (!res.ok) {
-      console.error('[grid-digital-clock] save failed:', res.status, await res.text());
+      console.error('[grid-ray-clock] save failed:', res.status, await res.text());
       return;
     }
     // Writing params.json is a source change, so Vite reloads the page -- which is the confirmation:

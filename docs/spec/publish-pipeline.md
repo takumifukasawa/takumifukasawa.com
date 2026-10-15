@@ -255,7 +255,7 @@ Card Validator が廃止されているので強制更新もできない。`pnpm
 
 ## 音のある作品（2026-10-16 合意）
 
-作品が音を出すときの約束。最初の例は `lab/grid-digital-clock/`（`sound.ts` / `mute.ts`）。
+作品が音を出すときの約束。最初の例は `lab/grid-ray-clock/`（`sound.ts` / `mute.ts`）。
 
 - **既定は on**（2026-10-16 に「既定はミュート」から変更）。ただしブラウザは操作前の再生を拒むので、**ページ上の最初の操作（タップ・クリック・キー）で鳴り始める**。`AudioContext` の resume はその操作の中で行う（iOS は `pointerdown` ではなく `touchend` で解錠されるので、running になるまで待ち受けを外さない）。
 - **ミュートボタンを右上に置く**（左上の ← と対になる）。見た目は `_shell.js` の ← と同じ（枠線の丸 + アイコン、文字なし、`mix-blend-mode: difference`）。読み上げ用の名前は `aria-label`。

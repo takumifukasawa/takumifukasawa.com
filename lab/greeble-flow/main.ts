@@ -16,7 +16,7 @@
 //
 // Conventions (docs/decisions/0004-lab-shell.md):
 // - No absolute paths starting with `/`; the build output may be moved.
-// - Debug UI is hidden when `?clean` is present (for recording).
+// - Debug UI is off by default and shown only with `?debug` (see debug.ts).
 // - No classes: plain state objects + functions, so unused code is tree-shaken (docs/coding.md).
 // - fixedUpdate: fixed 60 Hz (time/timeAccumulator.ts). update / render: capped at 60 fps (time/timeSkipper.ts).
 
@@ -202,7 +202,7 @@ const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
 const update = (time: number, deltaTime: number) => {
   // The tier for this frame. Reading the frame time here rather than in the pane is deliberate: the
-  // sketch has to respond to it whether or not the debug UI exists (?clean has no pane at all).
+  // sketch has to respond to it whether or not the debug UI exists (without ?debug there is no pane).
   const tier = quality['update'](deltaTime, params);
   debug['tick'](deltaTime);
   // Changing either of these reallocates render targets, so only on an actual change.

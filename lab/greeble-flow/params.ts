@@ -1,6 +1,6 @@
 // The *schema* of the knobs lives here. The *values* live in params.json, which the save button in the
 // debug pane writes. Nothing in this file is a value, so tuning the sketch never produces a code diff --
-// and the committed build and the ?clean recording read the same file the pane wrote.
+// and the committed build and every recording read the same file the pane wrote.
 //
 // Quoted keys throughout: terser mangles unquoted property names in the build, and these are read by
 // string (Tweakpane bindings, JSON keys). See the note in vite.config.ts.

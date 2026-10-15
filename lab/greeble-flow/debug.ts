@@ -1,5 +1,8 @@
 // Tweakpane, built from the schema in params.ts so the knobs are declared in exactly one place.
-// Never shown when ?clean is present (that is the recording URL; decision 0004).
+// Off by default: it is shown only with ?debug in the URL. The published sketch is what people see,
+// and a pane of knobs on top of it is not part of the work -- opt-in means every visitor and every
+// recording gets the sketch alone without anyone having to remember a flag. ?clean is therefore no
+// longer about the pane; it only hides the site link in _shell.js (decision 0004).
 import { Pane } from 'tweakpane';
 import { LIVE_KEYS, SCHEMA, isColor, toJSON, type ParamKey, type Params, type Spec } from './params.ts';
 import type { Quality } from './quality.ts';
@@ -9,7 +12,7 @@ export type Debug = { 'tick': (deltaTime: number) => void };
 const NOOP: Debug = { 'tick': () => {} };
 
 export const createDebug = (params: Params, quality: Quality, onRebuild: () => void): Debug => {
-  if (new URLSearchParams(location.search).has('clean')) return NOOP;
+  if (!new URLSearchParams(location.search).has('debug')) return NOOP;
 
   const pane = new Pane({ title: 'greeble-flow' });
 

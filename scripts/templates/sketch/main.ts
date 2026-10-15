@@ -4,8 +4,10 @@
 // - Never use absolute paths starting with `/`. The build output may be moved to another directory.
 //   Use relative paths, `new URL('./x.png', import.meta.url)`, or `import.meta.env.BASE_URL`.
 // - Shaders: `import frag from './frag.glsl?raw'` (no plugin needed).
-// - Debug UI (Tweakpane): do not show it when `?clean` is present (for recording).
-//   const clean = new URLSearchParams(location.search).has('clean');
+// - Debug UI (Tweakpane): off by default, shown only with `?debug`. The published sketch should be the
+//   work alone, and opt-in means no one has to remember a flag when recording. (`?clean` is a separate
+//   thing: it hides the site link in _shell.js.)
+//   if (!new URLSearchParams(location.search).has('debug')) return;
 // - No classes: plain state objects + functions, so unused code can be tree-shaken (docs/coding.md).
 // - Import libraries per sketch. Do not put shared code in lab/core/ until it has been written 3 times (lab/core/AGENTS.md).
 //

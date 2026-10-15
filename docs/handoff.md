@@ -60,10 +60,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
    - 床の読みやすさ（葉 = パネル）: `massMetal` を下げる、`maxSide` 6〜10、`splitBias` 0.9〜1、`stopChance` を上げる、を提案済み
    - `flowExtent` をカメラの視錐台に合わせて自動で決める（縦長のスマホでは画面内の粒が 16〜20% しかない。**座標変換なので人間の領域**）
    - CPU → GPU 転送を減らす（20000 粒・尾 14 で CPU 7.7 ms/frame + 約 14 MB/frame。履歴を k フレームおきに記録 / 尾か計算を GPU 側へ、を提案済み）
-3. **`greeble-flow` を公開する**: 撮影モード（`?capture` → `s`）で静止画を撮り `pnpm lab:add greeble-flow --poster <png>`（動画も出すなら `--video <mp4>` を足す。まず `--dry-run`）。**これが `lab:add` の本番初回**。
-   直前に `harness check`（`--fast` なし）で `artifacts run` を通す。公開は `main` へ（決定 0009）。
-   **2026-10-14 まではここが `greeble` だった**（没にしたので入れ替わった）。配管の初回検証と作品が同時になる懸念は下の「解決済」の最後の行のとおり残る。
-4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble-flow`）を確かめる。下の実測表の残りもここで埋まる。
+3. ~~`greeble-flow` を公開する~~ → **済（2026-10-15、`59dbc32`）**。poster は撮影モードの静止画、動画はまだ出していない（出すなら録画して `pnpm lab:add greeble-flow --video <mp4>`。既存の poster key はスキップされる）。**トップの URL を人に貼ってよい状態**。
+4. 公開後の実測: 末尾スラッシュは済（307）。残りは下の実測表の repo サイズと R2 の Class B。
 5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。`/about/` の OGP（ページ自体が P1 なのでまだ無い）。
 6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
@@ -164,7 +162,7 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 | repo サイズ（`du -sh .git` と working tree） | 500 件 ~150 MB の見込みが当たっているか。外れたら Three.js を external にして共有コピー 1 本にする | `decisions/0001` の「repo サイズ」と `learnings.md` |
 | ~~デプロイ所要時間と差分アップロード~~ | **済（2026-10-11）。差分アップロードされる**（`Found 1 new or modified static asset to upload`）。初回ビルド 48 秒 | 書き戻し済: `references/cloudflare-limits.md` の「実測」 |
 | `base: './'` の成果物が Worker・動的 import・`new URL(..., import.meta.url)` 込みで動くか | (B) への乗り換えを `git mv` だけにする前提（決定 0004） | `decisions/0004-lab-shell.md` |
-| `/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか（`curl -I`） | 相対パスの成果物はスラッシュ無しで開くと白画面になる。されなければ `_redirects` で 301。**ローカルの `pnpm preview`（`wrangler dev`）では 307 で転送された**。本番は sketch を 1 件公開しないと測れない | `decisions/0004-lab-shell.md` |
+| ~~`/lab/<slug>`（末尾スラッシュ無し）が `/lab/<slug>/` へリダイレクトされるか~~ | **済（2026-10-15）。本番で 307 → `/lab/greeble-flow/` が 200**。301 にはしていない（理由は決定 0004） | 書き戻し済: `decisions/0004-lab-shell.md` |
 | R2 の Class B 実績（Dashboard） | キャッシュヒットがカウントされるかが未確認 | `references/cloudflare-limits.md` の未確認事項 |
 
 ## 未確定事項（人間の判断待ち）

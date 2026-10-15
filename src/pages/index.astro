@@ -21,6 +21,18 @@ const hrefFor = (id: string, externalUrl?: string) => externalUrl ?? `/lab/${id}
 
 const dateLabel = (d: Date) =>
   `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+
+// One string for both <meta name="description"> and og:description, so they cannot drift apart.
+const description = 'Takumi Fukasawa — graphics / realtime rendering. sketches and experiments.';
+
+// og:image is the newest published sketch's poster, and nothing when there is none. A default image was
+// considered and dropped: a poster only exists after a recording, so the fallback would be a second,
+// differently-made picture of the same work, used only while zero sketches are published -- dead the day
+// the first one ships (docs/spec/site-v0.md).
+//
+// Do not share the site URL until a poster exists: X caches a card forever and the Card Validator is
+// gone, so an image-less card cannot be fixed later (docs/learnings.md, 2026-10-08).
+const ogImage = sketches.length > 0 ? resolveMedia(sketches[0]!.data.poster) : undefined;
 ---
 
 <!doctype html>
@@ -29,7 +41,17 @@ const dateLabel = (d: Date) =>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>takumifukasawa</title>
-    <meta name="description" content="Takumi Fukasawa — graphics / realtime rendering. sketches and experiments." />
+    <meta name="description" content={description} />
+    <!-- OGP. Absolute URLs come from `site` in astro.config.ts; og:url is this page because it is the only one.
+         summary_large_image needs an actual image, so without one the card falls back to the small form. -->
+    <meta property="og:title" content="takumifukasawa" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.site!.href} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={ogImage.url} />}
+    {ogImage && <meta property="og:image:width" content={String(ogImage.width)} />}
+    {ogImage && <meta property="og:image:height" content={String(ogImage.height)} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
     <!-- Google Analytics 4. The sketches are separate HTML files that this page does not generate, so they
          load the same id through public/_shell.js — change both together. -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-L3EDWSFJ82"></script>

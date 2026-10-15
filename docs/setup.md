@@ -13,6 +13,9 @@ clone しただけでは揃わないもの（git に入れない・マシンご�
 | 6 | 一度だけ `pnpm dev:lab <slug> --https`（昇格を求められる） | mkcert のルート証明書をこのマシンに入れる。`dev` / `preview` の `--https` も同じ証明書を使う | `--https` で起動できない（http なら動く） |
 | 7 | 実機で見るなら: `~/.vite-plugin-mkcert/rootCA.pem` を iPhone に送ってインストールし、「設定 → 一般 → 情報 → 証明書信頼設定」で信頼する | LAN 内の iPhone から HTTPS で開く（カメラ・センサーは HTTPS 必須） | iPhone で証明書エラーになる |
 
+**2026-10-11 より前に作った `.env` には `PUBLIC_MEDIA_BASE_URL` の行が無い**（後から `.env.example` に足したもの）。sketch を 1 件公開すると `pnpm dev` / `pnpm build` が「media keys cannot become URLs」で落ちるので、
+`.env.example` の最後の 1 行を写して足す（秘密ではない。値は `https://media.takumifukasawa.com`）。
+
 `.env` / 証明書は**秘密**なので、マシン間でコピーするときも
 git・チャット・クラウドの共有フォルダを通さない（パスワードマネージャーから手で写す）。
 

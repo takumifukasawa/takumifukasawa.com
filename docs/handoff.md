@@ -36,10 +36,11 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 | 項目 | 状態 | 出典 |
 |---|---|---|
-| 決定 0001〜0008 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005〜0007 は 2026-10-11、0008 は 2026-10-12） | `decisions/`, `spec/` |
+| 決定 0001〜0009 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005〜0007 は 2026-10-11、0008 は 2026-10-12、0009 は `develop` で作り `main` で出す） | `ls docs/decisions/`, `spec/` |
 | 検査 | **全部 pass。件数は叩いて確かめる**（ここに書くと腐る）。`artifacts run` だけ `fast` ではない = **pre-commit では走らない**ので、公開前に `harness check`（`--fast` なし）を 1 回通すこと | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
+| `/` の OGP | 入れた（2026-10-15、P1 から前倒し）。`og:image` は最新の公開 sketch の `poster`、無ければ出さない。捨てデータで両方の分岐を確認済み（画像あり → `summary_large_image` + `og:image:width/height`、無し → `summary`）。**トップの URL を人に貼るのは `greeble-flow` の公開後** | `src/pages/index.astro`、`spec/site-v0.md` |
 | Astro（`/` の 1 枚）/ `pnpm dev` / `pnpm preview` | 動作確認済み（http）。`--https` は未確認。`/` は暫定版で、sketch 0 件のいまは**名前だけが出る**（説明文は置かない規律。`AGENTS.md`）。1 件入れば自動でグリッドになることを捨てデータで確認済み | 計画 0-9 / 1-1、`src/pages/index.astro` |
 | `pnpm lab:add` | `--dry-run` で全工程、R2 の put / 配信 / delete を `_test/` で確認。**本番の初回（`lab/greeble-flow/`）で commit / push まで通すのが残り**（2026-10-14 に対象が `greeble` から移った） | 計画 0-8 |
 | Cloudflare DNS | Active（2026-10-08） | 計画の進捗ログ |
@@ -63,7 +64,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
    直前に `harness check`（`--fast` なし）で `artifacts run` を通す。公開は `main` へ（決定 0009）。
    **2026-10-14 まではここが `greeble` だった**（没にしたので入れ替わった）。配管の初回検証と作品が同時になる懸念は下の「解決済」の最後の行のとおり残る。
 4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble-flow`）を確かめる。下の実測表の残りもここで埋まる。
-5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
+5. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。`/about/` の OGP（ページ自体が P1 なのでまだ無い）。
 6. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 7. **P0 で作るページは `/` の 1 枚だけ**（`spec/site-v0.md`。2026-10-11 に緩めた）。作り込みは P1。sketch を 5〜10 件積んでから P1 に入る。
 
@@ -245,6 +246,7 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 - `docs/roles/` — harness の seed のまま。`task-orchestrate` を回す段階になったら読む
 - `docs/rules/README.md` — `lab/AGENTS.md` と `lab/core/AGENTS.md` を登録済み。`lab-archives/` に `AGENTS.md` は置いていない（棚上げしたソースに規律は要らない）
 - `docs/architecture.md` — 2026-10-12 に不変条件の表へ `artifacts run` を 1 行足しただけ。構造は変わっていない
+- `docs/decisions/` — 2026-10-14〜15 の決定（`greeble` の没 / `?debug` / `/` の OGP）は**新しい決定ファイルを作らなかった**。没は決定 0006 の手順の適用、残り 2 つは spec（`publish-pipeline.md` / `site-v0.md`）の変更なので、理由と落選案は`plans/active/site-and-lab.md` の決定ログに置いた
 - `docs/glossary.md` — `<NNN-slug>` → `<slug>` の置換のみ（決定 0007）
 - `docs/spec/` 3 本 — 同上。連番の置換と `no`（連番）フィールドの扱いだけ。仕様そのものは変えていない
 - `.harness/state/` — 使っていない（`task-orchestrate` を回していないため）

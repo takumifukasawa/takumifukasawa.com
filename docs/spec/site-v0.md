@@ -124,7 +124,7 @@ Worker スクリプトも置かない（assets だけの Worker）。全リク�
 
 - sitemap.xml
 - ~~Cloudflare Web Analytics~~ → **Google Analytics 4**（`G-L3EDWSFJ82`）。**2026-10-11 に P0 で入れた**（下記）
-- OGP（`astro.config` の `site` 設定 + `poster` を `og:image` に使う）
+- ~~OGP~~ → **`/` の分は 2026-10-15 に P0 で入れた**（`astro.config.ts` の `site` + 最新 sketch の `poster` を `og:image` に使う。`src/pages/index.astro`）。**poster が無ければ `og:image` を出さない**（出せる画像が無いので `twitter:card` は `summary` に落ちる）。既定の OGP 画像は作らない — poster は録画の後にしか存在せず、既定画像は「公開 0 件の間だけ効いて 1 件目で死ぬ」2 枚目の絵になる。`/about/` の分は P1（ページ自体がまだ無い）
 - 作品ページの導線（`public/_shell.js`）の見た目を決める。P0 の間は左上のテキストリンク 1 つ（決定 0004）
 
 ### P1 で作らないもの（意図的に削ったもの）

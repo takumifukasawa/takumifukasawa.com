@@ -236,3 +236,19 @@
   **`--host` の有無でバインド先が変わるので、同じポートに立て直すときは `--host` を揃える**（揃えていれば衝突して
   `strictPort` が止めてくれる）。`dev-lab.ts` のコメントにある「古いサーバーが 5173 を掴んで別の sketch を見てしまう」の
   変種で、**`strictPort` が守ってくれない**のがこちら（2026-10-14、`wip` → `greeble-flow` の改名後に踏んだ）。
+
+## 2026-10-15 [harness候補] `.env.example` に後から足した行は、既に `.env` を作ったマシンに伝わらない
+
+- 症状: `.env` はある（`doctor` も OK）のに、ある機能を使った瞬間だけ環境変数が無いと言われる。
+  このプロジェクトでは `PUBLIC_MEDIA_BASE_URL` で、sketch を 1 件公開した直後に
+  `pnpm dev` / `pnpm build` が `media keys cannot become URLs` で落ちる形になる。
+  **`.env` を作った日には存在しなかった行**なので、手元を見ても「書き忘れ」に見えない。
+- 原因: `.env` は gitignore なので、`cp .env.example .env` は**その時点のコピー**でしかない。
+  後から `.env.example` に行が増えても既存の `.env` は変わらず、差分を知らせるものが何も無い。
+  この repo では `.env`（2026-10-08 作成）と `PUBLIC_MEDIA_BASE_URL` の追加（2026-10-11）で 3 日ずれていた。
+- 対処 / 再発したら: **`.env.example` の鍵の一覧と `.env` を比べる**。
+  `diff <(grep -oE '^[A-Z_]+=' .env.example | sort) <(grep -oE '^[A-Z_]+=' .env | sort)`（値は出さない）。
+  足りない行を `.env.example` から写す。秘密でない値（公開ドメインなど）はそのまま使える。
+  `.env.example` に行を足した側は、**同じコミットで `docs/setup.md` に「既存の `.env` にも足す」を書く**
+  （本人の別マシンが必ず踏む）。検査にするには `.env` を読む必要があり、CI には `.env` が無いので、
+  機械化するなら「`.env` があるときだけ鍵の差分を WARN する」形になる（まだ足していない）。

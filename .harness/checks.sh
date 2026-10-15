@@ -24,7 +24,9 @@ check      "doctor: FAIL 0"    "bash .harness/bin/harness doctor || { echo 'doct
 
 # --- P0（docs/plans/active/site-and-lab.md 0-10。不変条件の一覧は docs/architecture.md） ---
 # src/ の grep 検査と astro check / astro build はページを作る P1（1-5）で足す。
-check fast "tests green (>0)"   "out=\$(node --test 'scripts/**/*.test.ts' 2>&1); s=\$?; echo \"\$out\" | grep -E '^ℹ (tests|fail) '; n=\$(echo \"\$out\" | sed -n 's/^ℹ tests //p'); [ \"\${n:-0}\" -gt 0 ] || { echo 'テストが 0 件。0 件で green は不合格。scripts/**/*.test.ts（node:test）に足す。'; exit 1; }; [ \$s -eq 0 ] || { echo \"\$out\" | grep -A8 '✖' | head -60; echo '失敗したテストを直す（pnpm test で再現）。'; exit 1; }"
+# FORCE_COLOR=0: node --test colours its summary whenever FORCE_COLOR is set in the environment, even into
+# $(...), and the grep below then reads 0 tests and fails with a misleading message (docs/learnings.md).
+check fast "tests green (>0)"   "out=\$(FORCE_COLOR=0 node --test 'scripts/**/*.test.ts' 2>&1); s=\$?; echo \"\$out\" | grep -E '^ℹ (tests|fail) '; n=\$(echo \"\$out\" | sed -n 's/^ℹ tests //p'); [ \"\${n:-0}\" -gt 0 ] || { echo 'テストが 0 件。0 件で green は不合格。scripts/**/*.test.ts（node:test）に足す。'; exit 1; }; [ \$s -eq 0 ] || { echo \"\$out\" | grep -A8 '✖' | head -60; echo '失敗したテストを直す（pnpm test で再現）。'; exit 1; }"
 check fast "lab build in sync"  "node scripts/check.ts lab-build-in-sync"
 check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"

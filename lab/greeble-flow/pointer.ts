@@ -38,3 +38,17 @@ export const createPointer = (canvas: HTMLCanvasElement, camera: THREE.Camera): 
 
   return pointer;
 };
+
+// Puts the pointer under a point on the screen (NDC, -1..1) without an event. ?capture holds it at the
+// middle of the frame every frame, so it stays under the same spot while the camera swings -- a hand on a
+// still mouse would leave it at one place on the ground instead, and the raised patch would drift.
+export const aimPointer = (pointer: Pointer, camera: THREE.Camera, x: number, y: number) => {
+  // lookAt only sets the rotation; the ray needs the world matrix that render() would otherwise update.
+  camera.updateMatrixWorld();
+  ndc.set(x, y);
+  ray.setFromCamera(ndc, camera);
+  if (!ray.ray.intersectPlane(ground, hitPoint)) return;
+  pointer['x'] = hitPoint.x;
+  pointer['z'] = hitPoint.z;
+  pointer['active'] = true;
+};

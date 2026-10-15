@@ -159,7 +159,16 @@ export const SCHEMA = {
   // The biggest lever on a phone. Post is fill-rate bound (the DOF blur alone is 41 taps per pixel), and a
   // modern phone reports devicePixelRatio 3, so the cap here decides how many pixels all of that runs over.
   // Capped against the device's own ratio, never multiplied past it.
-  'pixelRatio': { 'folder': 'perf', 'min': 0.5, 'max': 2, 'step': 0.1 }
+  'pixelRatio': { 'folder': 'perf', 'min': 0.5, 'max': 2, 'step': 0.1 },
+  // Read only with ?capture in the URL (capture.ts): stills and video, never what a visitor gets. The frame
+  // is a fixed size whatever the window is, drawn at captureScale times that and scaled back down when
+  // saved -- supersampling is the antialiasing. Bloom is sized against captureWidth, not the supersampled
+  // frame, so captureBloomScale 1 keeps the spread you tuned on screen; above 1 is sharper but also tighter.
+  'captureWidth': { 'folder': 'capture', 'min': 320, 'max': 3840, 'step': 2 },
+  'captureHeight': { 'folder': 'capture', 'min': 320, 'max': 3840, 'step': 2 },
+  'captureScale': { 'folder': 'capture', 'min': 1, 'max': 4, 'step': 0.5 },
+  'captureMsaa': { 'folder': 'capture', 'min': 0, 'max': 8, 'step': 2 }, // three clamps to the GPU's maximum
+  'captureBloomScale': { 'folder': 'capture', 'min': 0.25, 'max': 2, 'step': 0.25 },
 } as const satisfies Record<string, Spec>;
 
 export type ParamKey = keyof typeof SCHEMA;
@@ -176,6 +185,7 @@ export const LIVE_KEYS: ParamKey[] = [
   'flowSpeed', 'flowAngle', 'flowPush', 'flowSwirl', 'flowJitter', 'flowSeparate', 'flowSeparateRadius', 'flowTurn', 'flowWidth', 'flowHead', 'flowBrightness', 'flowGlow', 'flowGlowTurn', 'flowGlowDecay', 'flowAltitude', 'flowExtent',
   'bloomStrength', 'bloomRadius', 'bloomThreshold', 'bloomScale', 'bloomKnee', 'msaa', 'aberration',
   'dofAperture', 'dofFocus', 'dofMaxBlur', 'pixelRatio', 'autoQuality', 'qualityMs',
+  'captureWidth', 'captureHeight', 'captureScale', 'captureMsaa', 'captureBloomScale',
   // Materials and colours are assigned onto the existing objects every frame, so none of them rebuilds
   // the field. `emissive` used to: it was read once when the material was made, which meant the one knob
   // the bloom threshold has to be balanced against was the one that cost a full rebuild to try.

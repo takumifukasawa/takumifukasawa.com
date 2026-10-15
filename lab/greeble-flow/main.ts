@@ -27,7 +27,8 @@ import envUrl from './env.hdr?url';
 import { applyMaterials, createField, disposeField, updateBlocks, type Blocks } from './blocks.ts';
 import { createFlow, type Flow } from './flow.ts';
 import { collectPlates, updateLift, type Plates } from './lift.ts';
-import { createPointer } from './pointer.ts';
+import { aimPointer, createPointer } from './pointer.ts';
+import { capture, captureView, createShutter, takeShot } from './capture.ts';
 import { createDebug } from './debug.ts';
 import { loadParams } from './params.ts';
 import { createPost } from './post.ts';
@@ -38,6 +39,8 @@ import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#c')!;
+// ?capture draws a fixed-size frame; letterbox it rather than stretch it to whatever the window is.
+if (capture) canvas.style.objectFit = 'contain';
 // Values come from params.json, never from code (the debug pane's save button writes that file).
 const params = loadParams();
 
@@ -183,19 +186,38 @@ const post = createPost(renderer, scene, camera, params);
 const quality = createQuality();
 const debug = createDebug(params, quality, rebuild);
 
-// Both are the saved knob scaled down by whatever tier quality.ts has settled on. The pixel ratio is then
-// capped against the device: drawing more pixels than the screen has is pure cost.
-let appliedPixelRatio = Math.min(window.devicePixelRatio, params['pixelRatio']);
-let appliedBloomScale = params['bloomScale'];
+const shutter = createShutter();
+
+// What the frame is drawn at. On screen: the window, at the saved pixel ratio and bloom scale times
+// whatever tier quality.ts has settled on, the ratio capped against the device (drawing more pixels than
+// the screen has is pure cost). With ?capture: the fixed capture frame at captureScale, uncapped -- the
+// extra pixels are not for the screen, they are averaged away when the still is saved.
+type Frame = { 'width': number; 'height': number; 'pixelRatio': number; 'bloomScale': number };
+
+const frameFor = (tier: { 'pixel': number; 'bloom': number }): Frame =>
+  capture
+    ? {
+        'width': params['captureWidth'],
+        'height': params['captureHeight'],
+        'pixelRatio': params['captureScale'],
+        'bloomScale': params['captureBloomScale'],
+      }
+    : {
+        'width': window.innerWidth,
+        'height': window.innerHeight,
+        'pixelRatio': Math.min(window.devicePixelRatio, params['pixelRatio'] * tier['pixel']),
+        'bloomScale': params['bloomScale'] * tier['bloom'],
+      };
+
+let applied = frameFor({ 'pixel': 1, 'bloom': 1 });
 
 const setSize = () => {
-  renderer.setPixelRatio(appliedPixelRatio);
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  camera.aspect = w / h;
+  if (!capture) applied = { ...applied, 'width': window.innerWidth, 'height': window.innerHeight };
+  renderer.setPixelRatio(applied['pixelRatio']);
+  camera.aspect = applied['width'] / applied['height'];
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h, false);
-  post['setSize'](w, h, appliedBloomScale);
+  renderer.setSize(applied['width'], applied['height'], false);
+  post['setSize'](applied['width'], applied['height'], applied['bloomScale']);
 };
 
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
@@ -203,14 +225,19 @@ const fixedUpdate = (_time: number, _deltaTime: number) => {};
 const update = (time: number, deltaTime: number) => {
   // The tier for this frame. Reading the frame time here rather than in the pane is deliberate: the
   // sketch has to respond to it whether or not the debug UI exists (without ?debug there is no pane).
-  const tier = quality['update'](deltaTime, params);
+  // ?capture draws with its own copy of the params (capture.ts); everything else reads the saved ones.
+  const view = capture ? captureView(params) : params;
+  const tier = quality['update'](deltaTime, view);
   debug['tick'](deltaTime);
-  // Changing either of these reallocates render targets, so only on an actual change.
-  const pixelRatio = Math.min(window.devicePixelRatio, params['pixelRatio'] * tier['pixel']);
-  const bloomScale = params['bloomScale'] * tier['bloom'];
-  if (pixelRatio !== appliedPixelRatio || bloomScale !== appliedBloomScale) {
-    appliedPixelRatio = pixelRatio;
-    appliedBloomScale = bloomScale;
+  // Any of these reallocates render targets, so only on an actual change.
+  const next = frameFor(tier);
+  if (
+    next['width'] !== applied['width'] ||
+    next['height'] !== applied['height'] ||
+    next['pixelRatio'] !== applied['pixelRatio'] ||
+    next['bloomScale'] !== applied['bloomScale']
+  ) {
+    applied = next;
     setSize();
   }
   // Its own period, not loopPeriod. They were the same number back when the whole piece was one cycle;
@@ -223,6 +250,7 @@ const update = (time: number, deltaTime: number) => {
   const azimuth = orbit['azimuth'] + swing;
   camera.position.set(Math.cos(azimuth) * orbit['radius'], orbit['height'], Math.sin(azimuth) * orbit['radius']);
   camera.lookAt(target);
+  if (capture) aimPointer(pointer, camera, 0, 0);
 
   renderer.toneMappingExposure = params['exposure'];
   key.intensity = params['keyLight'];
@@ -247,7 +275,7 @@ const update = (time: number, deltaTime: number) => {
   fog.color.setHex(params['bgColor']);
   fog.near = params['size'] * params['fogNear'];
   fog.far = params['size'] * params['fogFar'];
-  post['apply'](params, tier);
+  post['apply'](view, tier);
   if (plates) {
     const moved = updateLift(plates, deltaTime, pointer, params);
     // With autoGrow off, growth() is the constant 1 and createPlaneSurface ignores time -- so once the
@@ -275,6 +303,11 @@ const update = (time: number, deltaTime: number) => {
 
 const render = (_time: number, _deltaTime: number) => {
   post['composer'].render();
+  // Straight after the draw, in the same task: see takeShot.
+  if (shutter['pending']) {
+    shutter['pending'] = false;
+    takeShot(canvas, applied['width'], applied['height'], 'greeble-flow');
+  }
 };
 
 const fixedTimer = createTimeAccumulator(60, fixedUpdate);

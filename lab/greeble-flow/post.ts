@@ -72,6 +72,10 @@ export const createPost = (
   return {
     'composer': composer,
     'setSize': (width, height, bloomScale) => {
+      // EffectComposer reads the renderer's pixel ratio once, in its constructor -- which runs before
+      // main.ts first sets it, so it stayed at 1 and the scene was drawn at CSS size whatever `pixelRatio`
+      // said (only the final copy to the canvas got bigger). Hand it the current ratio on every resize.
+      composer.setPixelRatio(renderer.getPixelRatio());
       composer.setSize(width, height);
       // setSize, not `resolution.set`: assigning the vector leaves the pass's render targets at their old
       // size, so bloom silently stopped following window resizes. Scaled down because the bloom pyramid is

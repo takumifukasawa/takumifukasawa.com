@@ -91,5 +91,10 @@
   "earthColor": "#3a1206",
   "autoQuality": 1,
   "qualityMs": 24,
-  "pixelRatio": 1.5
+  "pixelRatio": 1.5,
+  "captureWidth": 1920,
+  "captureHeight": 1080,
+  "captureScale": 2,
+  "captureMsaa": 8,
+  "captureBloomScale": 1
 }

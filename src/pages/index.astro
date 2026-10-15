@@ -1,6 +1,6 @@
 ---
-// The only page of the site. It is the index and the detail view at once: a card opens the work itself
-// in a new tab, so there are no per-sketch pages (docs/spec/site-v0.md).
+// The top page. It is the index and the detail view at once: a card opens the work itself in a new tab,
+// so there are no per-sketch pages (docs/spec/site-v0.md). Head, header and links are in layouts/Base.astro.
 //
 // PROVISIONAL. P0 originally had no pages at all; this exists so the domain is not a 404 and so the first
 // sketch has somewhere to appear. Fonts / colours / layout are decided in P1 (plan 1-1) once there are
@@ -9,6 +9,7 @@
 // No prose. Not a tagline, not an empty-state sentence, not a section intro (AGENTS.md). With no sketches
 // this page is the name and nothing else, and that is the intended state — the work is the content.
 import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
 import { resolveMedia } from '../lib/media.ts';
 
 const sketches = (await getCollection('lab', ({ data }) => !data.draft)).sort(
@@ -21,16 +22,6 @@ const hrefFor = (id: string, externalUrl?: string) => externalUrl ?? `/lab/${id}
 
 const dateLabel = (d: Date) =>
   `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-
-// Where else the work lives. Labels only -- the name of the place is the whole content (AGENTS.md: no
-// prose). The P1 plan had these on /about/, which does not exist yet; they sit next to the name until it
-// does (docs/spec/site-v0.md). note is expected to join later.
-const links = [
-  { 'label': 'X', 'href': 'https://x.com/takumifukasawa' },
-  { 'label': 'GitHub', 'href': 'https://github.com/takumifukasawa' },
-  { 'label': 'Shadertoy', 'href': 'https://www.shadertoy.com/user/takumifukasawa' },
-  { 'label': 'Hatena Blog', 'href': 'https://takumifukasawa.hatenablog.com/' },
-];
 
 // One string for both <meta name="description"> and og:description, so they cannot drift apart.
 const description = 'Takumi Fukasawa — graphics / realtime rendering. sketches and experiments.';
@@ -45,144 +36,37 @@ const description = 'Takumi Fukasawa — graphics / realtime rendering. sketches
 const ogImage = sketches.length > 0 ? resolveMedia(sketches[0]!.data.poster) : undefined;
 ---
 
-<!doctype html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>takumifukasawa</title>
-    <meta name="description" content={description} />
-    <!-- OGP. Absolute URLs come from `site` in astro.config.ts; og:url is this page because it is the only one.
-         summary_large_image needs an actual image, so without one the card falls back to the small form. -->
-    <meta property="og:title" content="takumifukasawa" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.site!.href} />
-    <meta property="og:description" content={description} />
-    {ogImage && <meta property="og:image" content={ogImage.url} />}
-    {ogImage && <meta property="og:image:width" content={String(ogImage.width)} />}
-    {ogImage && <meta property="og:image:height" content={String(ogImage.height)} />}
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
-    <!-- Google Analytics 4. The sketches are separate HTML files that this page does not generate, so they
-         load the same id through public/_shell.js — change both together. -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L3EDWSFJ82"></script>
-    <script is:inline>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-L3EDWSFJ82');
-    </script>
-  </head>
-  <body>
-    <header>
-      <h1>takumifukasawa</h1>
-      <ul class="links">
-        {
-          links.map((link) => (
+<Base description={description} path="/" ogImage={ogImage}>
+  {
+    sketches.length > 0 && (
+      <ul class="grid">
+        {sketches.map((sketch) => {
+          const poster = resolveMedia(sketch.data.poster);
+          return (
             <li>
-              <a href={link.href} target="_blank" rel="noopener me">
-                {link.label}
+              <a href={hrefFor(sketch.id, sketch.data.externalUrl)} target="_blank" rel="noopener">
+                <img
+                  src={poster.url}
+                  width={poster.width}
+                  height={poster.height}
+                  alt={sketch.data.title}
+                  loading="lazy"
+                />
+                <span class="title">{sketch.data.title}</span>
+                <span class="meta">
+                  <time datetime={sketch.data.date.toISOString()}>{dateLabel(sketch.data.date)}</time>
+                  <span class="tags">{sketch.data.tags.join(' / ')}</span>
+                </span>
               </a>
             </li>
-          ))
-        }
+          );
+        })}
       </ul>
-    </header>
-
-    <main>
-      {
-        sketches.length > 0 && (
-          <ul class="grid">
-            {sketches.map((sketch) => {
-              const poster = resolveMedia(sketch.data.poster);
-              return (
-                <li>
-                  <a href={hrefFor(sketch.id, sketch.data.externalUrl)} target="_blank" rel="noopener">
-                    <img
-                      src={poster.url}
-                      width={poster.width}
-                      height={poster.height}
-                      alt={sketch.data.title}
-                      loading="lazy"
-                    />
-                    <span class="title">{sketch.data.title}</span>
-                    <span class="meta">
-                      <time datetime={sketch.data.date.toISOString()}>{dateLabel(sketch.data.date)}</time>
-                      <span class="tags">{sketch.data.tags.join(' / ')}</span>
-                    </span>
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        )
-      }
-    </main>
-  </body>
-</html>
+    )
+  }
+</Base>
 
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #0b0b0d;
-    --fg: #e8e8ea;
-    --dim: #86868c;
-    --line: #232328;
-  }
-
-  html {
-    background: var(--bg);
-  }
-
-  body {
-    margin: 0;
-    padding: clamp(2rem, 6vw, 5rem) clamp(1rem, 5vw, 4rem);
-    background: var(--bg);
-    color: var(--fg);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 14px;
-    line-height: 1.7;
-  }
-
-  header {
-    max-width: 44rem;
-    margin-bottom: clamp(2rem, 6vw, 4rem);
-  }
-
-  header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.5rem 1.5rem;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-  }
-
-  .links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .links a {
-    color: var(--dim);
-    text-decoration: none;
-  }
-
-  .links a:hover,
-  .links a:focus-visible {
-    color: var(--fg);
-  }
-
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));

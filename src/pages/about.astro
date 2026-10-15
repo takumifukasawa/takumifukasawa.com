@@ -1,0 +1,149 @@
+---
+// /about/ — the profile. Facts only: name, affiliation, awards, each a line you could check somewhere else.
+// No bio paragraph (AGENTS.md: no prose; decided with the owner, 2026-10-15). Sections with no entries are
+// not rendered, so adding the first talk or exhibition is one line in the arrays below and nothing else.
+//
+// One page, no language switch: the site is Japanese for now, and items are written in the language they
+// exist in (docs/spec/site-v0.md).
+import Base from '../layouts/Base.astro';
+
+// The company name links to its own profile page, which is the company's account of the same person.
+const affiliation = { 'name': '面白法人カヤック', 'href': 'https://www.kayac.com/team/fukasawa-takumi' };
+const roles = ['Frontend Engineer', 'Game Developer'];
+const fields = ['webgl', 'shader', 'unity', 'unreal engine'];
+
+type Entry = { 'year': number; 'name': string; 'work'?: string; 'href'?: string };
+
+// Newest first.
+const awards: Entry[] = [];
+const exhibitions: Entry[] = [];
+const talks: Entry[] = [];
+
+const sections = [
+  { 'label': 'Awards', 'entries': awards },
+  { 'label': 'Exhibitions', 'entries': exhibitions },
+  { 'label': 'Talks', 'entries': talks },
+].filter((section) => section.entries.length > 0);
+---
+
+<Base title="About" description="深澤 匠 / Takumi Fukasawa" path="/about/">
+  <h1 class="person">
+    <span>深澤 匠</span>
+    <span lang="en">Takumi Fukasawa</span>
+  </h1>
+
+  <ul class="facts">
+    <li>
+      <a href={affiliation.href} target="_blank" rel="noopener">{affiliation.name}</a>所属
+    </li>
+    <li lang="en">{roles.join(' / ')}</li>
+    <li lang="en" class="dim">{fields.join(' / ')}</li>
+  </ul>
+
+  {
+    sections.map((section) => (
+      <section>
+        <h2>{section.label}</h2>
+        <ul class="entries">
+          {section.entries.map((entry) => (
+            <li>
+              <span class="year">{entry.year}</span>
+              <span class="what">
+                {entry.href ? (
+                  <a href={entry.href} target="_blank" rel="noopener">
+                    {entry.name}
+                  </a>
+                ) : (
+                  entry.name
+                )}
+                {entry.work && <span class="work">{entry.work}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</Base>
+
+<style>
+  /* No labels on the facts (decided with the owner): each line is told apart by how it is set instead.
+     The name is the subject; the affiliation and the roles are who; the fields, dimmer, are what with. */
+  .person {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0 0 clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 500;
+  }
+
+  .person span:first-child {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+  }
+
+  .person [lang='en'] {
+    color: var(--dim);
+    font-size: 1rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .facts {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .facts .dim {
+    margin-top: 1rem;
+    color: var(--dim);
+  }
+
+  a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--line);
+    text-underline-offset: 0.25em;
+  }
+
+  a:hover,
+  a:focus-visible {
+    text-decoration-color: currentColor;
+  }
+
+  section {
+    margin-top: clamp(2rem, 5vw, 3rem);
+  }
+
+  h2 {
+    margin: 0 0 0.5rem;
+    color: var(--dim);
+    font-size: 0.85em;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .entries {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entries li {
+    display: grid;
+    grid-template-columns: 4em 1fr;
+    gap: 0 1rem;
+  }
+
+  .year,
+  .work {
+    color: var(--dim);
+  }
+
+  .work {
+    display: block;
+  }
+</style>

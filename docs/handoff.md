@@ -60,7 +60,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
    - 床の読みやすさ（葉 = パネル）: `massMetal` を下げる、`maxSide` 6〜10、`splitBias` 0.9〜1、`stopChance` を上げる、を提案済み
    - `flowExtent` をカメラの視錐台に合わせて自動で決める（縦長のスマホでは画面内の粒が 16〜20% しかない。**座標変換なので人間の領域**）
    - CPU → GPU 転送を減らす（20000 粒・尾 14 で CPU 7.7 ms/frame + 約 14 MB/frame。履歴を k フレームおきに記録 / 尾か計算を GPU 側へ、を提案済み）
-3. **`greeble-flow` を公開する**: 録画して `pnpm lab:add greeble-flow --video <mp4>`（まず `--dry-run`）。**これが `lab:add` の本番初回**。
+3. **`greeble-flow` を公開する**: 撮影モード（`?capture` → `s`）で静止画を撮り `pnpm lab:add greeble-flow --poster <png>`（動画も出すなら `--video <mp4>` を足す。まず `--dry-run`）。**これが `lab:add` の本番初回**。
    直前に `harness check`（`--fast` なし）で `artifacts run` を通す。公開は `main` へ（決定 0009）。
    **2026-10-14 まではここが `greeble` だった**（没にしたので入れ替わった）。配管の初回検証と作品が同時になる懸念は下の「解決済」の最後の行のとおり残る。
 4. push が通ったら、作品が本番で動くことと末尾スラッシュ（`curl -I https://takumifukasawa.com/lab/greeble-flow`）を確かめる。下の実測表の残りもここで埋まる。
@@ -83,6 +83,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | bloom のちらつき / 箱のエッジ | コミット済（`3732c56`）。合成先の MSAA、`bloomScale` 1、エッジは `edge.glsl` | `lab/greeble-flow/post.ts`, `edges.ts`, `edge.glsl` |
 | `dev:lab --host` / `--port` | コミット済。`--host` は LAN と Tailscale（`*.ts.net`）で http 配信 | `scripts/dev-lab.ts`, `spec/publish-pipeline.md` |
 | 流れ: `flowExtent`（範囲をノブに）、粒同士の分離、粒ごとのばらつき、川の回り込み、曲がると光る | コミット済（2026-10-14） | `lab/greeble-flow/flow.ts` |
+| **撮影モード `?capture`**（2026-10-15）: `http://localhost:5173/?capture` で開き **`s` で PNG 保存**（`&clean` は画面ごと録画するときだけ）。1920×1080 固定を 2 倍で描いて縮小（＝AA）、MSAA 8、動的解像度オフ、ポインタは画面中央に固定（床が中央で隆起）。値は `params.json` の `capture*` ノブ。`captureBloomScale` 1 が画面で詰めた bloom の広がりと同じで、上げると細かくなるが広がりも縮む。動画の録画も同じモードを使う前提（録画の仕組み自体はまだ無い） | コミット済（2026-10-15） | `lab/greeble-flow/capture.ts`、`main.ts`、`pointer.ts` |
+| **`pixelRatio` ノブがシーンに効いていなかった**のを直した（2026-10-15）。EffectComposer が生成時の pixel ratio（=1）を握ったままだった。**画面でもシーンが実際に `min(DPR, 1.5)` 倍で描かれるようになり、見た目が細かく・重くなった**。前の見た目に戻すなら `pixelRatio` を 1 | コミット済（2026-10-15） | `lab/greeble-flow/post.ts`、`learnings.md` |
 | デバッグ画面（Tweakpane）を **`?debug` のときだけ出す**ように変えた（2026-10-14。既定は非表示。dev も同じ＝`http://localhost:5173/?debug`）。雛形のコメントと spec も直した | コミット済（2026-10-15） | `lab/greeble-flow/debug.ts`、`scripts/templates/sketch/main.ts`、`spec/publish-pipeline.md` |
 
 - **流れのモデルは「避ける」のまま**。渦（curl / stream function）に書き換えた版は**人間が却下**（2026-10-14。「タップしたところに磁場みたいに渦巻く」。避ける動きの方が良い）。再提案しない。

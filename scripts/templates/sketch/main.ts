@@ -8,6 +8,9 @@
 //   work alone, and opt-in means no one has to remember a flag when recording. (`?clean` is a separate
 //   thing: it hides the site link in _shell.js.)
 //   if (!new URLSearchParams(location.search).has('debug')) return;
+// - Capture (`?capture`): stills and recordings may be drawn at higher quality than the live sketch
+//   (supersampling, MSAA, no dynamic resolution) but must look the same. See docs/spec/publish-pipeline.md
+//   "撮影のときだけ高品質にする"; lab/greeble-flow/capture.ts is the first example.
 // - No classes: plain state objects + functions, so unused code can be tree-shaken (docs/coding.md).
 // - Import libraries per sketch. Do not put shared code in lab/core/ until it has been written 3 times (lab/core/AGENTS.md).
 //

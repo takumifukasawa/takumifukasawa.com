@@ -252,3 +252,14 @@
   `.env.example` に行を足した側は、**同じコミットで `docs/setup.md` に「既存の `.env` にも足す」を書く**
   （本人の別マシンが必ず踏む）。検査にするには `.env` を読む必要があり、CI には `.env` が無いので、
   機械化するなら「`.env` があるときだけ鍵の差分を WARN する」形になる（まだ足していない）。
+
+## 2026-10-15 three の EffectComposer は生成時の pixel ratio を握ったまま、`renderer.setPixelRatio` に追従しない
+
+- 症状: `pixelRatio` ノブ（と動的解像度の段）を変えても、シーンの細かさが変わらない。重さもほとんど変わらない。
+  canvas の `width` は確かに大きくなっているので、効いているように見える。
+- 原因: `new EffectComposer(renderer, target)` はコンストラクタで `renderer.getPixelRatio()` を 1 回読んで保持し、
+  以降の `composer.setSize(w, h)` はその値で中間ターゲットを確保する。`createPost` が `renderer.setPixelRatio` より
+  先に走っていたので 1 のまま固定され、**シーンは常に CSS サイズで描かれ、最後の OutputPass だけが大きい canvas に引き伸ばしていた**。
+- 対処 / 再発したら: リサイズのたびに `composer.setPixelRatio(renderer.getPixelRatio())` してから `composer.setSize`
+  （`lab/greeble-flow/post.ts`）。確かめ方は `composer.renderTarget1.width` と `canvas.width` が一致するかを見る。
+  **post を使う sketch を作ったら最初に見る**。`?capture` の supersampling を入れようとして見つけた。

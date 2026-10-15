@@ -21,7 +21,7 @@
   "gridFadeFar": 16,
   "markSize": 0.07,
   "markWidth": 0.035,
-  "rippleLead": 0.25,
+  "rippleLead": 0.2,
   "rippleRadius": 7,
   "rippleEnergy": 0.6,
   "rippleEase": 1.8,

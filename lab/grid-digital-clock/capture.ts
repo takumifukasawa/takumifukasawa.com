@@ -14,6 +14,19 @@ import type { Params } from './params.ts';
 
 export const capture = new URLSearchParams(location.search).has('capture');
 
+// ?capture&time=23:59:00 -- the clock reads that time the moment the page opens, and runs on from there in
+// real time. Capture only: a take can then be aimed at a particular moment (a minute or the day rolling
+// over) instead of waiting for it. Seconds of offset to add to the wall clock; 0 without the parameter.
+export const clockOffset = ((): number => {
+  const time = capture ? new URLSearchParams(location.search).get('time') : null;
+  const match = time?.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return 0;
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(Number(match[1]), Number(match[2]), Number(match[3] ?? 0), 0);
+  return (target.getTime() - now.getTime()) / 1000;
+})();
+
 // The params the frame is drawn with. A copy, never the original: the debug pane's save button writes
 // `params` to params.json, and a take must not leave its own settings behind in the file.
 export const captureView = (params: Params): Params => ({

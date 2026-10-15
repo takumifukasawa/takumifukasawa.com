@@ -14,10 +14,10 @@ const NOOP: Debug = { 'tick': () => {} };
 export const createDebug = (params: Params, quality: Quality): Debug => {
   if (!new URLSearchParams(location.search).has('debug')) return NOOP;
 
-  const pane = new Pane({ title: 'grid-line-timer' });
+  const pane = new Pane({ title: 'grid-digital-clock' });
 
   // Frame time first, and expanded. The reason it exists is that "is this too heavy on a phone?" is not a
-  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab grid-line-timer
+  // question anyone can answer by looking -- open the sketch on the device with `pnpm dev:lab grid-digital-clock
   // --https` and read the number. ms is the honest unit: 16.7 is the 60 fps budget, and unlike fps it does
   // not compress the interesting part of the range into a few pixels.
   //
@@ -69,7 +69,7 @@ export const createDebug = (params: Params, quality: Quality): Debug => {
       body: JSON.stringify(toJSON(params)),
     });
     if (!res.ok) {
-      console.error('[grid-line-timer] save failed:', res.status, await res.text());
+      console.error('[grid-digital-clock] save failed:', res.status, await res.text());
       return;
     }
     // Writing params.json is a source change, so Vite reloads the page -- which is the confirmation:

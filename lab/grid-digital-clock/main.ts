@@ -1,4 +1,4 @@
-// grid-line-timer
+// grid-digital-clock
 //
 // A digital clock on a grid. Every second, one line per segment that comes on in HH:MM:SS flies in
 // from off screen along the grid and lands exactly on the second. Unchanged digits stay still.
@@ -16,7 +16,7 @@
 // - fixedUpdate: fixed 60 Hz (time/timeAccumulator.ts). update / render: capped at 60 fps (time/timeSkipper.ts).
 
 import * as THREE from 'three';
-import { capture, captureView, createShutter, takeShot } from './capture.ts';
+import { capture, captureView, clockOffset, createShutter, takeShot } from './capture.ts';
 import { pickLayout, type Vec2 } from './clock.ts';
 import { createDebug } from './debug.ts';
 import { createGrid } from './grid.ts';
@@ -82,7 +82,8 @@ const setSize = () => {
 const DEG = Math.PI / 180;
 const target = new THREE.Vector3();
 // Wall-clock seconds. The lines land on real second boundaries, so this has to be the epoch, not page time.
-const wallTime = () => (performance.timeOrigin + performance.now()) / 1000;
+// clockOffset is 0 except under ?capture&time=... (capture.ts).
+const wallTime = () => (performance.timeOrigin + performance.now()) / 1000 + clockOffset;
 
 const fixedUpdate = (_time: number, _deltaTime: number) => {};
 
@@ -141,7 +142,7 @@ const render = (_time: number, _deltaTime: number) => {
   post['composer'].render();
   if (shutter['pending']) {
     shutter['pending'] = false;
-    takeShot(canvas, applied['width'], applied['height'], 'grid-line-timer');
+    takeShot(canvas, applied['width'], applied['height'], 'grid-digital-clock');
   }
 };
 

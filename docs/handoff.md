@@ -3,7 +3,7 @@
 <!-- 最終更新は絶対日付で。session-handoff が更新し、session-catchup が最初に読む。
      長期タスクの機械可読な進行状態は .harness/state/ に置き、ここには人間向けの要約だけ書く。 -->
 
-最終更新: 2026-10-15
+最終更新: 2026-10-16
 
 ## いま何をしているか（1〜3 行）
 
@@ -47,7 +47,7 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | **`greeble-flow`**（公開済み。`/lab/greeble-flow/`）と **`grid-ray-clock`（2026-10-15 着手。`wip` → `grid-line-timer` → `grid-digital-clock` → `grid-ray-clock` と改名。公開準備中）**。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
+| `lab/` の中身 | **`greeble-flow`**（公開済み。`/lab/greeble-flow/`）と **`grid-ray-clock`（2026-10-15 着手。`wip` → `grid-line-timer` → `grid-digital-clock` → `grid-ray-clock` と改名。**2026-10-16 公開**。`/lab/grid-ray-clock/`）**。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
@@ -84,7 +84,11 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 `lines.ts`（秒ごとのバッチと instanced quad）/ `grid.ts` / `post.ts`（bloom: `bloomScale` 0.5 + MSAA 4 + 動的解像度）。
 `quality.ts` / `capture.ts` / `debug.ts` は greeble-flow からのコピー（2 件目。**3 件目で `lab/core/` を判断**）。
 
-次: 見た目の調整（ノブは `?debug`）と、PC の配置（横か縦か）の決定。
+**2026-10-16 公開済み**（`b3acc73`）。PC は横並び・縦長は 3 段の `layout: auto` で確定。
+公開後に足したもの: マウス / ドラッグでカメラ（離しても戻らない）、クリック・タップで波紋、秒ごとの 2 音交互の「ピッ」
+（既定 on・最初の操作で鳴る・右上ミュート・タブ非表示で停止・iOS は `audioSession = 'playback'`。約束は `spec/publish-pipeline.md` の「音のある作品」）。
+撮影は `?capture&time=23:59:55` のように開始時刻を指定できる。
+途中で `grid-digital-clock` として一度 `lab:add` してしまい、数分後に取り下げた（決定 0007 末尾の記録。R2 に孤立した poster が 1 つ残る）。
 
 ## `greeble-flow` の現在地（2026-10-14。旧 `wip`）
 

@@ -1,8 +1,8 @@
 {
-  "harness_version": "0.11.0",
+  "harness_version": "0.11.1",
   "source": "https://github.com/takumifukasawa/agent-harness.git",
   "source_ref": "",
-  "installed_at": "2026-10-07",
+  "installed_at": "2026-10-15",
   "agents": "claude,codex",
   "files": [
     {"path":".harness/bin/harness","src":"@self","ownership":"managed","sha256":"b4eda1281ddace78fbb3560c04ee87f89738a67e","source_sha256":""},
@@ -39,7 +39,7 @@
     {"path":"docs/rules/README.md","src":"docs-template/rules/README.md","ownership":"seed","sha256":"-","source_sha256":"-"},
     {"path":"docs/spec/README.md","src":"docs-template/spec/README.md","ownership":"seed","sha256":"-","source_sha256":"-"},
     {"path":"docs/tech-debt.md","src":"docs-template/tech-debt.md","ownership":"seed","sha256":"-","source_sha256":"-"},
-    {"path":"AGENTS.md","src":"AGENTS.core.md","ownership":"merge","sha256":"314d9b225f617b24a3faee8923c663af25cd1f30","source_sha256":"-"},
+    {"path":"AGENTS.md","src":"AGENTS.core.md","ownership":"merge","sha256":"a66edb1bbd46779706ea2e03434755c2d0ae3c04","source_sha256":"-"},
     {"path":"CLAUDE.md","src":"adapters/claude/CLAUDE.md.template","ownership":"managed","sha256":"fcaf5d8406e36b729c4fb77c017027bc2d5eab1e","source_sha256":""},
     {"path":".harness/adapters/claude.settings.fragment.json","src":"adapters/claude/settings.fragment.json","ownership":"managed","sha256":"d7fc64fe34e903c597c345ba2add34206badab37","source_sha256":""},
     {"path":".claude/agents/implementer.md","src":"docs-template/roles/implementer.md","ownership":"generated","sha256":"7b564ab0f68749e6ac71c4994b4468b06c18fecc","source_sha256":"311cf3c1bc117fa7a58d7d3d66b8705d78ca0fd6"},
@@ -47,7 +47,7 @@
     {"path":".agents/skills/role-implementer/SKILL.md","src":"docs-template/roles/implementer.md","ownership":"generated","sha256":"ba1c6ac9ac63adf447dc5f0dc884451a28d5a9e2","source_sha256":"311cf3c1bc117fa7a58d7d3d66b8705d78ca0fd6"},
     {"path":".agents/skills/role-reviewer/SKILL.md","src":"docs-template/roles/reviewer.md","ownership":"generated","sha256":"7a5326a71c9b37e2b66a1c1bc6ca439fb3215bbb","source_sha256":"8ce7658a4d82d774b1768e8188664bff5a5f2257"},
     {"path":".codex/hooks.json","src":"adapters/codex/hooks.json","ownership":"managed","sha256":"0bed6c2dec668ee3022fb0efb16ee9bf6b22711c","source_sha256":""},
-    {"path":".harness/scripts/codex-deny.sh","src":"adapters/codex/deny.sh","ownership":"managed","sha256":"52084c968588891398635e41640ba6199f627ec7","source_sha256":""},
+    {"path":".harness/scripts/codex-deny.sh","src":"adapters/codex/deny.sh","ownership":"managed","sha256":"ef2c5e9cc24ac4ba4363ec2577ee807f81c388b8","source_sha256":""},
     {"path":".githooks/pre-commit","src":"@pre-commit","ownership":"managed","sha256":"581e80a3b67f04d1bb187f30db213f3ca6753fd3","source_sha256":""}
   ]
 }

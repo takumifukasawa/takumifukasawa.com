@@ -588,8 +588,8 @@ fi
 # ---------------------------------------------------------------- B12. 配布先の case 衝突（tech-debt #13 / #14）
 # case を区別しないファイルシステム（macOS / Windows）では、harness の配布先パスと大文字小文字
 # 違いの既存ファイルが同じもの扱いになる。seed は apply_plan がそれを「既にある」として雛形を
-# 配らないが manifest には配布先の名前で記録される（tech-debt #13。2026-09-21、実プロジェクト
-# aesthetic-comparison への導入で発見）。managed（.githooks/pre-commit を含む）・generated
+# 配らないが manifest には配布先の名前で記録される（tech-debt #13。2026-09-21、実プロジェクトへの
+# 導入で発見）。managed（.githooks/pre-commit を含む）・generated
 # （.claude/agents/*.md 等の役割ファイル。生成元は docs/roles/）も同じ理由で衝突しうる。
 # apply_plan は managed と generated を全く同じ経路（case 非依存の `[ -f ]` 判定）で扱うので、
 # 両方とも一般の CONFLICT として .harness/conflicts/ へ逃がすだけで、実際に使われているのは

@@ -11,8 +11,8 @@
 # あると seed の docs/handoff.md の配布が `[ -f docs/handoff.md ]` で「既にある」と判定されて
 # スキップされる。にもかかわらず manifest には docs/handoff.md として記録される。case を区別する
 # Linux に持っていくと、その名前のファイルが本当に無いと判定されて harness update が雛形を新たに
-# 配り、HANDOFF.md と handoff.md が併存する（docs/tech-debt.md #13。2026-09-21、実プロジェクト
-# aesthetic-comparison への導入で発見。その場は git mv で寄せて解消した）。
+# 配り、HANDOFF.md と handoff.md が併存する（docs/tech-debt.md #13。2026-09-21、実プロジェクトへの
+# 導入で発見。その場は git mv で寄せて解消した）。
 #
 # 判定そのものは ownership に依存しない（「配布先のパスと case 違いの既存ファイルがあるか」を
 # 見ているだけ）。managed（.githooks/pre-commit 等）も同じ判定で衝突しうる: 既存に case 違いの

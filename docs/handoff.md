@@ -55,8 +55,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **撮影モードを `lab/core/` に出すかを決める**（3 件目の `voxel-rain` を出したので、判断の時期が来た。**未決**）。コピーは 3 件（`greeble-flow` / `grid-ray-clock` / `voxel-rain` の `capture.ts`・`quality.ts`・`debug.ts`・`post.ts`）。
-   ただし `voxel-rain` の `capture.ts` は撮影の段取り（`d` で中央に落とす、`window.voxelRain.drop`）を足して他と分かれた。共通にできるのは「固定フレーム・supersample・MSAA・`s` で保存」の部分だけ。
+1. **撮影モードの共通部分を `lab/core/capture.ts` に出した**（2026-10-17）。`?capture` の判定・`captureView`・`s` で PNG 保存だけ。固定フレームと supersample の配線は作品の `main.ts`（`spec/publish-pipeline.md`）。
+   **4 件目の sketch から `../core/capture.ts` を import する**（既存 3 件はコピーのまま）。`quality.ts`・`debug.ts`・`post.ts` のコピーは未判断（作品ごとの差が大きい）。core を変えたときの検査の穴は `tech-debt.md` #4。
 2. **次の sketch を作る**。これが本題（評価軸は制作量。`AGENTS.md`）。`pnpm new <slug>`（制作中は `wip`）→ 制作 → 撮影モード（`?capture` → `s`）で poster →
    **`harness check`（full）** → `main` に `develop` をマージして `pnpm lab:add <slug> --poster <png>`（まず `--dry-run`）。撮影の約束は `spec/publish-pipeline.md` の「撮影のときだけ高品質にする」。
    **実装の前に、何を作るかを相談する**（2026-10-16、voxel rain で先に作り始めて止められた）。
@@ -64,7 +64,6 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 4. `_shell.js` の `←` を「直前がこのサイトのトップなら `history.back()`」にする（**提案だけ、未着手**）。カードが同じタブになったので、作品が増えると `href="/"` ではトップのスクロール位置を失う。作品 1 件のいまは実害なし。
 5. 公開後の実測の残り: repo サイズ、R2 の Class B（下の実測表）。
 6. `[harness候補]` を agent-harness に戻す（`harness-maintain` の手順）: **`tests green` の `FORCE_COLOR`**（雛形の検査そのものの不具合。最優先）、テストの `GIT_INDEX_FILE` 継承（`learnings.md` 2026-10-15）、2026-10-17 の 3 件（検査出力の grep、古いブランチへの checkout で配布物が消える、iPhone の低電力モード）。
-7. local branch `chore/close-workers-dev`（`af328fa`）が**どこにもマージされていない**のにリモートは削除済み。中身は `tech-debt.md` の宿題（workers.dev の本番 URL を塞ぐ）。取り込むか捨てるかを決める。2026-10-17 に push-gate のレビュー印は付けた（秘密情報なし）が、push はしていない。
 8. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
 9. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
 10. `greeble-flow` は完成形（見た目の詰めは再開しない）。保留 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は下の節。

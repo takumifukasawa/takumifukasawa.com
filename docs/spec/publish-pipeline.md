@@ -250,7 +250,9 @@ Card Validator が廃止されているので強制更新もできない。`pnpm
 - **見た目（色・構図・動き・bloom の広がり）は変えない**。品質のための値が見た目を変えるもの（例: bloom の解像度を上げると広がりが縮む）は、既定を「画面と同じ見た目」にしてノブで選べるようにする
 - 撮影に要る演出（ポインタを画面中央に固定する等）も撮影モードに入れてよい。作品ごとに決める
 - 値は `params.json` の `capture*` ノブに置く（`.ts` に値を書かない規約のまま）。静止画は撮影モードの中から保存する（`greeble-flow` は `s` キーで PNG）
-- **共通化はまだしない**。実装は作品ごとのコピー（`lab/greeble-flow/capture.ts` が最初の 1 件）。3 件目で `lab/core/` に出すかを判断する（`lab/core/AGENTS.md`）
+- **共通部分は `lab/core/capture.ts`**（2026-10-17、3 件目の `voxel-rain` の後に出した）。中身は `?capture` の判定・`captureView`（`captureMsaa`、動的解像度オフ）・`s` で PNG 保存の 3 つだけ。
+  固定の撮影サイズと supersample の配線（`frameFor` / `setSize`）は renderer と post に絡むので作品の `main.ts` に置く。撮影の段取り（`voxel-rain` の `d` キー）も作品側。
+  既存 3 件（`greeble-flow` / `grid-ray-clock` / `voxel-rain`）は自分のコピーのまま（`lab/core/AGENTS.md`）
 1080p60 / 10 秒で mp4 は 4〜6 MB になるため、500 件での R2 ストレージは約 2.6 GB（mp4 のみ）（無料枠 10 GB の内側。`../references/cloudflare-limits.md`）。
 
 ## 音のある作品（2026-10-16 合意）

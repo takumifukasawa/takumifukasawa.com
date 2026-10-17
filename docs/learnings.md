@@ -5,6 +5,27 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-17 [harness候補] 配布物を gitignore にした後、それより古いブランチへ checkout すると配布物が消える
+
+- 症状: `develop` → `main` → `develop` と切り替えたら、`.harness/bin/harness` や `.harness/scripts/*.sh` が消えて `harness check` が動かなくなった。
+- 原因: `3ebf4a6`（harness 1.2.0）で配布物を git の管理から外した（.gitignore）。`main` はそれより古く、まだ管理していた。
+  `main` への checkout で手元の ignored ファイルが `main` の版に上書きされ、`develop` に戻るときに「管理から外す」差分を通って git が削除した。
+- 対処 / 再発したら: `bash <agent-harness の clone>/bin/harness install`（パスは `.harness/source.local`）。
+  `main` が `develop` に追いついた後は起きない。配布物の管理方法を変えたら、デプロイ用ブランチも早めに追いつかせる。
+
+## 2026-10-17 Windows で `git mv lab/wip` が Permission denied になる
+
+- 症状: 公開前の改名 `git mv lab/wip lab/<slug>` が `Permission denied` で失敗する。
+- 原因: `pnpm dev:lab wip` の dev サーバーが `lab/wip` を監視していて、Windows ではディレクトリを掴んだまま改名できない。
+  前のセッションのサーバーが残っていることもある（`netstat -ano | grep :5173`）。pnpm のタスクを止めても子の node が残ることがある。
+- 対処 / 再発したら: dev サーバーを全部止めてから改名する（`taskkill //PID <pid> //F`）。
+
+## 2026-10-17 依存や vite.config.ts を変えると、動いている dev サーバーが真っ黒な画面を返し続ける
+
+- 症状: 依存を足した直後や `vite.config.ts` を書き換えた直後に、dev の画面が真っ黒になる。例外もコンソールのエラーも出ない。
+- 原因: Vite が依存を再最適化し、古いハッシュの `node_modules/.vite/deps/three.js` に 504（Outdated Optimize Dep）を返し続ける。
+- 対処 / 再発したら: `curl -o /dev/null -w '%{http_code}'` で deps の URL を叩いて 504 なら、dev サーバーを起動し直す。
+
 ## 2026-10-17 [harness候補] 検査の出力を grep で絞ると、検査そのものが動いていないことに気付けない
 
 - 症状: `npx tsc --noEmit -p . 2>&1 | grep lab/wip` を「型チェック」として何度も回し、何も出ないので「通った」と報告していた。

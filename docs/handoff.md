@@ -3,12 +3,12 @@
 <!-- 最終更新は絶対日付で。session-handoff が更新し、session-catchup が最初に読む。
      長期タスクの機械可読な進行状態は .harness/state/ に置き、ここには人間向けの要約だけ書く。 -->
 
-最終更新: 2026-10-16
+最終更新: 2026-10-17
 
 ## いま何をしているか（1〜3 行）
 
 P0 の配管が**全部つながった**。`takumifukasawa.com` が Cloudflare から応答し（Pages ではなく **Workers Static Assets**）、R2 も配信済み。
-**最初の sketch `greeble-flow` を公開した**（2026-10-15。`lab:add` の本番初回も通った）。サイトは `/`（作品のグリッド + プロフィールのリンク）と
+**公開済みの sketch は 3 件**（`greeble-flow` 2026-10-15、`grid-ray-clock` 2026-10-16、**`voxel-rain` 2026-10-17**）。サイトは `/`（作品のグリッド + プロフィールのリンク）と
 `/about/`（事実だけ）の 2 ページ。**次の本題は sketch を積むこと**（P1 に入るのは 5〜10 件たまってから）。
 棚上げは 2 件（`lab-archives/mirror-sphere/` と `lab-archives/greeble/`。決定 0006）。
 **日々の作業は `develop`、デプロイされるのは `main` だけ**（決定 0009）。
@@ -34,8 +34,8 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 
 | 項目 | 状態 | 出典 |
 |---|---|---|
-| 決定 0001〜0009 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005〜0007 は 2026-10-11、0008 は 2026-10-12、0009 は `develop` で作り `main` で出す） | `ls docs/decisions/`, `spec/` |
-| 検査 | **全部 pass。件数は叩いて確かめる**（ここに書くと腐る）。`artifacts run` だけ `fast` ではない = **pre-commit では走らない**ので、公開前に `harness check`（`--fast` なし）を 1 回通すこと | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
+| 決定 0001〜0010 / spec 3 本 | 採用・合意済（0001〜0004 は 2026-10-08、0005〜0007 は 2026-10-11、0008 は 2026-10-12、0009 は `develop` で作り `main` で出す、**0010 は TypeScript の型検査を必須にする**（2026-10-17）） | `ls docs/decisions/`, `spec/` |
+| 検査 | **全部 pass。件数は叩いて確かめる**（ここに書くと腐る）。`artifacts run` と `types pass`（`astro check`）は `fast` ではない = **pre-commit では走らない**。**`lab:add` の前に必ず `harness check`（`--fast` なし）を通す**（2026-10-17 に飛ばして、起動時に止まるビルドを本番に出した。`learnings.md` 2026-10-13 の追記） | `bash .harness/bin/harness check`、登録内容は `.harness/checks.sh` |
 | `pnpm new` / `dev:lab` / `lab:build` / `lab:rebuild --all` | 動作確認済み（`dev:lab --https` は未確認。初回は sudo が要る） | 計画 0-4 / 0-4b / 0-5 |
 | `/_shell.js` | 配信・ブラウザでの表示・`?clean` を確認（ローカルの `wrangler dev` + 実ブラウザ）。GA の読み込みもここ経由。**`h` キーのトグルは未確認** | 計画 0-6、決定 0004 |
 | サイト（Astro）| **`/` と `/about/` の 2 ページ**。共通の head・ヘッダー（名前 + About / X / GitHub / Shadertoy / Hatena Blog）は `src/layouts/Base.astro`。フォントは M PLUS 1 Code（Google Fonts）。見た目は暫定（P1 で決める）。`/about/` は事実だけ（名前・所属・職種・技術）。作品のカードは**行き先でタブを決める**（このサイトの作品は同じタブ） | `src/layouts/`、`src/pages/`、`spec/site-v0.md` |
@@ -47,23 +47,46 @@ cp .env.example .env                    # R2 のトークンをパスワード�
 | 配信（**Workers Static Assets**） | 稼働。`/` も `/_shell.js` も 200、http は https へ 301。Pages は新規作成の入口が消えていたため使っていない | `curl -I https://takumifukasawa.com/`、`spec/site-v0.md`、`references/cloudflare-limits.md` |
 | デプロイ | push → Workers Builds で自動。PR にはプレビュー URL が出る（Branch Preview は実機確認に便利） | `spec/site-v0.md` の「プレビュー URL」 |
 | 計測 | GA4 `G-L3EDWSFJ82`。`/` は `index.astro`、全作品は `_shell.js` 経由。本番のリアルタイムで疎通確認済み。**開発機の Chrome はブロッカーで飛ばない** | `spec/site-v0.md` の「計測」、`learnings.md` |
-| `lab/` の中身 | **`greeble-flow`**（公開済み。`/lab/greeble-flow/`）と **`grid-ray-clock`（2026-10-15 着手。`wip` → `grid-line-timer` → `grid-digital-clock` → `grid-ray-clock` と改名。**2026-10-16 公開**。`/lab/grid-ray-clock/`）**。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
+| `lab/` の中身 | **`voxel-rain`**（**2026-10-17 公開**。`/lab/voxel-rain/`。下の節）、**`greeble-flow`**（公開済み。`/lab/greeble-flow/`）と **`grid-ray-clock`（2026-10-15 着手。`wip` → `grid-line-timer` → `grid-digital-clock` → `grid-ray-clock` と改名。**2026-10-16 公開**。`/lab/grid-ray-clock/`）**。撮影モード `?capture` あり。棚上げは `lab-archives/mirror-sphere/` と `lab-archives/greeble/`。**slug に連番は無く**（決定 0007）、**制作中は `wip`、公開時に本名へ改名**（`spec/publish-pipeline.md`。`greeble-flow` は 2026-10-14 に改名済み） | `ls lab/ lab-archives/`、決定 0006 / 0007 |
 | 語彙の置き場 | Cosense `poc-input`（public）。公式 plugin + CLI 導入・login 済み。`greeble` / `語彙の書き方` の 2 ページを追加 | `cosense whoami https://scrapbox.io`、下の「解決済」 |
+| TypeScript | **必須**（2026-10-17、決定 0010）。`typescript` は **6 系に固定**（7 は `astro check` が未対応）。対象は `src/`・`scripts/`・`lab/`（`lab-archives/` と `public/` は除外）。書き方は現代的な ES、プロパティのクォートは `mangleProperties = true` の作品だけ（`coding.md`） | `pnpm typecheck`、`tsconfig.json` |
+| 制作中の `lab:build` | **制作中は回さない**（dev サーバーで確かめる）。ただし `lab build in sync` が pre-commit で走るので、**`lab/wip` をコミットするときだけ** `pnpm lab:build wip` してから。公開時は `lab:add` が自分でビルドする | `.harness/checks.sh` |
 | `src/content.config.ts`（lab の schema） | あり。生成した md が `astro build` を通ることを確認 | `spec/content-model.md` |
 
 ## NEXT（依存順。順序制約があれば明記）
 
-1. **次の sketch を作る**。これが本題（評価軸は制作量。`AGENTS.md`）。`pnpm new <slug>`（制作中は `wip`）→ 制作 → 撮影モード（`?capture` → `s`）で poster →
-   `main` に `develop` をマージして `pnpm lab:add <slug> --poster <png>`（まず `--dry-run`）。撮影の約束は `spec/publish-pipeline.md` の「撮影のときだけ高品質にする」。
-   撮影モードは作品ごとのコピー（`lab/greeble-flow/capture.ts` が 1 件目）。**3 件目で `lab/core/` に出すかを判断**。
-2. 動画も出すなら: 録画の仕組みはまだ無い（OBS で画面ごと録るなら `?capture&clean`）。`canvas.captureStream` で撮る仕組みを作るなら、作品 2〜3 件で必要になってから。
-3. `_shell.js` の `←` を「直前がこのサイトのトップなら `history.back()`」にする（**提案だけ、未着手**）。カードが同じタブになったので、作品が増えると `href="/"` ではトップのスクロール位置を失う。作品 1 件のいまは実害なし。
-4. 公開後の実測の残り: repo サイズ、R2 の Class B（下の実測表）。
-5. `[harness候補]` を agent-harness に戻す（`harness-maintain` の手順）: **`tests green` の `FORCE_COLOR`**（雛形の検査そのものの不具合。最優先）、テストの `GIT_INDEX_FILE` 継承（`learnings.md` 2026-10-15）。
-6. local branch `chore/close-workers-dev`（`af328fa`）が**どこにもマージされていない**のにリモートは削除済み。中身は `tech-debt.md` の宿題（workers.dev の本番 URL を塞ぐ）。取り込むか捨てるかを決める。
-7. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
-8. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
-9. `greeble-flow` は完成形（見た目の詰めは再開しない）。保留 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は下の節。
+1. **撮影モードを `lab/core/` に出すかを決める**（3 件目の `voxel-rain` を出したので、判断の時期が来た。**未決**）。コピーは 3 件（`greeble-flow` / `grid-ray-clock` / `voxel-rain` の `capture.ts`・`quality.ts`・`debug.ts`・`post.ts`）。
+   ただし `voxel-rain` の `capture.ts` は撮影の段取り（`d` で中央に落とす、`window.voxelRain.drop`）を足して他と分かれた。共通にできるのは「固定フレーム・supersample・MSAA・`s` で保存」の部分だけ。
+2. **次の sketch を作る**。これが本題（評価軸は制作量。`AGENTS.md`）。`pnpm new <slug>`（制作中は `wip`）→ 制作 → 撮影モード（`?capture` → `s`）で poster →
+   **`harness check`（full）** → `main` に `develop` をマージして `pnpm lab:add <slug> --poster <png>`（まず `--dry-run`）。撮影の約束は `spec/publish-pipeline.md` の「撮影のときだけ高品質にする」。
+   **実装の前に、何を作るかを相談する**（2026-10-16、voxel rain で先に作り始めて止められた）。
+3. 動画も出すなら: 録画の仕組みはまだ無い（OBS で画面ごと録るなら `?capture&clean`）。`canvas.captureStream` で撮る仕組みを作るなら、作品 2〜3 件で必要になってから。
+4. `_shell.js` の `←` を「直前がこのサイトのトップなら `history.back()`」にする（**提案だけ、未着手**）。カードが同じタブになったので、作品が増えると `href="/"` ではトップのスクロール位置を失う。作品 1 件のいまは実害なし。
+5. 公開後の実測の残り: repo サイズ、R2 の Class B（下の実測表）。
+6. `[harness候補]` を agent-harness に戻す（`harness-maintain` の手順）: **`tests green` の `FORCE_COLOR`**（雛形の検査そのものの不具合。最優先）、テストの `GIT_INDEX_FILE` 継承（`learnings.md` 2026-10-15）、2026-10-17 の 3 件（検査出力の grep、古いブランチへの checkout で配布物が消える、iPhone の低電力モード）。
+7. local branch `chore/close-workers-dev`（`af328fa`）が**どこにもマージされていない**のにリモートは削除済み。中身は `tech-debt.md` の宿題（workers.dev の本番 URL を塞ぐ）。取り込むか捨てるかを決める。2026-10-17 に push-gate のレビュー印は付けた（秘密情報なし）が、push はしていない。
+8. AI 側で残っているもの: `_shell.js` の `h` キーのトグル確認。
+9. **別 repo の宿題**: `PaleGL/CLAUDE.md` に AI 利用範囲を書く（決定 0005 で「未着手」と明記したまま）。
+10. `greeble-flow` は完成形（見た目の詰めは再開しない）。保留 3 件（床の読みやすさ / `flowExtent` の自動決定 / CPU→GPU 転送削減）は下の節。
+
+## `voxel-rain` の現在地（2026-10-16 着手、2026-10-17 公開。旧 `wip`）
+
+ボクセルの世界に雨が降り、床に波紋が広がる。床は 2D の波動方程式で、波の高さで光り、上下し、強いところほど大きくなる。
+雨は粒ごとに柱を等速で落ち、尾の明るさは頭からの距離で出す（**3D の配列は持たない**。状態は床の波と粒の一覧だけ）。
+
+人間と合意した仕様（2026-10-16〜17）:
+- 積もらない雨。セルが一瞬光る。波紋は波動方程式で、形は平ら・振幅で光る。空のセルは格子点だけ（床の 1 層だけ。天井は床と見間違えるので消した）。
+- 床は**読み込み時に画面を覆う大きさ**で作る。マス数は `floorCells` の予算で固定し、ボクセルの大きさは自動。スマホは `minCellPx` でボクセルを大きく保つ。リサイズは考慮しない（余白 `floorMargin` で吸収）。
+- 雨は**画面のランダムな点の下の柱**に降らせる（`rainRate` は画面全体の粒数）。遠くはフォグで背景に溶かし、床もフォグの先までは作らない。
+- カメラは上から（`camPitch` 41）。下から見上げる構図（`camPitchBelow`）も作り、`camView` で切り替えられる。**作品の顔は上から**（人間の判断）。
+- クリック / ドラッグで雨（高さ固定の面に raycast して、そこから落とす）。出た場所に暖色の光の粒。軽い色収差。
+- **訪問者向けのつまみ**（`controls.ts`。閉じた小さな pane）: view・雨の量・色 2 つ・波紋の速さ / 寿命 / 明るさ。出すかは作品ごとに決める（`spec/publish-pipeline.md`）。
+- **AI との分担: 今回も全部 AI が書く**（人間の明示的な許可、2026-10-16「今回も全部 AI」）。greeble-flow / grid-ray-clock と同じく例外で、方針変更ではない。
+
+撮影（poster は人間が実機で `?capture` → `s` で撮った 1 枚）:
+- 撮影モードでもクリックで雨を落とせる（光の粒は出さない）。`d` で画面中央の下に 1 粒。スクリプトからは `window.voxelRain.drop(x, y)` と `window.voxelRain.params`。
+- **ヘッドレス（swiftshader）で `?capture` を撮ると、色収差 + MSAA の組み合わせで真っ黒になる**。実機の GPU では正常。ヘッドレスで撮るなら `captureMsaa` を 0 にする。
+- ヘッドレスで `s`（ダウンロード）を続けて押すと途中から保存されない。`Page.captureScreenshot` で撮る。
 
 ## `grid-ray-clock` の現在地（2026-10-15 着手。旧 `wip` / `grid-line-timer` / `grid-digital-clock`）
 
@@ -196,6 +219,8 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
   （AI が実際にそう読み違えた）。本人の意図は「作品・ブログ・プロフィールを束ねる個人のページ。ただし評価軸は制作量で、サイトの作り込みは下位」
 - `/about/` に PaleGL へのリンクを載せるか（spec にはあった。2026-10-15 時点で未定）。受賞歴は「いったん無し」で確定（枠だけある）
 - `greeble` を没にした理由（docs には「人間の判断」とだけある。`lab-archives/` は見返す棚なので一言あると効く）
+- **撮影モードを `lab/core/` に出すか**（3 件目で判断する約束。NEXT の 1）
+- `voxel-rain` の訪問者向けペインの `view`（上から / 下から）の切り替えを残すか（2026-10-17 に質問して返事なし。いまは残してある）
 - フォント・配色・レイアウトの方向性（P1 着手時に決める。フォントだけ M PLUS 1 Code に先行決定）。グリッドの列数は「デスクトップで 4 列前後、スマホで 2 列」が候補（2026-10-08）。sketch を数件並べてから決める
 
 ### 2026-10-11〜12 に決めたことの置き場（本文はそれぞれの doc にある）
@@ -281,5 +306,5 @@ scatter は階層の無い点の集合で、**どちらも分割の木を持た�
 - `docs/glossary.md` — `<NNN-slug>` → `<slug>` の置換のみ（決定 0007）
 - `docs/spec/` 3 本 — 同上。連番の置換と `no`（連番）フィールドの扱いだけ。仕様そのものは変えていない
 - `.harness/state/` — 使っていない（`task-orchestrate` を回していないため）
-- `harness status` — managed の drift 0（2026-10-12 時点）。`doctor` の WARN 2 件は既知（Codex の deny hook が未信頼、`.harness/source.local` 由来）
+- `harness status` — managed の drift 0（2026-10-17 時点。`harness install` で配り直した直後）。`doctor` の WARN 2 件は既知（Codex の deny hook が未信頼、`.harness/source.local` 由来）
 - **`.harness/checks.sh` は seed なので、`artifacts run` の追加は drift にならない**（プロジェクトが編集する領域）

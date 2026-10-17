@@ -5,6 +5,32 @@
      プロジェクト非依存のものには [harness候補] を付ける。harness-maintain が昇格を検討する。
      昇格先の優先順位: 検査スクリプト（check.sh）> スキル > AGENTS.core.md の文章 -->
 
+## 2026-10-17 [harness候補] 検査の出力を grep で絞ると、検査そのものが動いていないことに気付けない
+
+- 症状: `npx tsc --noEmit -p . 2>&1 | grep lab/wip` を「型チェック」として何度も回し、何も出ないので「通った」と報告していた。
+  その間に、関数名の付け替え漏れがクリック時の `ReferenceError` として残った。
+- 原因: `typescript` が入っておらず、`npx tsc` は別物のパッケージの「This is not the tsc command you are looking for」を出していた。
+  grep がそれを捨てたので、検査が動いていないことと、エラーが 0 件であることの区別がつかなかった。
+- 対処 / 再発したら: 型検査は `pnpm typecheck`（決定 0010）を使い、**最後の集計行（`- 0 errors`）を見る**。
+  「何も出なかった」を pass の根拠にしない。新しい検査を足したら、一度わざと失敗させて、落ちることを確かめる。
+
+## 2026-10-17 pnpm の追加が途中で止まると、symlink だけ残って型が全部消える
+
+- 症状: `pnpm add -D @tweakpane/core` の後、Tweakpane の `Pane` から `addFolder` などのメソッドが全部消えた（型エラー）。
+  pnpm は `Done` と出していた。
+- 原因: `node_modules/@tweakpane/core` の symlink はあるのに、リンク先の `.pnpm/@tweakpane+core@2.0.5` が無かった。
+  直前に中断したインストールの影響と思われる（再現は取っていない）。
+- 対処 / 再発したら: まず `ls node_modules/<pkg>/package.json` で中身があるかを見る。無ければ `pnpm install` で直る。
+  依存の解決を疑って tsconfig の `paths` などで回避する前に、これを確かめる。
+
+## 2026-10-17 [harness候補] iPhone で 33ms に張り付いたら、まず低電力モードを疑う
+
+- 症状: voxel rain（`lab/wip`）を iPhone の Safari で開くと、debug ペインの `ms` が 33 に張り付き、60fps にならない。
+  作品が重いように見える。
+- 原因: 低電力モードの間、iOS の Safari は `requestAnimationFrame` を 30fps に落とす。作品の重さとは関係がない。
+- 対処 / 再発したら: まず電池のアイコン（黄色なら低電力モード）を見る。本当に重いときは自動品質が働いて `tier` が 0 より大きくなり、
+  `ms` は 33 ちょうどにはならない。実機の速さは、低電力モードを切ってから測る。
+
 ## 2026-10-15 `artifacts run` はシェーダーのコンパイル失敗を見逃す（ビルドが three のエラー出力を消している）
 
 - 症状: `lab/wip/grid.ts` の GLSL で予約語 `half` を変数名にして、フラグメントシェーダーのコンパイルに失敗した。

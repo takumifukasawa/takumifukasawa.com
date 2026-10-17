@@ -13,6 +13,7 @@
 | [0007](0007-no-sketch-numbering.md) | sketch の識別子に連番を持たせない — `lab/<slug>/` | 採用 | 2026-10-11 |
 | [0008](0008-artifact-check.md) | ビルド成果物をヘッドレスで開く検査を入れ、property mangling は既定で切る | 採用 | 2026-10-12 |
 | [0009](0009-develop-branch.md) | `develop` で作り、`main` で出す | 採用 | 2026-10-13 |
+| [0010](0010-typecheck.md) | TypeScript の型検査を必須にする（`src/`・`scripts/`・`lab/`） | 採用 | 2026-10-17 |
 
 ## テンプレート
 

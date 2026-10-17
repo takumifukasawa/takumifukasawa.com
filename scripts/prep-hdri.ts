@@ -27,6 +27,7 @@ const read = (path: string): Image => {
   const loader = path.toLowerCase().endsWith('.exr') ? new EXRLoader() : new HDRLoader();
   loader.type = FloatType;
   const { width, height, data } = loader.parse(ab);
+  if (width === undefined || height === undefined || !data) throw new Error(`prep-hdri: could not decode ${path}`);
   // Drop alpha, which an environment map has no use for.
   const rgb = new Float32Array(width * height * 3);
   for (let i = 0, n = width * height; i < n; i++) {

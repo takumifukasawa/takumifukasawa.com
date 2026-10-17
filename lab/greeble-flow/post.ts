@@ -114,7 +114,8 @@ export const createPost = (
       // whose brightness crosses the threshold is therefore either fully in the bloom or fully out, and
       // on a moving camera, specular highlights and thin emissive bars cross it constantly: that is what
       // reads as bloom flickering. Widening the knee makes them fade in and out instead of switching.
-      bloom.highPassUniforms['smoothWidth']!.value = next['bloomKnee'];
+      // @types/three types highPassUniforms as a bare object; at run time it is the shader's uniforms.
+      (bloom.highPassUniforms as Record<string, THREE.IUniform>)['smoothWidth']!.value = next['bloomKnee'];
       aberration.uniforms['uAmount']!.value = next['aberration'];
     },
   };

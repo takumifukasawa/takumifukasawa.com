@@ -25,6 +25,12 @@ export class TimeSkipper { exec(time: number) { /* ... */ } }
 - 理由: class のメソッドや、オブジェクトに詰めたクロージャは、使わないものまでバンドルに残る。個別の関数なら tree-shaking で落ちる。
 - 見本は雛形の `scripts/templates/sketch/time/timeAccumulator.ts`。
 
+### 現代的な ES で書く
+
+ブラウザ向けの変換は作品の `vite.config.ts`（`build.target`）に任せる。書く側は省略記法（`return { mesh }`）、
+`??` / `?.`、`**` などをそのまま使ってよい。プロパティ名はクォートしない（`{ mesh: … }`、`params.speed`）。
+型は `pnpm typecheck` が見る（決定 0010）。
+
 ### 文字列で参照されるプロパティはクォートする（`mangleProperties = true` にした作品だけ）
 
 **既定は off なので、普段は気にしなくてよい**（決定 0008）。以下はフラグを立てた作品にだけ効く。

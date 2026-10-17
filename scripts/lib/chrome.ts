@@ -96,8 +96,8 @@ export const launchChrome = async (executable: string): Promise<Browser> => {
 
     await new Promise((resolve) => socket.addEventListener('open', resolve, { once: true }));
     socket.addEventListener('message', (event) => {
-      const message = JSON.parse(String(event.data)) as { method?: string; params?: Record<string, never> };
-      const params = message.params as Record<string, never> | undefined;
+      const message = JSON.parse(String(event.data)) as { method?: string; params?: Record<string, unknown> };
+      const params = message.params;
       if (message.method === 'Runtime.exceptionThrown') {
         const details = params?.['exceptionDetails'] as { text?: string; exception?: { description?: string } };
         problems.push({ kind: 'exception', text: details?.exception?.description ?? details?.text ?? 'exception' });

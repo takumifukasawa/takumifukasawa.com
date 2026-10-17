@@ -4,7 +4,7 @@
 
 ## コードを書く前に
 
-**`../docs/coding.md` の「lab」の節を読む。** class を使わない、文字列で参照されるプロパティはクォートする（terser がプロパティ名まで mangle する）、
+**`../docs/coding.md` の「lab」の節を読む。** class を使わない、現代的な ES で書く（プロパティのクォートは `mangleProperties = true` にした作品だけ）、
 破損はビルド済みの成果物で確かめる、などの規約がある。
 
 ## three.js の完成品をどこまで使うか

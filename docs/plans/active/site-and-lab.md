@@ -49,7 +49,7 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 | 1-2 | `_shell.js` の見た目を決める | 人間 + AI | 未着手 | sketch 数件を見ながら |
 | 1-3 | sitemap / 計測 / OGP | AI | 一部済 | **計測は P0 で入れた**（GA4 `G-L3EDWSFJ82`。2026-10-11）。残りは sitemap と OGP |
 | 1-4 | 500 件ダミーで計測（ビルド時間・`/` の初期転送） | AI | 未着手 | 結果は `../../learnings.md` |
-| 1-5 | `astro check` / `astro build` / `tag normalization` を検査に登録。`src/data/tech.ts` は 0-13 で実際に使った語から作る | AI | 未着手 | |
+| 1-5 | `astro check` / `astro build` / `tag normalization` を検査に登録。`src/data/tech.ts` は 0-13 で実際に使った語から作る | AI | 一部済 | `astro check` は 2026-10-17 に前倒しで登録（`types pass`。決定 0010）。`astro build` と `tag normalization` は未着手 |
 
 ## 決定ログ（日付・決めたこと・理由・落選案）
 
@@ -67,6 +67,7 @@ AI との分担（`AGENTS.md`）: P0 のタスクはほぼ「任せる」（tool
 
 - 2026-10-11: 計測を **Cloudflare Web Analytics から Google Analytics 4 に変更**し、P1 ではなく P0 で入れた（`spec/site-v0.md` の「計測」）。作品ページには `_shell.js` 経由で載せる（決定 0004 の追記）。成果物をコミットする方式なので、作品側に直接足すと全件の再ビルドが要るため。落選案: Cloudflare Web Analytics のまま（Cookie 不要で軽いが流入元の粒度が粗い）、両方入れる（必要になってから足せる）、作品ページには入れずトップだけ計測する（どの sketch が見られたか分からず、入れる意味が半減する）。
 
+- 2026-10-17: **訪問者向けのつまみを出すかは作品ごとに決める**（人間の判断。`spec/publish-pipeline.md` の雛形生成の行）。voxel rain では雨の量・雨の色・波紋の色・波紋の速さ／寿命／明るさの 6 つを出した（`lab/wip/controls.ts`）。debug の pane を opt-in にした 2026-10-14 の理由（録画に写る・付け忘れ）は、`?capture` / `?clean` で出さないことと、閉じた状態で置くことで守る。落選案: すべての作品の標準にする（作品によっては触る場所が無い。人間が「作品次第」と判断）。
 - 2026-10-14: **デバッグ画面（Tweakpane）は既定で出さず、URL に `?debug` が付いているときだけ出す**ことにした（`spec/publish-pipeline.md` の雛形生成の行、`lab/greeble-flow/debug.ts`、`scripts/templates/sketch/main.ts`）。理由: 作品を公開するとノブが訪問者に見えるのと、録画のたびにフラグを付け忘れると写ること。opt-in なら何も付けない側が常に正しい絵になる。落選案: `?clean` で隠す従来方式のまま（付け忘れが残る。`?clean` はサイトへの導線を隠すフラグで、pane と抱き合わせにする理由が無い）、dev だけ既定で出す（dev と本番で挙動が変わり、いま何を見ているのか分からなくなる）。
 
 - 2026-10-15: **`/` の OGP を P1 から前倒しして入れた**（`src/pages/index.astro`）。`og:image` は**最新の公開 sketch の `poster`、無ければ出さない**。落選案: 既定の OGP 画像を 1 枚作る（poster は録画の後にしか存在しないので、同じ作品の 2 枚目の絵を別の作り方・別の比率・別の置き場で持つことになり、しかも効くのは公開 0 件の間だけ＝1 件目を出した日に死ぬ）、画像を諦めてタグだけ入れる（`lab:add` の直後から絵が出せるのに捨てる理由が無い）。**トップの URL を人に貼るのは `greeble-flow` を公開した後**（X はカードを永久にキャッシュする。`learnings.md` 2026-10-08）。

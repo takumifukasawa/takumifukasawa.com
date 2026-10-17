@@ -61,7 +61,8 @@ export const createPost = (
       bloom.threshold = next['bloomThreshold'];
       // three hardcodes the high pass's soft knee at 0.01, a step: a line fading out would drop out of the
       // bloom all at once. Widened, it leaves the bloom as it fades.
-      bloom.highPassUniforms['smoothWidth']!.value = next['bloomKnee'];
+      // @types/three types highPassUniforms as a bare object; at run time it is the shader's uniforms.
+      (bloom.highPassUniforms as Record<string, THREE.IUniform>)['smoothWidth']!.value = next['bloomKnee'];
     },
   };
 };

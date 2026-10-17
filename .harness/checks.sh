@@ -32,5 +32,7 @@ check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"
 check fast "lab head in sync"   "node scripts/check.ts lab-head-in-sync"
 check fast "media keys resolve" "node scripts/check.ts media-keys-resolve"
+# fast にしない: astro check は 10 秒ほどかかる。src/ だけでなく scripts/ と lab/ の .ts も見る（tsconfig.json、決定 0010）。
+check      "types pass"         "pnpm -s typecheck || { echo '型エラーがある。上の file:line を直す（pnpm typecheck で再現）。TypeScript 7 は astro check が未対応なので 6 のまま（決定 0010）。'; exit 1; }"
 # fast にしない: Chrome を起動するので数秒かかる。だが公開前には必ず通す（これだけが成果物そのものを動かす検査）。
 check      "artifacts run"      "node scripts/check-artifacts.ts"

@@ -5,7 +5,7 @@
 // it from another machine over Tailscale or local Wi-Fi when the sketch needs no secure context.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createServer, type Plugin } from 'vite';
+import { createServer, type Plugin, type PluginOption } from 'vite';
 import { portConflictHint } from './lib/port.ts';
 
 const root = join(import.meta.dirname, '..');
@@ -42,7 +42,7 @@ const serveShell: Plugin = {
   },
 };
 
-const plugins: Plugin[] = [serveShell];
+const plugins: PluginOption[] = [serveShell];
 if (https) {
   const { default: mkcert } = await import('vite-plugin-mkcert');
   plugins.push(mkcert());

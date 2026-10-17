@@ -1,0 +1,19 @@
+{
+  // Type-checked by `pnpm typecheck` (astro check), which harness check runs (docs/decisions/0010-typecheck.md).
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    // scripts/ runs on Node's type stripping (node scripts/x.ts): syntax it cannot strip (enum, namespace,
+    // parameter properties) would only fail at run time.
+    "erasableSyntaxOnly": true,
+    // node: scripts/. vite/client: import.meta.env / import.meta.hot in lab/.
+    "types": ["node", "vite/client"]
+  },
+  "exclude": [
+    "dist",
+    // Build outputs: minified JS, not source.
+    "public",
+    // Shelved sketches may stay broken (docs/decisions/0006-lab-archives.md).
+    "lab-archives",
+    ".harness"
+  ]
+}

@@ -177,7 +177,7 @@ pnpm lab:rebuild --all            # 全件（共通の変更を入れた時な�
 
 | ステップ | 約束 |
 |---|---|
-| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」（ループは html-game-template と同じ構造: fixedUpdate 60Hz 固定 + update / render 60fps 上限。`time/` の 2 ファイルは作品ごとにコピー）+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは **既定で出さず、URL に `?debug` が付いているときだけ出す**、を雛形のコメントに書く（2026-10-14 に `?clean` で隠す方式から変更。公開した作品にノブを出さないため。録画のときに何も付け忘れない側に倒れる。`?clean` はサイトへの導線を隠すフラグで pane とは別＝決定 0004）。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
+| 雛形生成 | `pnpm new <slug> "<title>"`。雛形は「canvas と requestAnimationFrame が動く最小」（ループは html-game-template と同じ構造: fixedUpdate 60Hz 固定 + update / render 60fps 上限。`time/` の 2 ファイルは作品ごとにコピー）+ **OGP 入りの `index.html`**（下記）。debug UI（Tweakpane）を足すときは **既定で出さず、URL に `?debug` が付いているときだけ出す**、を雛形のコメントに書く（2026-10-14 に `?clean` で隠す方式から変更。公開した作品にノブを出さないため。録画のときに何も付け忘れない側に倒れる。`?clean` はサイトへの導線を隠すフラグで pane とは別＝決定 0004）。**訪問者向けのつまみ**（debug とは別の、閉じた状態の小さな pane）を出すかは**作品ごとに決める**（2026-10-17。voxel rain で初めて出した＝`lab/<slug>/controls.ts`）。出すなら触っても作品が壊れない最小限に絞り、範囲もスキーマより狭める。`?debug`（全部入りの pane に置き換わる）・`?capture`・`?clean` では出さず、保存もしない。`index.html` にはサイトへの導線 `<script src="/_shell.js" defer></script>` を 1 行入れる（決定 0004）。ライブラリは作品ごとに import する（共通 bootstrap を最初に作らない） |
 | R2 の key | `lab/<slug>/{poster.webp,clip.mp4}`。一度 put した key は上書きしない |
 | ビルド成果物 | Vite の `outDir` が直接 `public/lab/<slug>/` に出す（中間の `dist/` を作らない）。これをコミットする。**Pages のビルドは Astro だけ**を走らせ、`public/` はコピーするだけなので、作品のコードがサイトのビルドを壊さない（決定 0001） |
 | manifest | `media/manifest.json` は生成物だがコミットする。これが無いとビルドが落ちる（意図的: メディアの実在をオフラインで検査するため）。**P0 の最初に空の `{}` をコミットしておく**（1 件目を追加する前は存在しないので、無いと初回ビルドが落ちる） |

@@ -257,6 +257,9 @@
   それで直らなければ compress オプションを二分探索する（`minify: false` で通ることを先に確認してから。
   オプションを 1 つずつ戻してビルド → `node scripts/check-artifacts.ts <slug>` を回す）。
   この手の壊れ方は dev では絶対に出ないので、判定は必ず成果物側で行う（決定 0008）。
+- 2026-10-17 に Tweakpane でも踏んだ: 訪問者向けのペイン（`lab/voxel-rain/controls.ts`）が `getContext('2d', { willReadFrequently: true })` を
+  呼び、`1` になった値をブラウザが拒否して、作品が起動時に止まった。**公開してから** `harness check` の `artifacts run` で気付いた
+  （`lab:add` の前に full の check を回していなかった）。雛形の既定を `false` にした。公開の前に必ず `harness check`（full）を通す。
 
 ## 2026-10-14 [harness候補] Windows では `strictPort` が古い dev サーバーを検知せず、同じポートに 2 本立つ
 

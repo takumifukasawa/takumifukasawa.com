@@ -33,7 +33,10 @@ export default defineConfig({
       compress: {
         passes: 1,
         arguments: true,
-        booleans_as_integers: true,
+        // OFF: it rewrites true/false as 1/0, which libraries do not survive -- three's HDRLoader (2026-10-13) and
+        // Tweakpane's getContext({ willReadFrequently: true }) (2026-10-17) both broke only in the build
+        // (docs/learnings.md). A few bytes are not worth a sketch that dies at load.
+        booleans_as_integers: false,
         drop_console: true,
         drop_debugger: true,
         keep_fargs: false,

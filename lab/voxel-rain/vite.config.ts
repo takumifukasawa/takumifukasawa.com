@@ -79,7 +79,9 @@ export default defineConfig({
       compress: {
         passes: 1,
         arguments: true,
-        booleans_as_integers: true,
+        // OFF: it turns true into 1, and Tweakpane (the visitor pane, controls.ts) passes willReadFrequently: true
+        // to getContext, where 1 is rejected and the whole sketch stops at load (docs/learnings.md 2026-10-13).
+        booleans_as_integers: false,
         drop_console: true,
         drop_debugger: true,
         keep_fargs: false,

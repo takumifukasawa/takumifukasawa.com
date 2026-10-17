@@ -105,7 +105,9 @@ export const checkLabHeadInSync = (root = repoRoot): string[] =>
     if (!existsSync(page) || !data?.title) return [];
     return headMatches(readFileSync(page, 'utf8'), { title: data.title, description: data.description })
       ? []
-      : [`public/lab/${slug}/index.html の <title> / OGP が src/content/lab/${slug}.md と違う。pnpm lab:build ${slug} で md から書き直す（手で直さない）`];
+      : [
+          `public/lab/${slug}/index.html の <title> / OGP が src/content/lab/${slug}.md と違う。pnpm lab:build ${slug} で md から書き直す（手で直さない）`,
+        ];
   });
 
 // Every media key in the md exists in media/manifest.json (offline; docs/spec/content-model.md).

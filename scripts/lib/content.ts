@@ -44,7 +44,16 @@ export const readLabMd = (slug: string, root = repoRoot): { data: Partial<LabFro
 
 // Field order follows content-model.md so generated files read the same as the spec.
 const FIELD_ORDER: (keyof LabFrontmatter)[] = [
-  'date', 'title', 'medium', 'poster', 'tags', 'description', 'video', 'externalUrl', 'repo', 'draft',
+  'date',
+  'title',
+  'medium',
+  'poster',
+  'tags',
+  'description',
+  'video',
+  'externalUrl',
+  'repo',
+  'draft',
 ];
 
 export const formatLabMd = (data: Partial<LabFrontmatter>, body = ''): string => {
@@ -63,9 +72,12 @@ export const mergeFrontmatter = (
 // --- values lab:add fills in ---------------------------------------------------------------------------------
 
 const unescapeHtml = (s: string) =>
-  s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-export const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  s
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 // The title given to `pnpm new` lives in og:title of lab/<slug>/index.html until the md exists.
 export const titleFromIndexHtml = (html: string): string | undefined => {
@@ -84,7 +96,10 @@ const TAG_RULES: { tag: string; test: (src: string, files: string[]) => boolean 
 ];
 
 export const inferTags = (files: { path: string; content: string }[]): string[] => {
-  const src = files.filter((f) => /\.(ts|js|tsx|jsx|mjs)$/.test(f.path)).map((f) => f.content).join('\n');
+  const src = files
+    .filter((f) => /\.(ts|js|tsx|jsx|mjs)$/.test(f.path))
+    .map((f) => f.content)
+    .join('\n');
   const paths = files.map((f) => f.path);
   const tags = TAG_RULES.filter((rule) => rule.test(src, paths)).map((rule) => rule.tag);
   return tags.length > 0 ? tags : ['sketch'];
@@ -113,8 +128,7 @@ export const rewriteHead = (html: string, data: Pick<LabFrontmatter, 'title' | '
 };
 
 // Whether the built page shows the md title (the `lab head in sync` check).
-export const headMatches = (html: string, data: Pick<LabFrontmatter, 'title' | 'description'>): boolean =>
-  rewriteHead(html, data) === html;
+export const headMatches = (html: string, data: Pick<LabFrontmatter, 'title' | 'description'>): boolean => rewriteHead(html, data) === html;
 
 // Called at the end of lab:build and lab:add. No md yet (before the first lab:add) → keep what pnpm new wrote.
 export const applyHeadFromMd = (slug: string, root = repoRoot): boolean => {

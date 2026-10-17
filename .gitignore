@@ -48,6 +48,12 @@ lab/.build-tmp/
 #     依存するので、別マシンでは効かず秘密を commit しうる。repo 側でも押さえる ---
 .claude/settings.local.json
 .harness/installed
+# --- VS Code: this repository's editor settings (TypeScript version, Prettier on save) and recommended extensions
+#     are shared. ~/.gitignore_global ignores .vscode/ on this machine; a repo .gitignore overrides it. ---
+!/.vscode/
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
 # >>> agent-harness managed (do not commit; restore with: harness install)
 /.harness/bin/harness
 /.harness/bin/harness.cmd

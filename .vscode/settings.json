@@ -1,0 +1,13 @@
+{
+  // This repository's TypeScript (package.json), so the editor and `pnpm typecheck` agree.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  // Prettier with this repository's .prettierrc.json / .prettierignore; `harness check` runs prettier --check.
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.requireConfig": true,
+  // No formatter for these: Markdown is ignored by .prettierignore, and Prettier has no WGSL / GLSL support.
+  "[markdown]": { "editor.formatOnSave": false },
+  "[wgsl]": { "editor.formatOnSave": false },
+  "[glsl]": { "editor.formatOnSave": false }
+}

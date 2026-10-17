@@ -16,7 +16,9 @@
     "lab:build": "node scripts/lab-build.ts",
     "lab:rebuild": "node scripts/lab-build.ts",
     "test": "node --test \"scripts/**/*.test.ts\"",
-    "lab:add": "node scripts/lab-add.ts"
+    "lab:add": "node scripts/lab-add.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
@@ -25,6 +27,7 @@
     "@types/three": "^0.186.0",
     "astro": "^7.3.6",
     "aws4fetch": "^1.0.20",
+    "prettier": "3.9.10",
     "sharp": "^0.35.5",
     "terser": "^5.51.2",
     "three": "^0.186.1",

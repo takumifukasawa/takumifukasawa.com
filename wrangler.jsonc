@@ -29,6 +29,6 @@
     // asset (decision 0004). This is the default, written out because the site depends on it.
     "html_handling": "auto-trailing-slash",
     // Serve dist/404.html for unknown paths. P0 has no pages, so this does nothing until P1 (1-1).
-    "not_found_handling": "404-page"
-  }
+    "not_found_handling": "404-page",
+  },
 }

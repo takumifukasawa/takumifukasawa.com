@@ -9,9 +9,15 @@ const run = (cmd: string, args: string[]) => {
     return execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`${cmd} not found. Install ffmpeg (macOS: brew install ffmpeg / Windows: winget install Gyan.FFmpeg --scope user). docs/setup.md`);
+      throw new Error(
+        `${cmd} not found. Install ffmpeg (macOS: brew install ffmpeg / Windows: winget install Gyan.FFmpeg --scope user). docs/setup.md`,
+      );
     }
-    const stderr = String((error as { stderr?: string }).stderr ?? '').trim().split('\n').slice(-5).join('\n');
+    const stderr = String((error as { stderr?: string }).stderr ?? '')
+      .trim()
+      .split('\n')
+      .slice(-5)
+      .join('\n');
     throw new Error(`${cmd} failed:\n${stderr}`);
   }
 };
@@ -33,9 +39,23 @@ export const probeVideo = (path: string): MediaEntry => {
 // H.264 / yuv420p / no audio / faststart (playback starts before the whole file arrives). fps and size are kept.
 export const encodeVideo = (input: string, output: string) => {
   run('ffmpeg', [
-    '-y', '-v', 'error', '-i', input,
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p',
-    '-an', '-movflags', '+faststart', output,
+    '-y',
+    '-v',
+    'error',
+    '-i',
+    input,
+    '-c:v',
+    'libx264',
+    '-preset',
+    'slow',
+    '-crf',
+    '20',
+    '-pix_fmt',
+    'yuv420p',
+    '-an',
+    '-movflags',
+    '+faststart',
+    output,
   ]);
 };
 

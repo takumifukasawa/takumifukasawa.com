@@ -15,8 +15,7 @@ const write = (path: string, content: string | Buffer) => {
 };
 // Every GIT_* variable stripped, per call: when a hook runs these tests, git points GIT_INDEX_FILE (and
 // can point GIT_DIR / GIT_WORK_TREE) at the real repository, and `cwd` alone does not override them.
-const scratchEnv = () =>
-  Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
+const scratchEnv = () => Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
 const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe', env: scratchEnv() });
 // The checks under test run git themselves (ls-files / cat-file) and inherit process.env, so the hook's
 // variables have to go for them too, or they read the real commit's index instead of the scratch repo's.

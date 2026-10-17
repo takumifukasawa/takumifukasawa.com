@@ -5,7 +5,14 @@ import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 import { checkLabHeadInSync, checkMediaKeysResolve } from './checks.ts';
 import {
-  applyHeadFromMd, formatLabMd, headMatches, inferMedium, inferTags, mergeFrontmatter, readLabMd, rewriteHead,
+  applyHeadFromMd,
+  formatLabMd,
+  headMatches,
+  inferMedium,
+  inferTags,
+  mergeFrontmatter,
+  readLabMd,
+  rewriteHead,
   titleFromIndexHtml,
 } from './content.ts';
 
@@ -57,7 +64,13 @@ describe('md', () => {
   });
 
   test('formats in content-model order and round-trips through YAML', () => {
-    const md = formatLabMd({ tags: ['glsl'], title: 'A: "quoted"', date: '2026-10-08', medium: 'runtime', poster: 'lab/alpha/poster.webp' });
+    const md = formatLabMd({
+      tags: ['glsl'],
+      title: 'A: "quoted"',
+      date: '2026-10-08',
+      medium: 'runtime',
+      poster: 'lab/alpha/poster.webp',
+    });
     assert.match(md, /^---\ndate: 2026-10-08\ntitle: /);
     const root = mkdtempSync(join(tmpdir(), 'content-test-'));
     try {
@@ -77,9 +90,21 @@ describe('md', () => {
 
 describe('inferred fields', () => {
   test('tags from imports, context types and shader files', () => {
-    assert.deepEqual(inferTags([{ path: 'main.ts', content: "import * as THREE from 'three';" }, { path: 'frag.glsl', content: '' }]), ['threejs', 'glsl']);
+    assert.deepEqual(
+      inferTags([
+        { path: 'main.ts', content: "import * as THREE from 'three';" },
+        { path: 'frag.glsl', content: '' },
+      ]),
+      ['threejs', 'glsl'],
+    );
     assert.deepEqual(inferTags([{ path: 'main.ts', content: "canvas.getContext('2d')" }]), ['canvas2d']);
-    assert.deepEqual(inferTags([{ path: 'main.ts', content: 'await navigator.gpu.requestAdapter()' }, { path: 'a.wgsl', content: '' }]), ['webgpu', 'wgsl']);
+    assert.deepEqual(
+      inferTags([
+        { path: 'main.ts', content: 'await navigator.gpu.requestAdapter()' },
+        { path: 'a.wgsl', content: '' },
+      ]),
+      ['webgpu', 'wgsl'],
+    );
   });
 
   test('falls back to one tag, because tags must not be empty', () => {

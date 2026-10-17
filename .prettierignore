@@ -1,0 +1,23 @@
+# Build output and generated files
+public/
+dist/
+.astro/
+lab/.build-meta/
+pnpm-lock.yaml
+
+# Distributed by agent-harness (restored by `harness install`; not this project's code)
+.harness/
+.agents/
+.claude/
+.codex/
+.githooks/
+
+# Markdown: Prettier rewraps Japanese prose and re-pads tables
+*.md
+
+# Published sketches: their builds are frozen (decision 0001), and formatting the source changes its hash, which
+# fails `lab build in sync`. Add a sketch here when it is published with lab:add.
+lab/greeble-flow/
+lab/grid-ray-clock/
+lab/voxel-rain/
+lab-archives/

@@ -29,10 +29,14 @@ if (https) {
   await config({ server: {} }, { command: 'serve', mode: 'development' });
   const certDir = join(homedir(), '.vite-plugin-mkcert');
   wranglerArgs.push(
-    '--ip', '0.0.0.0',
-    '--local-protocol', 'https',
-    '--https-key-path', join(certDir, 'dev.pem'),
-    '--https-cert-path', join(certDir, 'cert.pem'),
+    '--ip',
+    '0.0.0.0',
+    '--local-protocol',
+    'https',
+    '--https-key-path',
+    join(certDir, 'dev.pem'),
+    '--https-cert-path',
+    join(certDir, 'cert.pem'),
   );
 }
 run('wrangler', wranglerArgs);

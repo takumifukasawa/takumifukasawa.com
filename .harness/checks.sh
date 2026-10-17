@@ -27,6 +27,8 @@ check      "doctor: FAIL 0"    "bash .harness/bin/harness doctor || { echo 'doct
 # FORCE_COLOR=0: node --test colours its summary whenever FORCE_COLOR is set in the environment, even into
 # $(...), and the grep below then reads 0 tests and fails with a misleading message (docs/learnings.md).
 check fast "tests green (>0)"   "out=\$(FORCE_COLOR=0 node --test 'scripts/**/*.test.ts' 2>&1); s=\$?; echo \"\$out\" | grep -E '^ℹ (tests|fail) '; n=\$(echo \"\$out\" | sed -n 's/^ℹ tests //p'); [ \"\${n:-0}\" -gt 0 ] || { echo 'テストが 0 件。0 件で green は不合格。scripts/**/*.test.ts（node:test）に足す。'; exit 1; }; [ \$s -eq 0 ] || { echo \"\$out\" | grep -A8 '✖' | head -60; echo '失敗したテストを直す（pnpm test で再現）。'; exit 1; }"
+# Prettier (.prettierrc.json). Published sketches are in .prettierignore: formatting them would change their source hash.
+check fast "format clean"       "pnpm -s prettier --check . >/dev/null 2>&1 || { pnpm -s prettier --list-different .; echo '上のファイルが Prettier の書式と違う。pnpm format で直す（VS Code なら保存で直る。.vscode/settings.json）。公開済みの作品を直すと lab build in sync が落ちるので、.prettierignore に入っているか確かめる。'; exit 1; }"
 check fast "lab build in sync"  "node scripts/check.ts lab-build-in-sync"
 check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"

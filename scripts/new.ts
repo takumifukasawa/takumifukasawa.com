@@ -19,8 +19,7 @@ if (!SLUG_PATTERN.test(slug)) {
   fail(`slug must look like flow-field (lowercase words joined by "-"): ${slug}`);
 }
 
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const outDir = join(labDir, slug);
 // Uniqueness is the directory name itself -- there is no number ledger (decision 0007). This also guards the

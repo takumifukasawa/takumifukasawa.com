@@ -123,7 +123,12 @@ const rleScanline = (plane: Uint8Array, width: number, out: number[]) => {
     while (
       i + len < width &&
       len < 128 &&
-      !(i + len + 3 < width && plane[i + len] === plane[i + len + 1] && plane[i + len] === plane[i + len + 2] && plane[i + len] === plane[i + len + 3])
+      !(
+        i + len + 3 < width &&
+        plane[i + len] === plane[i + len + 1] &&
+        plane[i + len] === plane[i + len + 2] &&
+        plane[i + len] === plane[i + len + 3]
+      )
     ) {
       len++;
     }

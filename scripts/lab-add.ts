@@ -14,18 +14,20 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import {
-  applyHeadFromMd, formatLabMd, inferMedium, inferTags, labMdPath, mergeFrontmatter, readLabMd, readManifest,
-  titleFromIndexHtml, writeManifest, type LabFrontmatter, type MediaEntry,
+  applyHeadFromMd,
+  formatLabMd,
+  inferMedium,
+  inferTags,
+  labMdPath,
+  mergeFrontmatter,
+  readLabMd,
+  readManifest,
+  titleFromIndexHtml,
+  writeManifest,
+  type LabFrontmatter,
+  type MediaEntry,
 } from './lib/content.ts';
-import {
-  currentBranch,
-  labDir,
-  PRODUCTION_BRANCH,
-  repoRoot,
-  sketchFiles,
-  SLUG_PATTERN,
-  WORKSPACE_SLUGS,
-} from './lib/lab.ts';
+import { currentBranch, labDir, PRODUCTION_BRANCH, repoRoot, sketchFiles, SLUG_PATTERN, WORKSPACE_SLUGS } from './lib/lab.ts';
 import { encodeVideo, extractFrame, probeVideo, toWebp } from './lib/media.ts';
 import { createR2, objectExists, putObject, type R2 } from './lib/r2.ts';
 
@@ -82,8 +84,7 @@ const sketchDir = join(labDir, slug);
 const indexHtml = join(sketchDir, 'index.html');
 const hasIndexHtml = existsSync(indexHtml);
 const existingMd = readLabMd(slug);
-const title =
-  existingMd?.data.title ?? values.title ?? (hasIndexHtml ? titleFromIndexHtml(readFileSync(indexHtml, 'utf8')) : undefined);
+const title = existingMd?.data.title ?? values.title ?? (hasIndexHtml ? titleFromIndexHtml(readFileSync(indexHtml, 'utf8')) : undefined);
 if (!title) fail(`no title: lab/${slug}/index.html has no og:title and there is no md yet. Pass --title "<title>"`);
 
 // Fail on a missing / incomplete .env before spending minutes on encoding.
@@ -121,7 +122,12 @@ try {
     posterSource = join(work, 'frame.png');
     extractFrame(video.file, video.entry.durationSec ?? 0, posterSource);
   }
-  uploads.push({ key: `lab/${slug}/poster.webp`, file: posterFile, contentType: 'image/webp', entry: await toWebp(posterSource!, posterFile) });
+  uploads.push({
+    key: `lab/${slug}/poster.webp`,
+    file: posterFile,
+    contentType: 'image/webp',
+    entry: await toWebp(posterSource!, posterFile),
+  });
 
   // 3. upload (existing keys are never overwritten)
   const manifest = readManifest();
@@ -175,8 +181,13 @@ try {
 
 // 6. git
 if (!dryRun) {
-  const paths = [`lab/${slug}`, `public/lab/${slug}`, `lab/.build-meta/${slug}.json`, 'media/manifest.json', `src/content/lab/${slug}.md`]
-    .filter((p) => existsSync(join(repoRoot, p)));
+  const paths = [
+    `lab/${slug}`,
+    `public/lab/${slug}`,
+    `lab/.build-meta/${slug}.json`,
+    'media/manifest.json',
+    `src/content/lab/${slug}.md`,
+  ].filter((p) => existsSync(join(repoRoot, p)));
   git('add', '--', ...paths);
   const staged = execFileSync('git', ['diff', '--cached', '--name-only', '--', ...paths], { cwd: repoRoot, encoding: 'utf8' }).trim();
   if (staged === '') {

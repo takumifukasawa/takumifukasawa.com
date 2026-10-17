@@ -8,7 +8,15 @@ import { isColor, type ParamKey, type Params } from './params.ts';
 
 // The ranges are narrower than the schema's: only what still looks like the piece. waveSpeed stays well inside
 // the scheme's 0.5 limit, and waveDamping below 1, where the rings would never die out and the floor would slosh.
-const KNOBS: { key: ParamKey; label: string; min?: number; max?: number; step?: number }[] = [
+const KNOBS: {
+  key: ParamKey;
+  label: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  options?: Record<string, number>;
+}[] = [
+  { key: 'camView', label: 'view', options: { above: 0, below: 1 } },
   { key: 'rainRate', label: 'rain', min: 0, max: 60, step: 0.5 },
   { key: 'rainColor', label: 'rain color' },
   { key: 'rippleColor', label: 'ripple color' },
@@ -21,8 +29,10 @@ export const createControls = (params: Params) => {
   const query = new URLSearchParams(location.search);
   if (query.has('debug') || query.has('capture') || query.has('clean')) return;
   const pane = new Pane({ title: 'voxel rain', expanded: false });
-  for (const { key, label, min, max, step } of KNOBS) {
-    if (isColor(key)) {
+  for (const { key, label, min, max, step, options } of KNOBS) {
+    if (options) {
+      pane.addBinding(params, key, { label, options });
+    } else if (isColor(key)) {
       // Bound through a "#rrggbb" string: bound to the number itself, Tweakpane writes it as 0xrrggbb.
       const shown = { value: `#${params[key].toString(16).padStart(6, '0')}` };
       pane.addBinding(shown, 'value', { label, view: 'color' }).on('change', ({ value }) => {

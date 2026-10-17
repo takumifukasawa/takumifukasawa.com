@@ -65,6 +65,12 @@ const monitor: Monitor = { drops: 0, voxels: 0, floor: '' };
 const debug = createDebug(params, quality, monitor);
 createControls(params);
 const shutter = createShutter();
+if (capture) {
+  (window as Window & { voxelRain?: object }).voxelRain = {
+    params,
+    drop: (x: number, y: number, force?: number) => shutter.drops.push({ x, y, force }),
+  };
+}
 
 type Frame = { width: number; height: number; pixelRatio: number; bloomScale: number };
 
@@ -137,7 +143,8 @@ const dropAt = (x: number, z: number, force: number) => {
   if (i < 0 || j < 0 || i >= world.nx || j >= world.nz) return;
   const y = pointerHeight();
   drop(rain, i, j, y, force);
-  sparks.emit(i - world.nx / 2 + 0.5, y, j - world.nz / 2 + 0.5, params);
+  // Not in ?capture: there a click stages the still, and the sparks would only say someone clicked.
+  if (!capture) sparks.emit(i - world.nx / 2 + 0.5, y, j - world.nz / 2 + 0.5, params);
 };
 
 // A press drops a heavy drop under the pointer. Dragging then drops lighter ones along the path, one every
@@ -145,7 +152,6 @@ const dropAt = (x: number, z: number, force: number) => {
 // a slow one. Each touch keeps its own path.
 const drags = new Map<number, { x: number; z: number; carry: number }>();
 canvas.addEventListener('pointerdown', (event) => {
-  if (capture) return;
   const p = pointerAt(event);
   if (!p) return;
   canvas.setPointerCapture(event.pointerId);
@@ -175,6 +181,14 @@ canvas.addEventListener('pointerup', endDrag);
 canvas.addEventListener('pointercancel', endDrag);
 
 const fixedUpdate = (_time: number, deltaTime: number) => {
+  // ?capture: staged drops, each down the column under a point of the frame (capture.ts).
+  for (const staged of shutter.drops.splice(0)) {
+    raycaster.setFromCamera(ndc.set(staged.x, staged.y), camera);
+    if (!raycaster.ray.intersectPlane(floorTop, hit)) continue;
+    const x = Math.floor(hit.x + world.nx / 2);
+    const z = Math.floor(hit.z + world.nz / 2);
+    if (x >= 0 && z >= 0 && x < world.nx && z < world.nz) drop(rain, x, z, world.h, staged.force ?? params.tapImpulse);
+  }
   stepRain(rain, world, deltaTime, params, screenColumn);
   sparks.step(deltaTime);
   stepWorld(world, params);
@@ -196,6 +210,10 @@ const SWAY_CORNERS = [-1, 1].flatMap((p) =>
 // the floor comes to floorCells cells whatever the screen's shape; a resize keeps it, and the floor's margin
 // covers what a slightly bigger window shows.
 let cellsShort = 1;
+
+// Down onto the floor from above (camPitch), or up at it from below (camPitchBelow): camView picks.
+const basePitch = () => (params.camView === 1 ? params.camPitchBelow : params.camPitch);
+let builtView = -1;
 
 // The camera circles a target above the floor's centre, camLift camera distances up (0 = on the floor). A negative
 // pitch puts it below the target looking up: with no lift that is under the floor, with some lift it is just
@@ -222,6 +240,7 @@ const placeCamera = (pitch: number, yaw: number) => {
 // camYawSwing), so the rays are cast from each end of the sway and the rectangle holds all of them.
 const build = () => {
   built = true;
+  builtView = params.camView;
   target.set(0, 1, 0);
   cellsShort = 1;
   let distance = 0;
@@ -231,7 +250,7 @@ const build = () => {
   let z1 = -Infinity;
   for (const [pitchEnd, yawEnd, sx, sy] of SWAY_CORNERS) {
     distance = placeCamera(
-      (params.camPitch + pitchEnd * params.camPitchSwing) * DEG,
+      (basePitch() + pitchEnd * params.camPitchSwing) * DEG,
       (params.camYaw + yawEnd * params.camYawSwing) * DEG,
     );
     ray.set(sx, sy, 0.5).unproject(camera).sub(camera.position).normalize();
@@ -246,7 +265,7 @@ const build = () => {
     z0 = Math.min(z0, z);
     z1 = Math.max(z1, z);
   }
-  placeCamera(params.camPitch * DEG, params.camYaw * DEG);
+  placeCamera(basePitch() * DEG, params.camYaw * DEG);
   const margin = params.floorMargin;
   // As many cells as floorCells allows, but never so many that a cell at the target is under minCellPx CSS pixels:
   // a phone has fewer pixels for the same floor, so there the voxels stay big and the floor gets fewer cells.
@@ -304,9 +323,10 @@ const update = (time: number, deltaTime: number) => {
     camera.fov = params.camFov;
     camera.updateProjectionMatrix();
   }
-  if (!built) build();
+  // Switching between looking down and looking up builds the floor again, for what the new view sees.
+  if (!built || params.camView !== builtView) build();
   const pitch =
-    (params.camPitch + Math.sin((time / params.camPitchPeriod) * Math.PI * 2) * params.camPitchSwing) * DEG;
+    (basePitch() + Math.sin((time / params.camPitchPeriod) * Math.PI * 2) * params.camPitchSwing) * DEG;
   const yaw =
     (params.camYaw + Math.sin((time / params.camYawPeriod) * Math.PI * 2) * params.camYawSwing) * DEG;
   const distance = placeCamera(pitch, yaw);

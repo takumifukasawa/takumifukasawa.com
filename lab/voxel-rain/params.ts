@@ -66,6 +66,8 @@ export const SCHEMA = {
   fogNear: { folder: 'camera', min: 0, max: 6, step: 0.05 },
   fogFar: { folder: 'camera', min: 0.5, max: 8, step: 0.05 },
   camPitch: { folder: 'camera', min: -89, max: 89, step: 0.5 }, // degrees down onto the target; negative looks up at it
+  camView: { folder: 'camera', options: { above: 0, below: 1 } }, // which of the two pitches to use; switching rebuilds the floor
+  camPitchBelow: { folder: 'camera', min: -89, max: 89, step: 0.5 }, // camPitch when camView is below
   camLift: { folder: 'camera', min: 0, max: 2, step: 0.01 }, // the target's height above the floor, in camera distances (read at load)
   camYaw: { folder: 'camera', min: -180, max: 180, step: 1 }, // degrees
   // The camera sways back and forth by these many degrees, so the floor sized at load still covers the screen.
@@ -88,6 +90,7 @@ export const SCHEMA = {
   // Bloom resolution relative to the frame. The bloom is pure fill rate, so this is the main lever on its
   // cost. Too low and thin drops flicker in the bright pass (see post.ts).
   bloomScale: { folder: 'post', min: 0.1, max: 1, step: 0.05 },
+  chromaticAberration: { folder: 'post', min: 0, max: 0.05, step: 0.0005 }, // red / blue shift at the corners, as a share of the distance from the centre
   msaa: { folder: 'post', min: 0, max: 4, step: 2 },
   // quality.ts -- dynamic resolution
   autoQuality: { folder: 'perf', min: 0, max: 1, step: 1 },

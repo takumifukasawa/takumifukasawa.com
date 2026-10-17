@@ -1,4 +1,5 @@
-// Post-processing: scene -> bloom -> output. Plumbing, three's own passes.
+// Post-processing: scene -> bloom -> chromatic aberration -> output. Plumbing, three's own passes, plus a small
+// shader for the aberration.
 //
 // Cost. The scene itself is nearly free (a few hundred quads and the grid's lines), so the frame is almost
 // entirely the bloom, and the bloom is pure fill rate: a bright pass plus a 5-level blur pyramid, each
@@ -14,8 +15,33 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { Params } from './params.ts';
+
+// Red and blue pulled apart along the line from the centre, as a lens does: none in the middle, most at the
+// corners, where uAmount is the shift as a share of the distance from the centre. Before OutputPass, so it
+// works on the linear HDR frame and the bloom's glow splits too.
+const ChromaticAberration = {
+  uniforms: { tDiffuse: { value: null }, uAmount: { value: 0 } },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uAmount;
+    varying vec2 vUv;
+    void main() {
+      vec2 shift = (vUv - 0.5) * uAmount;
+      vec4 c = texture2D(tDiffuse, vUv);
+      c.r = texture2D(tDiffuse, vUv + shift).r;
+      c.b = texture2D(tDiffuse, vUv - shift).b;
+      gl_FragColor = c;
+    }`,
+};
 
 export type Post = {
   composer: EffectComposer;
@@ -35,6 +61,8 @@ export const createPost = (
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 1, 0, 1);
   composer.addPass(bloom);
+  const aberration = new ShaderPass(ChromaticAberration);
+  composer.addPass(aberration);
   // Tone mapping and colour space; must be last.
   composer.addPass(new OutputPass());
 
@@ -59,6 +87,8 @@ export const createPost = (
       bloom.strength = next.bloomStrength;
       bloom.radius = next.bloomRadius;
       bloom.threshold = next.bloomThreshold;
+      aberration.uniforms.uAmount!.value = next.chromaticAberration;
+      aberration.enabled = next.chromaticAberration > 0;
       // three hardcodes the high pass's soft knee at 0.01, a step: a line fading out would drop out of the
       // bloom all at once. Widened, it leaves the bloom as it fades.
       // @types/three types highPassUniforms as a bare object; at run time it is the shader's uniforms.

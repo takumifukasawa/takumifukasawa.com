@@ -5,9 +5,12 @@
 //   - drawn at captureScale times that size, so saving scales it back down: supersampling is the AA
 //   - captureMsaa on the composer's target, and no dynamic resolution (the frame must not change tier
 //     halfway through a take)
-//   - no input: a take should not depend on where the mouse happened to be
+//   - clicks and drags still drop rain, to stage a still by hand, but without the sparks (main.ts)
 //
-// Press `s` to save the current frame as a PNG at captureWidth x captureHeight.
+// Press `s` to save the current frame as a PNG at captureWidth x captureHeight. Press `d` to drop one drop down
+// the column under the centre of the frame, to stage a still: the rain is random, and the moment worth keeping
+// (a drop falling onto a ring spreading, in the middle) rarely comes by itself. For a composed still, a script can
+// call window.voxelRain.drop(x, y) with a point of the frame (-1..1 each way) and set window.voxelRain.params.
 // The saved still copies only the WebGL canvas, so the link back to the site (_shell.js) is never in it.
 // Add &clean only when recording the whole screen (OBS etc.), where that link would be.
 import type { Params } from './params.ts';
@@ -22,13 +25,16 @@ export const captureView = (params: Params): Params => ({
   autoQuality: 0,
 });
 
-export type Shutter = { pending: boolean };
+// drops: points of the frame (-1..1) to drop one under, with how hard; main.ts empties it every fixed step.
+export type Shutter = { pending: boolean; drops: { x: number; y: number; force?: number }[] };
 
 export const createShutter = (): Shutter => {
-  const shutter: Shutter = { pending: false };
+  const shutter: Shutter = { pending: false, drops: [] };
   if (!capture) return shutter;
   window.addEventListener('keydown', (event) => {
-    if (event.key === 's' && !event.repeat) shutter.pending = true;
+    if (event.repeat) return;
+    if (event.key === 's') shutter.pending = true;
+    if (event.key === 'd') shutter.drops.push({ x: 0, y: 0 });
   });
   return shutter;
 };

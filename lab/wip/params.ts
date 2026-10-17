@@ -1,6 +1,6 @@
 // The *schema* of the knobs lives here. The *values* live in params.json, which the save button in the
 // debug pane writes. Nothing in this file is a value, so tuning never produces a code diff.
-// (Same shape as lab/grid-ray-clock/params.ts. Every knob is read live except the ones that size the floor (gridY, floorCells, floorMargin, camPitch, camYaw, the swings, camFov), which are read at load.)
+// (Same shape as lab/grid-ray-clock/params.ts. Every knob is read live except the ones that size the floor (gridY, floorCells, floorMargin, camPitch, camLift, camYaw, the swings, camFov), which are read at load.)
 import saved from './params.json' with { type: 'json' };
 
 export type Spec = {
@@ -65,7 +65,8 @@ export const SCHEMA = {
   // floor is built no further out than that (read at load).
   fogNear: { folder: 'camera', min: 0, max: 6, step: 0.05 },
   fogFar: { folder: 'camera', min: 0.5, max: 8, step: 0.05 },
-  camPitch: { folder: 'camera', min: -30, max: 89, step: 0.5 }, // degrees down onto the box
+  camPitch: { folder: 'camera', min: -89, max: 89, step: 0.5 }, // degrees down onto the target; negative looks up at it
+  camLift: { folder: 'camera', min: 0, max: 2, step: 0.01 }, // the target's height above the floor, in camera distances (read at load)
   camYaw: { folder: 'camera', min: -180, max: 180, step: 1 }, // degrees
   // The camera sways back and forth by these many degrees, so the floor sized at load still covers the screen.
   camPitchSwing: { folder: 'camera', min: 0, max: 15, step: 0.1 },

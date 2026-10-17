@@ -102,13 +102,17 @@ const pointerPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const floorTop = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1);
 const ndc = new THREE.Vector2();
 
-// The column whose floor cell is under a random point of the screen, or null if that point is off the floor.
+// The column whose floor cell is under a random point of the screen. A point that misses the floor (sky, when
+// the camera looks up) is drawn again, a few times, so the rain keeps its rate however much floor is on screen.
 const screenColumn = (): Column => {
-  raycaster.setFromCamera(ndc.set(Math.random() * 2 - 1, Math.random() * 2 - 1), camera);
-  if (!raycaster.ray.intersectPlane(floorTop, hit)) return null;
-  const x = Math.floor(hit.x + world.nx / 2);
-  const z = Math.floor(hit.z + world.nz / 2);
-  return x < 0 || z < 0 || x >= world.nx || z >= world.nz ? null : { x, z };
+  for (let tries = 0; tries < 8; tries++) {
+    raycaster.setFromCamera(ndc.set(Math.random() * 2 - 1, Math.random() * 2 - 1), camera);
+    if (!raycaster.ray.intersectPlane(floorTop, hit)) continue;
+    const x = Math.floor(hit.x + world.nx / 2);
+    const z = Math.floor(hit.z + world.nz / 2);
+    if (x >= 0 && z >= 0 && x < world.nx && z < world.nz) return { x, z };
+  }
+  return null;
 };
 const hit = new THREE.Vector3();
 // Click and drag drops start pointerHeight cells up, right under the pointer: the pointer's ray is met with the
@@ -193,8 +197,12 @@ const SWAY_CORNERS = [-1, 1].flatMap((p) =>
 // covers what a slightly bigger window shows.
 let cellsShort = 1;
 
+// The camera circles a target above the floor's centre, camLift camera distances up (0 = on the floor). A negative
+// pitch puts it below the target looking up: with no lift that is under the floor, with some lift it is just
+// above the floor, looking up into the rain.
 const placeCamera = (pitch: number, yaw: number) => {
   const distance = cellsShort / (2 * Math.tan((camera.fov * DEG) / 2) * Math.min(1, camera.aspect));
+  target.y = 1 + params.camLift * distance;
   camera.position.set(
     target.x + Math.sin(yaw) * Math.cos(pitch) * distance,
     target.y + Math.sin(pitch) * distance,
@@ -205,7 +213,8 @@ const placeCamera = (pitch: number, yaw: number) => {
   return distance;
 };
 
-// Size the floor to cover this screen: cast a ray from each corner of the screen down to the floor's top,
+// Size the floor to cover this screen: cast a ray from each corner of the screen to the floor's top (down onto it,
+// or up onto its underside),
 // take the rectangle around where they land, and grow it by floorMargin. The target sits on that same plane,
 // so the rectangle scales exactly with the camera's distance: measure it once at cellsShort = 1, then pick
 // the cellsShort whose rectangle holds floorCells cells. The floor stays centred on the origin; the camera's
@@ -227,7 +236,9 @@ const build = () => {
     );
     ray.set(sx, sy, 0.5).unproject(camera).sub(camera.position).normalize();
     const reach = params.fogFar * distance;
-    const t = ray.y < 0 ? Math.min((target.y - camera.position.y) / ray.y, reach) : reach;
+    // Where the ray meets the floor's plane, if ahead of the camera; a ray that never does is cut at reach.
+    const meet = (1 - camera.position.y) / ray.y;
+    const t = meet > 0 && Number.isFinite(meet) ? Math.min(meet, reach) : reach;
     const x = camera.position.x + ray.x * t;
     const z = camera.position.z + ray.z * t;
     x0 = Math.min(x0, x);

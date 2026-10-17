@@ -37,7 +37,10 @@ export default defineConfig({
         // Tweakpane's getContext({ willReadFrequently: true }) (2026-10-17) both broke only in the build
         // (docs/learnings.md). A few bytes are not worth a sketch that dies at load.
         booleans_as_integers: false,
-        drop_console: true,
+        // Only log / info / debug. console.error and console.warn stay: they are how three reports a shader or
+        // pipeline that failed to compile, and `artifacts run` fails on console.error. With drop_console: true the
+        // build broke in silence (2026-10-17, decision 0008).
+        drop_console: ['log', 'info', 'debug'],
         drop_debugger: true,
         keep_fargs: false,
         module: true,

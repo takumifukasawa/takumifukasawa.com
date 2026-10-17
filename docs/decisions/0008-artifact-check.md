@@ -94,9 +94,22 @@ uniform 名・Tweakpane のキー・JSON のキーを毎回クォートし、守
 ## 影響・やり直す条件
 
 - `scripts/lib/chrome.ts`（CDP ドライバ）と `scripts/check-artifacts.ts`（検査本体）。
-  環境メッセージと本物のエラーを分ける判定は `isEnvironmentProblem()` で、**テストで両方向を固定している**
-  （`scripts/lib/chrome.test.ts`）。ここを緩めると検査が「壊れたビルドへの緑信号」に変わる
+  環境メッセージと本物のエラーを分ける判定は `isEnvironmentProblem()`（`scripts/lib/page-problems.ts`。2026-10-17 に `chrome.ts` から分けた。
+  ドライバと検査の方針を混ぜないため）で、**テストで両方向を固定している**（`scripts/lib/page-problems.test.ts`）。ここを緩めると検査が「壊れたビルドへの緑信号」に変わる
 - `ENVIRONMENT_PHRASES` は**実際にその環境が出力したものだけ**追加する。推測で足すと穴になる
 - `pnpm lab:add` の前にこの検査が通っていることが、公開の前提
 - やり直す条件: Chrome の起動が重くて検査を回さなくなったら。その場合は「`lab:add` の中でだけ走らせる」に移す
   （毎回ではなく公開時だけに寄せる）
+
+## 追記 2026-10-17: `console.error` を成果物に残す / WebGPU の作品は実 GPU でも開く
+
+- **成果物から `console.error` / `console.warn` を消さない**（作品の `vite.config.ts` の `drop_console: ['log', 'info', 'debug']`。雛形も）。
+  `drop_console: true` は three がシェーダーの失敗を知らせる `console.error` ごと消していて、この検査は壊れたシェーダーを素通りさせていた
+  （`learnings.md` 2026-10-17）。判定は文言に頼らず「`console.error` か未捕捉の例外が 1 件でもあれば失敗」のまま。
+- **WebGPU の作品は 2 回開く**: いまのソフトウェア WebGL のブラウザ（全作品）と、フラグなし＝実 GPU のブラウザ（`lab:add` のタグ推定で
+  `webgpu` になる作品だけ）。実 GPU のブラウザで adapter が取れなければ `SKIPPED` と明示する（黙って `ok` にしない）。
+  - 落選: Chrome の warning の文言で WebGPU の検証エラーを拾う（文言が変わると穴になる）、SwiftShader の WebGPU
+    （正常な作品でも canvas のテクスチャで落ちる）、全作品を実 GPU にする（既存の WebGL 作品の検査条件まで変わる）、
+    `--disable-gpu` だけ外す（ANGLE が SwiftShader のあいだは adapter が null のまま）。
+  - やり直す条件: SwiftShader の WebGPU が正常な作品を描けるようになったら、実 GPU をやめて 1 回に戻せる（GPU の無いマシンでも検査できる）。
+

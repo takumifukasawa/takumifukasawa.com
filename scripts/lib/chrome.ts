@@ -22,35 +22,33 @@ export const findChrome = (): string | undefined =>
 
 export type PageProblem = { kind: 'exception' | 'console' | 'log'; text: string };
 
-// Headless Chrome without a GPU says so, loudly and in several ways. Those messages are about the machine
-// running the check, not about the sketch, so they must not read as a broken artifact.
-//
-// Deliberately an allowlist of known phrases rather than "mentions WebGL": a real shader failure also
-// mentions WebGL ("THREE.WebGLProgram: Shader Error ... VALIDATE_STATUS false"), and swallowing that would
-// make this check worse than useless -- it would be a green light over a broken build.
-// Kept deliberately short, and only for messages about *getting a context at all*. Nothing was guessed
-// in from memory: on this machine headless Chrome with --use-angle=swiftshader produces none of these,
-// so the list exists for GPU-less machines. Extend it when a real environment actually prints something,
-// never pre-emptively -- every entry here is a hole in the check.
-const ENVIRONMENT_PHRASES = [
-  'Could not create a WebGL context',
-  'Automatic fallback to software WebGL',
-  'WebGL is disabled',
-  'WebGL unavailable',
-];
-
-// Anything naming the shader pipeline is the sketch's own problem, whatever else it says.
-const SKETCH_PHRASES = ['Shader Error', 'WebGLProgram', 'compile', 'VALIDATE_STATUS', 'gl.getProgramInfoLog'];
-
-export const isEnvironmentProblem = (problem: PageProblem): boolean => {
-  if (SKETCH_PHRASES.some((phrase) => problem.text.includes(phrase))) return false;
-  return ENVIRONMENT_PHRASES.some((phrase) => problem.text.includes(phrase));
-};
-
 type Browser = {
   open: (url: string, settleMs: number) => Promise<PageProblem[]>;
+  // Runs `expression` (awaited) in a fresh tab on `url` and returns its value. For questions about the browser
+  // itself, such as whether WebGPU has an adapter: that needs a secure context, so `url` is a loopback page,
+  // never about:blank.
+  evaluate: (url: string, expression: string) => Promise<unknown>;
   close: () => void;
 };
+
+// `software`: WebGL on SwiftShader. Without these three the page gets no WebGL context at all on a machine with
+// no usable GPU, and every sketch "fails". It also leaves WebGPU with no adapter (2026-10-17).
+// `gpu`: the machine's GPU, for WebGPU sketches. SwiftShader's WebGPU (--use-webgpu-adapter=swiftshader) gets an
+// adapter but fails on a healthy sketch's canvas texture ("Invalid Texture ... CreateView", then Device Lost), so
+// it cannot stand in (docs/decisions/0008, 2026-10-17).
+export type ChromeMode = 'software' | 'gpu';
+
+export const chromeArgs = (mode: ChromeMode, profile: string): string[] => [
+  '--headless=new',
+  '--remote-debugging-port=0',
+  `--user-data-dir=${profile}`,
+  ...(mode === 'software' ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu'] : []),
+  '--no-first-run',
+  '--no-default-browser-check',
+  '--disable-extensions',
+  '--mute-audio',
+  'about:blank',
+];
 
 const waitFor = (stream: NodeJS.ReadableStream, pattern: RegExp, timeoutMs: number) =>
   new Promise<string>((resolve, reject) => {
@@ -66,22 +64,9 @@ const waitFor = (stream: NodeJS.ReadableStream, pattern: RegExp, timeoutMs: numb
     });
   });
 
-export const launchChrome = async (executable: string): Promise<Browser> => {
+export const launchChrome = async (executable: string, mode: ChromeMode = 'software'): Promise<Browser> => {
   const profile = mkdtempSync(join(tmpdir(), 'lab-check-'));
-  const child = spawn(executable, [
-    '--headless=new',
-    '--remote-debugging-port=0',
-    `--user-data-dir=${profile}`,
-    // Software WebGL. Without these three the page gets no context at all and every sketch "fails".
-    '--use-angle=swiftshader',
-    '--enable-unsafe-swiftshader',
-    '--disable-gpu',
-    '--no-first-run',
-    '--no-default-browser-check',
-    '--disable-extensions',
-    '--mute-audio',
-    'about:blank',
-  ]);
+  const child = spawn(executable, chromeArgs(mode, profile));
   child.stderr.setEncoding('utf8');
   const line = await waitFor(child.stderr, /ws:\/\/127\.0\.0\.1:\d+\//, 20_000);
   const origin = `http://${new URL(line).host}`;
@@ -125,8 +110,28 @@ export const launchChrome = async (executable: string): Promise<Browser> => {
     return problems;
   };
 
+  const evaluate = async (url: string, expression: string): Promise<unknown> => {
+    const created = await fetch(`${origin}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' });
+    const target = (await created.json()) as { id: string; webSocketDebuggerUrl: string };
+    const socket = new WebSocket(target.webSocketDebuggerUrl);
+    await new Promise((resolve) => socket.addEventListener('open', resolve, { once: true }));
+    // The tab was opened on `url`; give it a moment to commit the navigation before evaluating in it.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const value = await new Promise<unknown>((resolve) => {
+      socket.addEventListener('message', (event) => {
+        const message = JSON.parse(String(event.data)) as { id?: number; result?: { result?: { value?: unknown } } };
+        if (message.id === 1) resolve(message.result?.result?.value);
+      });
+      socket.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }));
+    });
+    socket.close();
+    await fetch(`${origin}/json/close/${target.id}`);
+    return value;
+  };
+
   return {
     open,
+    evaluate,
     close: () => {
       child.kill();
       // Best effort: on Windows Chrome still holds the profile for a moment after kill, and failing to

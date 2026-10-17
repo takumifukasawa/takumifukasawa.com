@@ -351,3 +351,25 @@
 - 対処 / 再発したら: 検査の側で `FORCE_COLOR=0 node --test ...` と色を明示的に切る（`.harness/checks.sh`。`NO_COLOR` は
   `FORCE_COLOR` に負けるので効かない）。**出力を grep する検査は、色が付く可能性を先に潰す**。
   「通るはずのテストが 0 件と言われる」を見たら、まず `env | grep -i color` と、出力を `od -c` で見て行頭に `033[` が無いか。
+
+## 2026-10-17 成果物の `drop_console: true` で、シェーダーのエラーが消えて `artifacts run` が素通りしていた
+
+- 症状: わざと壊した WGSL でビルドした成果物を `artifacts run` が `ok` と判定した。WebGL の作品も同じで、成果物の bundle には
+  `console.` が 1 件も無かった（4 件とも）。`page-problems.ts` の `SKETCH_PHRASES`（`Shader Error` 等）は成果物ではもう出てこない文言だった。
+- 原因: three はシェーダーやパイプラインの失敗を API で検知し（WebGPU は `pushErrorScope` / `getCompilationInfo`、WebGL は
+  `checkShaderErrors`）、`console.error` で知らせる。terser の `drop_console: true` がそれごと消す。例外は投げないので、検査に何も届かない。
+  Chrome 自身も WebGPU の検証エラーは **warning** でしか出さない。
+- 対処 / 再発したら: 作品の `vite.config.ts` は `drop_console: ['log', 'info', 'debug']`（雛形もこれ。`error` / `warn` を残す）。
+  検査は文言を見ず「`console.error` が 1 件でもあれば失敗」のまま。**消す設定を足すときは、壊れたシェーダーで検査が落ちることを確かめる**。
+  2026-10-17 より前にビルドした作品（greeble-flow / grid-ray-clock / voxel-rain）は消したままだが、公開済みで動いている WebGL の作品なので
+  作り直さない（2026-10-17、人間の判断）。作り直すときに雛形の設定に合わせる。
+
+## 2026-10-17 ヘッドレス Chrome の WebGPU は、実 GPU でしか検査に使えない
+
+- 症状: `--use-angle=swiftshader` 等のいまのフラグでは WebGPU の adapter が null で、WebGPU の作品は「WebGPU が無い」経路を通って
+  黙って `ok` になる（壊れた WGSL でも）。`--enable-unsafe-webgpu --use-webgpu-adapter=swiftshader` を足すと adapter は取れるが、
+  **正常な作品でも** `Invalid Texture … CreateView` から Device Lost まで出て落ちる。`--disable-gpu` だけ外しても、ANGLE が SwiftShader の
+  あいだは adapter が null のまま。
+- 対処 / 再発したら: WebGPU の作品だけ、フラグなし（実 GPU）のブラウザでもう一度開く（`scripts/lib/chrome.ts` の `ChromeMode`、
+  `check-artifacts.ts`）。adapter が取れないマシンでは `SKIPPED` と出る。WebGPU の作品が `ok` なのに中身が動いていない気がしたら、
+  まず出力に `<slug> (WebGPU): ok` の行があるか（`SKIPPED` になっていないか）を見る。

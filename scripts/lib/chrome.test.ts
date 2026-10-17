@@ -1,28 +1,28 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { isEnvironmentProblem, type PageProblem } from './chrome.ts';
+import { chromeArgs } from './chrome.ts';
 
-const log = (text: string): PageProblem => ({ kind: 'log', text });
+// The two modes of the artifact check (decision 0008). Pinned because each half was learned the hard way:
+// software mode without SwiftShader gets no WebGL context on a GPU-less machine, and SwiftShader in gpu mode
+// leaves WebGPU with no adapter, so a broken WebGPU sketch passes in silence (2026-10-17).
+describe('chromeArgs', () => {
+  const software = chromeArgs('software', '/tmp/p');
+  const gpu = chromeArgs('gpu', '/tmp/p');
 
-// This classifier decides what the artifact check is allowed to ignore. Getting it wrong in the lenient
-// direction turns the check into a green light over a broken build, so both directions are pinned here.
-describe('isEnvironmentProblem', () => {
-  for (const text of [
-    'Could not create a WebGL context, VENDOR = 0xffff',
-    'Automatic fallback to software WebGL has been deprecated',
-    'WebGL is disabled',
-  ]) {
-    test(`ignores: ${text.slice(0, 40)}`, () => assert.equal(isEnvironmentProblem(log(text)), true));
-  }
-
-  // The dangerous direction: these all mention WebGL but are the sketch's own fault.
-  for (const text of [
-    'THREE.WebGLProgram: Shader Error 0 - VALIDATE_STATUS false',
-    'THREE.WebGLProgram: gl.getProgramInfoLog() invalid shaders',
-    'Failed to compile fragment shader: WebGL context lost',
-    "TypeError: Cannot read properties of undefined (reading 'replace')",
-    'Failed to load resource: the server responded with a status of 404 (Not Found) <http://x/lab/a/t.png>',
-  ]) {
-    test(`reports: ${text.slice(0, 40)}`, () => assert.equal(isEnvironmentProblem(log(text)), false));
-  }
+  test('software renders WebGL on SwiftShader', () => {
+    for (const flag of ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-gpu'])
+      assert.ok(software.includes(flag), flag);
+  });
+  test('gpu mode keeps the GPU and SwiftShader out', () => {
+    assert.equal(
+      gpu.some((flag) => /swiftshader|--disable-gpu/.test(flag)),
+      false,
+    );
+  });
+  test('both are headless and debuggable', () => {
+    for (const args of [software, gpu]) {
+      assert.ok(args.includes('--headless=new'));
+      assert.ok(args.includes('--remote-debugging-port=0'));
+    }
+  });
 });

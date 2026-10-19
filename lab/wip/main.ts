@@ -9,6 +9,8 @@
 //   state.ts    the state of every cell on the GPU, stepped by step.wgsl (human)
 //   voxels.ts   the surface cells as instanced boxes, colored by color.wgsl (human)
 //   pointer.ts  tap vs drag, and the drag's turn
+//   post.ts     bloom and chromatic aberration
+//   params.ts   the knobs (values in params.json), as uniforms; debug.ts shows them with ?debug
 //
 // Conventions (docs/decisions/0004-lab-shell.md):
 // - No absolute paths starting with `/`; the build output may be moved.
@@ -31,7 +33,10 @@ import {
   WebGPUBackend,
 } from 'three/webgpu';
 import { createCells } from './cells.ts';
+import { createDebug } from './debug.ts';
+import { createUniforms, loadParams } from './params.ts';
 import { attachPointer } from './pointer.ts';
+import { createPost } from './post.ts';
 import { createTimeAccumulator, execTimeAccumulator, startTimeAccumulator } from './time/timeAccumulator.ts';
 import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/timeSkipper.ts';
 import { createState } from './state.ts';
@@ -60,6 +65,8 @@ const renderer = new Renderer(new WebGPUBackend({ canvas }));
 renderer.library = new StandardNodeLibrary();
 
 const start = () => {
+  const params = loadParams();
+  const uniforms = createUniforms(params);
   const scene = new Scene();
   const camera = new PerspectiveCamera(30, 1, 0.1, 1000);
 
@@ -67,8 +74,9 @@ const start = () => {
   const shape = new Group();
   // Provisional: a corner toward the camera, so it reads as a cube before anyone drags it.
   shape.rotation.set(Math.PI / 6, -Math.PI / 4, 0);
-  const state = createState(cells);
-  const voxels = createVoxels(cells, state);
+  const state = createState(cells, uniforms);
+  const voxels = createVoxels(cells, state, uniforms);
+  createDebug(params, { reset: () => state.reset(renderer) });
   shape.add(voxels);
   scene.add(shape);
 
@@ -105,9 +113,12 @@ const start = () => {
     state.knock(cells.surface[hit.instanceId]!);
   });
 
-  const fixedUpdate = (_time: number, _deltaTime: number) => state.step(renderer);
+  const fixedUpdate = (_time: number, _deltaTime: number) => {
+    for (let i = 0; i < params.stepsPerFrame; i++) state.step(renderer);
+  };
   const update = (_time: number, _deltaTime: number) => {};
-  const render = (_time: number, _deltaTime: number) => renderer.render(scene, camera);
+  const post = createPost(renderer, scene, camera, uniforms);
+  const render = (_time: number, _deltaTime: number) => post.render();
 
   const fixedTimer = createTimeAccumulator(60, fixedUpdate);
   const frameTimer = createTimeSkipper(60, (time, deltaTime) => {
@@ -117,6 +128,7 @@ const start = () => {
   const getCurrentRealTime = () => performance.now() / 1000;
   const tick = () => {
     const time = getCurrentRealTime();
+    uniforms.sync();
     execTimeAccumulator(fixedTimer, time);
     execTimeSkipper(frameTimer, time);
     window.requestAnimationFrame(tick);

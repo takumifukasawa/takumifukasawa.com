@@ -40,6 +40,7 @@
 | セル 1 個が持つ状態の構成と面の数（下の未確定事項） | **人間** |
 | タップしたセルの叩き方（入れる値・広がり） | **人間** |
 | 状態 → 色（fragment shader の数行） | **人間** |
+| 状態 → ボクセルのずれ（`offset.wgsl`。向きと量） | **人間** |
 | 形の関数 `inside(x,y,z)`（まず立方体） | **人間** |
 | renderer・カメラ・buffer の確保・bind・dispatch・表面セルの instanced 描画の配線 | 共同（エージェントが骨組みを出して確認を取る） |
 | タップとドラッグの判定、回転、Raycaster → cellIndex | エージェント |
@@ -58,7 +59,8 @@
 | 4 | 状態の buffer と、毎フレーム compute を呼ぶ配線。本体は空 | 共同 | 済（人間の確認待ち） | **着手条件: 未確定事項の「セルの状態の構成」が決まっていること**。bind 済みの空の `.wgsl` の雛形まで |
 | 5 | タップ → cellIndex → compute へ渡す（uniform）。叩く本体は空 | エージェント | 済 | |
 | 6 | 形の関数・更新の規則・叩き方・色 | **人間** | 未着手（`shape.ts`・`step.wgsl`・`color.wgsl` のスタブを埋める） | 状態は fragment で読む（決定ログ） |
-| 7 | debug ペイン（規則のパラメータ）、`?capture` を `../core/capture.ts` で | エージェント | 未着手 | `captureView` は `msaa` / `captureMsaa` / `autoQuality` を型で要求する。使うなら `params.json` に 3 キーを置き、使わないなら `capture`・`createShutter`・`takeShot` だけ import する。どちらにするかはここで決める |
+| 7 | debug ペイン（規則のパラメータ）、`?capture` を `../core/capture.ts` で | エージェント | debug ペインは済（`params.ts` / `params.json` / `debug.ts`、値は uniform で `.wgsl` の引数へ）。`?capture` は未着手 | `captureView` は `msaa` / `captureMsaa` / `autoQuality` を型で要求する。使うなら `params.json` に 3 キーを置き、使わないなら `capture`・`createShutter`・`takeShot` だけ import する。どちらにするかはここで決める |
+| 6b | ボクセルを状態で動かす配線: 表面ごとに状態を写す compute、属性で頂点へ、空の `offset.wgsl` | エージェント | 済 | 決定ログ 2026-10-18 |
 | 8 | 名前を決めて改名 → poster → `harness check`（full）→ `lab:add` | 共同 | 未着手 | |
 
 ### タスク 2 の中身
@@ -90,6 +92,12 @@
   （`navigator.gpu` はあるのに adapter が null の環境がある。2026-10-17 にヘッドレス Chrome で実測）。
 - 2026-10-17 **状態は fragment shader で読む**。理由: three は WebGPU の互換モード（`featureLevel: 'compatibility'`）で adapter を取り、
   GLES 系の Android では vertex stage で storage buffer を読めない可能性がある。fragment なら互換モードでも読める。
+- 2026-10-18 **ボクセルを状態で動かす。向きはまず「中心へ」**（人間）。セルごとに中心への向き × `u`。状態の構成は変えない。
+  落選: 視線の向きを 1 つだけ持つ（別の角度で叩くと前の波の向きまで変わる）。視線の向きを波に持たせる（`u`・`v` を vec3 に、1 セル vec4 × 2）は、
+  中心への向きで物足りなければ次に試す（頂点側の配線はそのまま使える）。
+- 2026-10-18 **頂点へは、表面ごとに状態を写す小さい compute を足し、属性として読む**（`toAttribute()`）。上の「fragment で読む」と同じ互換モードの理由で、
+  頂点から storage を直接読まない。色も同じ写しを読む（読み口を 1 つにする）。落選: 頂点で `latest()` を直接読む（互換モードの Android で動かない恐れ）。
+  当たり判定は動く前の位置（instanceMatrix）のまま。
 - 2026-10-17 **形はまず立方体だけ**。切り替え方（キー / ペイン / 時間で移る）は形を増やすときに決める。
 - 2026-10-17 **タップとドラッグは押した場所ではなく動き方で分ける**。落選: ボクセル以外を触ったら回転（スマホで掴む場所が無い）、
   ボクセルを押して動かしたら回転（外を触ったときの意味が別に要る）。
@@ -106,6 +114,9 @@
 
 ## 進捗ログ
 
+- 2026-10-18 タスク 6b。`state.ts` に `shown`（表面ごとの状態の写し、`toAttribute()`）と写す compute を向き別に 2 本、`voxels.ts` は色もずれも `shown` を読み、
+  `cellPosition` 属性と `positionNode = positionLocal + cellOffset(...)`、`offset.wgsl` は空のスタブ。スタブを一時的に「赤いセルを上へ 3」にして、
+  叩くと箱が面から飛び出すことを dev で確かめ、空に戻した。`harness check` pass=11（`wip (WebGPU)` ok）。
 - 2026-10-17 `artifacts run` の穴を塞いだ: 雛形と wip の `drop_console` を `['log', 'info', 'debug']` に、`chrome.ts` に `ChromeMode`（software / gpu）と
   `evaluate`、`check-artifacts.ts` が WebGPU の作品を実 GPU で開き直す（adapter が無ければ SKIPPED）。判定の方針は `chrome.ts` から
   `page-problems.ts` に分けた。壊した WGSL で `wip (WebGPU)` が落ち、正常では 4 件 + `wip (WebGPU)` が ok、adapter 無しで SKIPPED を確認。

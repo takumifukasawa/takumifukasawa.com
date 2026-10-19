@@ -9,5 +9,12 @@
   // No formatter for these: Markdown is ignored by .prettierignore, and Prettier has no WGSL / GLSL support.
   "[markdown]": { "editor.formatOnSave": false },
   "[wgsl]": { "editor.formatOnSave": false },
-  "[glsl]": { "editor.formatOnSave": false }
+  "[glsl]": { "editor.formatOnSave": false },
+  // wgsl-analyzer: naga's validation rejects storage pointers as function parameters, which Chrome (Tint) accepts
+  // and lab/wip/step.wgsl uses (the unrestricted_pointer_parameters extension). naga's parsing and wgsl-analyzer's
+  // own semantic checks stay on.
+  "wgsl-analyzer.diagnostics.external.naga.validation.errors": false,
+  // Code Spell Checker: off here. Nearly every word it flags is a technical term (webgpu, wgsl, msaa ...), and
+  // keeping a dictionary of them is upkeep this project does not want (2026-10-17).
+  "cSpell.enabled": false
 }

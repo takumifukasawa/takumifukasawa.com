@@ -21,8 +21,10 @@ const saveParams: Plugin = {
             typeof values === 'object' &&
             values !== null &&
             !Array.isArray(values) &&
-            Object.values(values).every((v) => typeof v === 'number' && Number.isFinite(v));
-          if (!ok) throw new Error('expected a flat object of finite numbers');
+            Object.values(values).every(
+              (v) => (typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)),
+            );
+          if (!ok) throw new Error('expected a flat object of finite numbers and #rrggbb colours');
           writeFileSync(join(import.meta.dirname, 'params.json'), JSON.stringify(values, null, 2) + '\n');
           res.end('ok');
         } catch (error) {

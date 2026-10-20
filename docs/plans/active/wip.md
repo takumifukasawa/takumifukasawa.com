@@ -58,7 +58,7 @@
 | 3 | セルの mask（形の関数を呼ぶ側）と、表面セルの instanced 描画。色は定数 | 共同 | 済（人間の確認待ち） | Raycaster が当たるよう instanceMatrix は CPU で持つ（表面セルは形が決まれば固定）。`computeBoundingSphere()` を一度呼ぶ。インスタンスごとに固定の cellIndex 属性 |
 | 4 | 状態の buffer と、毎フレーム compute を呼ぶ配線。本体は空 | 共同 | 済（人間の確認待ち） | **着手条件: 未確定事項の「セルの状態の構成」が決まっていること**。bind 済みの空の `.wgsl` の雛形まで |
 | 5 | タップ → cellIndex → compute へ渡す（uniform）。叩く本体は空 | エージェント | 済 | |
-| 6 | 形の関数・更新の規則・叩き方・色 | **人間** | 未着手（`shape.ts`・`step.wgsl`・`color.wgsl` のスタブを埋める） | 状態は fragment で読む（決定ログ） |
+| 6 | 形の関数・更新の規則・叩き方・色 | **人間** | ほぼ済（`step.wgsl`・`color.wgsl`・`offset.wgsl` は書かれた。`shape.ts` は立方体のまま） | 状態は fragment で読む（決定ログ） |
 | 7 | debug ペイン（規則のパラメータ）、`?capture` を `../core/capture.ts` で | エージェント | debug ペインは済（`params.ts` / `params.json` / `debug.ts`、値は uniform で `.wgsl` の引数へ）。`?capture` は未着手 | `captureView` は `msaa` / `captureMsaa` / `autoQuality` を型で要求する。使うなら `params.json` に 3 キーを置き、使わないなら `capture`・`createShutter`・`takeShot` だけ import する。どちらにするかはここで決める |
 | 6b | ボクセルを状態で動かす配線: 表面ごとに状態を写す compute、属性で頂点へ、空の `offset.wgsl` | エージェント | 済 | 決定ログ 2026-10-18 |
 | 8 | 名前を決めて改名 → poster → `harness check`（full）→ `lab:add` | 共同 | 未着手 | |
@@ -98,6 +98,15 @@
 - 2026-10-18 **頂点へは、表面ごとに状態を写す小さい compute を足し、属性として読む**（`toAttribute()`）。上の「fragment で読む」と同じ互換モードの理由で、
   頂点から storage を直接読まない。色も同じ写しを読む（読み口を 1 つにする）。落選: 頂点で `latest()` を直接読む（互換モードの Android で動かない恐れ）。
   当たり判定は動く前の位置（instanceMatrix）のまま。
+- 2026-10-20 **箱の縁は角を丸めて出す**（人間）。`RoundedBoxGeometry`（`bevelRadius` / `bevelSegments` のノブ。変えると箱を作り直す）と、
+  ハイライトが乗るよう `MeshStandardNodeMaterial`（`roughness` / `metalness`）。落選: fragment で縁だけ色を変える（縁の判定を自分で書く案。
+  今回は見え方を先に試したい）、後処理で輪郭を検出（形の外周にも線が出て、重い）。`RoundedBoxGeometry` は `'three'` から import するが、
+  core は `three/webgpu` と同じ `three.core.js` で、バンドルは +2 KB だった。
+- 2026-10-20 **当たり判定は、描かない幅 1 の立方体で取る**（人間）。描いている箱は 0.9 で角も丸いので、レイが隙間を抜けて空洞を渡り、裏側の面に当たっていた
+  （グリッド 32・ランダム 1 万回で、幅 1 の立方体と違うセルに当たるのが 18〜34%、裏側まで抜けるのが 1.1〜3.0%。丸みが大きいほど多い）。
+  `voxels.ts` の `hit` が `mesh` と instanceMatrix を共有する。落選: 描いている箱のまま（隙間が埋まらない）、グリッド DDA（いまの規模では Raycaster で足りる）。
+- 2026-10-20 **色とライトをノブにする**（人間）。`color.wgsl` の 3 色は引数に（計算は変えていない。置き換えはエージェント、人間が了承）、
+  背景・環境光・平行光（色・強さ・向き）は `main.ts` が毎フレーム params から入れる。色は voxel-rain と同じ「メモリでは 0xRRGGBB、JSON では "#rrggbb"」。
 - 2026-10-17 **形はまず立方体だけ**。切り替え方（キー / ペイン / 時間で移る）は形を増やすときに決める。
 - 2026-10-17 **タップとドラッグは押した場所ではなく動き方で分ける**。落選: ボクセル以外を触ったら回転（スマホで掴む場所が無い）、
   ボクセルを押して動かしたら回転（外を触ったときの意味が別に要る）。
@@ -114,6 +123,11 @@
 
 ## 進捗ログ
 
+- 2026-10-20 角の丸み・Standard マテリアル・色とライトのノブ（決定ログ）。グリッドの大きさを比べるため dev だけ `?grid=N` で上書きできる
+  （大きさが決まったら外す）。成果物 964,462 B。`harness check` pass=11（`wip (WebGPU)` ok）。
+- 2026-10-19 `post.ts`（three の `bloom` → `chromaticAberration`、`RenderPipeline`。つまみは `post` フォルダ）。止まっている色が純色だと色収差が見えないので
+  全チャンネルを持つ色に、波の色は `glow` 倍で 1 を超えて波だけ光る。波は「叩いた所は速く、周りへは弱く」に寄せた（`k` を下げ `anchor` を上げ、
+  `damping` を下げ、`knockStrength` を上げる。`anchor` の上限を 0.2 に）。値は仮（人間が色と一緒に詰める）。
 - 2026-10-18 タスク 6b。`state.ts` に `shown`（表面ごとの状態の写し、`toAttribute()`）と写す compute を向き別に 2 本、`voxels.ts` は色もずれも `shown` を読み、
   `cellPosition` 属性と `positionNode = positionLocal + cellOffset(...)`、`offset.wgsl` は空のスタブ。スタブを一時的に「赤いセルを上へ 3」にして、
   叩くと箱が面から飛び出すことを dev で確かめ、空に戻した。`harness check` pass=11（`wip (WebGPU)` ok）。
@@ -138,5 +152,6 @@
 ## 未確定事項（人間の判断待ち）
 
 - グリッドの大きさ（たたき台は 64³。表面は約 2.4 万セル）と、1 フレームに compute を何回回すか
+  （2026-10-20: 64 だと箱が小さすぎて縁が見えないかもしれない。dev で `?grid=32` などを比べている）
 - 回転に慣性を付けるか、どの軸で回すか（形を回す / カメラを回す）
 - タップとみなす移動量の閾値（たたき台は数 px）

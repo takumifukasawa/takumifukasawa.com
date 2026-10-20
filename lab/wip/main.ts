@@ -17,11 +17,14 @@
 // - Debug UI is off by default and shown only with `?debug`.
 // - Capture (`?capture`): lab/core/capture.ts (import from '../core/capture.ts').
 // - No classes: plain state objects + functions, so unused code is tree-shaken (docs/coding.md).
-// - Only 'three/webgpu' and 'three/tsl'. Importing 'three' too would bundle the WebGL renderer as well.
+// - Only 'three/webgpu' and 'three/tsl' in our own code. Importing 'three' too would bundle the WebGL renderer as well.
+//   An example module that imports 'three' for core classes is fine (RoundedBoxGeometry in voxels.ts: they resolve
+//   to the same three.core.js; checked by bundle size, 2026-10-20).
 // - fixedUpdate: fixed 60 Hz (time/timeAccumulator.ts). update / render: capped at 60 fps (time/timeSkipper.ts).
 
 import {
   AmbientLight,
+  Color,
   DirectionalLight,
   Group,
   PerspectiveCamera,
@@ -42,8 +45,10 @@ import { createTimeSkipper, execTimeSkipper, startTimeSkipper } from './time/tim
 import { createState } from './state.ts';
 import { createVoxels } from './voxels.ts';
 
-// Provisional (plan: 未確定事項).
-const GRID = 64;
+// Provisional (plan: 未確定事項). Dev only: ?grid=32 overrides it, to compare sizes while deciding.
+// Remove the override once the size is settled.
+const gridOverride = import.meta.env.DEV ? Number(new URLSearchParams(location.search).get('grid')) : 0;
+const GRID = Number.isInteger(gridOverride) && gridOverride >= 2 && gridOverride <= 128 ? gridOverride : 64;
 
 const canvas = document.querySelector<HTMLCanvasElement>('#c')!;
 
@@ -75,16 +80,26 @@ const start = () => {
   // Provisional: a corner toward the camera, so it reads as a cube before anyone drags it.
   shape.rotation.set(Math.PI / 6, -Math.PI / 4, 0);
   const state = createState(cells, uniforms);
-  const voxels = createVoxels(cells, state, uniforms);
+  const voxels = createVoxels(cells, state, uniforms, params);
   createDebug(params, { reset: () => state.reset(renderer) });
-  shape.add(voxels);
+  shape.add(voxels.mesh);
   scene.add(shape);
 
-  // Placeholder light for the placeholder look (voxels.ts).
-  scene.add(new AmbientLight(0xffffff, 0.6));
-  const sun = new DirectionalLight(0xffffff, 2);
-  sun.position.set(0.5, 1, 0.8);
-  scene.add(sun);
+  // Lights and background from the knobs (params.ts, light / colour folders), set again every frame.
+  // The sun points at the origin from (sunX, sunY, sunZ); only the direction matters.
+  const ambient = new AmbientLight();
+  const sun = new DirectionalLight();
+  scene.add(ambient, sun);
+  scene.background = new Color();
+  const applyLook = () => {
+    ambient.color.setHex(params.ambientColor);
+    ambient.intensity = params.ambientIntensity;
+    sun.color.setHex(params.sunColor);
+    sun.intensity = params.sunIntensity;
+    sun.position.set(params.sunX, params.sunY, params.sunZ);
+    (scene.background as Color).setHex(params.bgColor);
+  };
+  applyLook();
 
   const setSize = () => {
     const width = window.innerWidth;
@@ -108,7 +123,7 @@ const start = () => {
     const rect = canvas.getBoundingClientRect();
     ndc.set(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObject(voxels)[0];
+    const hit = raycaster.intersectObject(voxels.hit)[0];
     if (hit?.instanceId === undefined) return;
     state.knock(cells.surface[hit.instanceId]!);
   });
@@ -116,7 +131,10 @@ const start = () => {
   const fixedUpdate = (_time: number, _deltaTime: number) => {
     for (let i = 0; i < params.stepsPerFrame; i++) state.step(renderer);
   };
-  const update = (_time: number, _deltaTime: number) => {};
+  const update = (_time: number, _deltaTime: number) => {
+    applyLook();
+    voxels.update();
+  };
   const post = createPost(renderer, scene, camera, uniforms);
   const render = (_time: number, _deltaTime: number) => post.render();
 

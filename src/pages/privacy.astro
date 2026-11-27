@@ -1,0 +1,76 @@
+---
+// /privacy/ — the privacy policy. Functional text (AGENTS.md allows it): what the site collects and through
+// whom, nothing more. Keep it true to what the pages actually load:
+//   - Google Analytics 4: src/layouts/Base.astro and public/_shell.js (decision 0004)
+//   - click-to-load CodePen / YouTube in blog articles (docs/plans/active/blog-migration.md)
+// Each <p> is one source line: in Japanese a line break in the source renders as a stray space.
+// Add a section when something new is loaded (AdSense: before applying; it needs its own paragraph and,
+// for visitors in the EEA / UK, a consent banner). Update `updated` whenever the text changes.
+import Base from '../layouts/Base.astro';
+
+const updated = '2026-11-27';
+---
+
+<Base title="Privacy" description="takumifukasawa.com のプライバシーポリシー" path="/privacy/">
+  <article>
+    <h1>プライバシーポリシー</h1>
+
+    <section>
+      <h2>アクセス解析</h2>
+      <p>このサイトはアクセスの傾向を知るために Google アナリティクス（Google LLC）を使っています。Google アナリティクスは Cookie を使ってデータを集めます。集めるデータは匿名で、個人を特定するものではありません。</p>
+      <p>データの扱いは<a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener">Google のサービスを使用するサイトやアプリから収集した情報の Google による使用</a>を参照してください。収集を止めるには、ブラウザの Cookie を無効にするか、<a href="https://tools.google.com/dlpage/gaoptout?hl=ja" target="_blank" rel="noopener">Google アナリティクス オプトアウト アドオン</a>を使ってください。</p>
+    </section>
+
+    <section>
+      <h2>外部サービスの埋め込み</h2>
+      <p>ブログの一部の記事には CodePen と YouTube の埋め込みがあります。これらは再生ボタンを押したときにだけ読み込まれ、読み込んだ後はそれぞれのサービスのプライバシーポリシーに従います。YouTube は Cookie を抑えた埋め込み（youtube-nocookie.com）を使っています。</p>
+    </section>
+
+    <section>
+      <h2>お問い合わせ</h2>
+      <p>このポリシーについてのお問い合わせは<a href="https://x.com/takumifukasawa" target="_blank" rel="noopener">X（@takumifukasawa）</a>までお願いします。</p>
+    </section>
+
+    <p class="updated"><time datetime={updated}>{updated}</time> 改定</p>
+  </article>
+</Base>
+
+<style>
+  article {
+    max-width: 48rem;
+  }
+
+  h1 {
+    margin: 0 0 1.5rem;
+    color: var(--dim);
+    font-size: 0.85em;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  section + section {
+    margin-top: 2rem;
+  }
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1em;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0 0 0.75em;
+  }
+
+  a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--dim);
+    text-underline-offset: 0.25em;
+  }
+
+  .updated {
+    margin-top: 2rem;
+    color: var(--dim);
+  }
+</style>

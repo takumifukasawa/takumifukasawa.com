@@ -15,6 +15,7 @@ export const GET: APIRoute = async ({ site }) => {
     { path: '/' },
     { path: '/about/' },
     { path: '/blog/' },
+    { path: '/privacy/' },
     ...posts.map((p) => ({ path: `/blog/${p.id}/`, lastmod: p.data.date })),
     ...sketches.map((s) => ({ path: `/lab/${s.id}/`, lastmod: s.data.date })),
   ];

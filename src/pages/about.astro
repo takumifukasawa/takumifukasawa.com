@@ -27,6 +27,8 @@ const sections = [
 ---
 
 <Base title="About" description="深澤 匠 / Takumi Fukasawa" path="/about/">
+  <h1>About</h1>
+
   <ul class="facts">
     <li>
       <a href={affiliation.href} target="_blank" rel="noopener">{affiliation.name}</a>所属
@@ -65,6 +67,15 @@ const sections = [
   /* No labels on the facts (decided with the owner): each line is told apart by how it is set instead.
      The affiliation and the roles are who; the fields, dimmer, are what with. The name is not repeated here:
      the header already carries it (decided with the owner, 2026-11-27). */
+  /* The page's label, set like the section labels: the header already names the person. */
+  h1 {
+    margin: 0 0 1.5rem;
+    color: var(--dim);
+    font-size: 0.85em;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
   .facts {
     display: grid;
     gap: 0.25rem;

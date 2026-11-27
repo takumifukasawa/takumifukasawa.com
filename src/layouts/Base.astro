@@ -15,9 +15,12 @@ type Props = {
   // The page's own path, so og:url is that page and not the site root.
   path: string;
   ogImage?: { url: string; width: number; height: number };
+  // An article (a blog post) says so, with its date; every other page is a website.
+  article?: { publishedTime: Date };
 };
 
-const { title, description, path, ogImage } = Astro.props;
+const { title, description, path, ogImage, article } = Astro.props;
+const url = new URL(path, Astro.site).href;
 const fullTitle = title ? `${title} — takumifukasawa` : 'takumifukasawa';
 const isHome = path === '/';
 
@@ -40,11 +43,14 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <!-- The page's own address. The Hatena entries point their canonical here too (scripts/hatena/head.html). -->
+    <link rel="canonical" href={url} />
     <!-- OGP. Absolute URLs come from `site` in astro.config.ts.
          summary_large_image needs an actual image, so without one the card falls back to the small form. -->
     <meta property="og:title" content={fullTitle} />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={new URL(path, Astro.site).href} />
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    {article && <meta property="article:published_time" content={article.publishedTime.toISOString()} />}
+    <meta property="og:url" content={url} />
     <meta property="og:description" content={description} />
     {ogImage && <meta property="og:image" content={ogImage.url} />}
     {ogImage && <meta property="og:image:width" content={String(ogImage.width)} />}

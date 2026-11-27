@@ -2,8 +2,12 @@
 // /blog/<id>/ — one article. <id> is the path under src/content/blog/, so it can contain slashes
 // ("2021/06/19/133849"), hence the rest parameter.
 // PROVISIONAL like the list (docs/plans/active/blog-migration.md).
+import { getImage } from 'astro:assets';
 import { getCollection, render } from 'astro:content';
+import type { ImageMetadata } from 'astro';
+import { dirname, posix, relative, resolve } from 'node:path';
 import Base from '../../layouts/Base.astro';
+import { excerpt, firstImagePath } from '../../lib/blog.ts';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
@@ -13,10 +17,37 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
+const description = post.data.description ?? (excerpt(post.body ?? '') || post.data.title);
+
+// og:image: the body's first image, resized for link cards. Article images live in src/assets/blog/
+// (docs/spec/content-model.md); the Markdown refers to them relative to the .md file.
+const articleImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/blog/**/*.{png,jpg,jpeg,gif,webp}', {
+  eager: true,
+});
+const ogImage = await (async () => {
+  const rel = firstImagePath(post.body ?? '');
+  if (!rel || !post.filePath) return undefined;
+  const key = `/${relative(process.cwd(), resolve(dirname(post.filePath), rel)).split(/[\\/]/).join(posix.sep)}`;
+  const source = articleImages[key]?.default;
+  if (!source) return undefined;
+  const image = await getImage({ src: source, width: Math.min(source.width, 1200), format: 'jpg' });
+  return {
+    url: new URL(image.src, Astro.site).href,
+    width: Number(image.attributes.width),
+    height: Number(image.attributes.height),
+  };
+})();
+
 const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
 ---
 
-<Base title={post.data.title} description={post.data.description ?? post.data.title} path={`/blog/${post.id}/`}>
+<Base
+  title={post.data.title}
+  description={description}
+  path={`/blog/${post.id}/`}
+  ogImage={ogImage}
+  article={{ publishedTime: post.data.date }}
+>
   <article>
     <header>
       <h1>{post.data.title}</h1>

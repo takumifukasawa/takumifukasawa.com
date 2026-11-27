@@ -1,0 +1,14 @@
+---
+// The AdSense tag, in every page built from layouts/Base.astro. Which pages actually show ads is decided in
+// AdSense (auto ads, with URL exclusions), not here (decided with the owner, 2026-11-27). The sketches under
+// /lab/ are separate HTML files and do not carry it: an ad over a full-screen work would break it.
+// Covered by the advertising section of /privacy/ — keep the two in step.
+// The publisher id is public (it ships in the HTML and in /ads.txt).
+const CLIENT = 'ca-pub-8518421635310179';
+---
+
+<script
+  is:inline
+  async
+  src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${CLIENT}`}
+  crossorigin="anonymous"></script>

@@ -6,6 +6,8 @@
 // The one exception already made is the font, so Japanese titles do not fall back to whatever the OS picks.
 //
 // No prose (AGENTS.md): the header is the name and labels, nothing else.
+import AdSense from '../components/AdSense.astro';
+
 type Props = {
   // undefined on the top page, which is the site's name and nothing more.
   title?: string;
@@ -67,6 +69,9 @@ const links = [
       gtag('js', new Date());
       gtag('config', 'G-L3EDWSFJ82');
     </script>
+    <AdSense />
+    <!-- Page-specific head tags. -->
+    <slot name="head" />
   </head>
   <body>
     <header>

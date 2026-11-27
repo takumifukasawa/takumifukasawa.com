@@ -2,10 +2,11 @@
 // /privacy/ — the privacy policy. Functional text (AGENTS.md allows it): what the site collects and through
 // whom, nothing more. Keep it true to what the pages actually load:
 //   - Google Analytics 4: src/layouts/Base.astro and public/_shell.js (decision 0004)
+//   - Google AdSense on every Base.astro page (not the sketches): src/components/AdSense.astro
 //   - click-to-load CodePen / YouTube in blog articles (docs/plans/active/blog-migration.md)
 // Each <p> is one source line: in Japanese a line break in the source renders as a stray space.
-// Add a section when something new is loaded (AdSense: before applying; it needs its own paragraph and,
-// for visitors in the EEA / UK, a consent banner). Update `updated` whenever the text changes.
+// Add a section when something new is loaded. Visitors in the EEA / UK get Google's consent message, turned
+// on in AdSense (Privacy & messaging), not built here. Update `updated` whenever the text changes.
 import Base from '../layouts/Base.astro';
 
 const updated = '2026-11-27';
@@ -19,6 +20,12 @@ const updated = '2026-11-27';
       <h2>アクセス解析</h2>
       <p>このサイトはアクセスの傾向を知るために Google アナリティクス（Google LLC）を使っています。Google アナリティクスは Cookie を使ってデータを集めます。集めるデータは匿名で、個人を特定するものではありません。</p>
       <p>データの扱いは<a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener">Google のサービスを使用するサイトやアプリから収集した情報の Google による使用</a>を参照してください。収集を止めるには、ブラウザの Cookie を無効にするか、<a href="https://tools.google.com/dlpage/gaoptout?hl=ja" target="_blank" rel="noopener">Google アナリティクス オプトアウト アドオン</a>を使ってください。</p>
+    </section>
+
+    <section>
+      <h2>広告</h2>
+      <p>このサイトでは Google AdSense（Google LLC）の広告を載せています。Google などの第三者配信事業者は Cookie を使い、このサイトや他のサイトへの過去のアクセスに基づいて広告を配信します。</p>
+      <p>Google が Cookie を使って広告を配信する仕組みは<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener">広告 – ポリシーと規約 – Google</a>を参照してください。パーソナライズ広告は<a href="https://adssettings.google.com/" target="_blank" rel="noopener">広告設定</a>で無効にできます。</p>
     </section>
 
     <section>

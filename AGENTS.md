@@ -1,4 +1,4 @@
-<!-- harness:begin v=1.3.1 -->
+<!-- harness:begin v=1.12.0 -->
 # エージェント運用の共通ルール（agent-harness 管理領域）
 
 このブロックは agent-harness が管理する。直したい場合は直してよいが、`harness diff` で差分を確認し上流へ戻すこと（詳細: `.agents/skills/harness-maintain/SKILL.md`）。
@@ -18,7 +18,7 @@
 | 依存ライブラリ等の外部知識の抜粋 | `docs/references/` |
 | 何を作るか（唯一の正） | `docs/spec/` |
 | 長期タスクの役割分担（統括 / 実装 / レビュー / 機械検査） | `docs/roles/` |
-| 長期タスクの機械可読な進行状態 | `.harness/state/progress.json`, `stages.json`（gitignore） |
+| 長期タスクの機械可読な進行状態 | `.harness/state/progress.json`, `stages.json`（gitignore。レポートも含め `git add -f` でコミットしない。`doctor` が FAIL にする） |
 | 特定ディレクトリだけに効く規律 | そのディレクトリの `AGENTS.md`（一覧: `docs/rules/README.md`） |
 
 表の場所は雛形の**既定**。プロジェクトが別の場所を使うなら `docs/README.md` の索引にそう書く。**索引が正**で、索引にある限り「流儀と違う」とは扱わず、置き場を変える提案もしない。
@@ -32,7 +32,7 @@
 
 ## 検証と報告
 
-- 実装後は `.harness/scripts/check.sh`（`harness check`）を回す。これが「完了」の客観条件。
+- 実装後は `.harness/scripts/check.sh`（`harness check`。差分に関係する検査だけが回る）を回す。これが「完了」の客観条件。`on` で飛ばす検査があるプロジェクトでは、push の前に `harness check --full` で全部回す（push の関門が求める）。
 - 振る舞いを変えたらテストを足す（バグ修正は再現テストから）。テスト基盤が無い・書けないときは足さずに完了報告へ理由を 1 行書く。確認は求めない。
 - 結果は出力ごと報告する。失敗はそのまま伝え、スキップした検査は明言する。
 - 検査を通すためにテストや検査そのものを弱めない。必要なら理由を `docs/decisions/` に残して人間に判断を委ねる。
@@ -55,7 +55,7 @@
 ## やらないこと
 
 - 破壊的な git 操作（`push --force`、push 済みの履歴の書き換え、ブランチ削除）を指示なしに行わない。push していないコミットは書き換えてよい（push 前のレビューで直すときなど）。
-- 秘密情報・個人情報をコミットしない。
+- 秘密情報・個人情報・機械識別子（端末の UDID、署名のチーム ID、端末名、LAN の IP。形では見分けられず機械では止まらないので、環境変数か実行時の取得にし、実装役への指示にも実物を書かない）をコミットしない。コミットメッセージにもコミットするファイルにも、claude.ai のリンク（`Claude-Session:` の行のセッションの URL、Artifact の URL など）を入れない（公開されうる履歴に ID が残る。Remote Control や Artifact を使うと付けるよう指示されることがある。push の関門が止める。`Co-Authored-By:` は付けてよい）。
 - ハーネス管理ファイル（`.harness/manifest.json` に `managed` と記録されているもの）を黙って改変したまま放置しない。
 <!-- harness:end -->
 

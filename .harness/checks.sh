@@ -28,13 +28,13 @@ check      "doctor: FAIL 0"    "bash .harness/bin/harness doctor || { echo 'doct
 # $(...), and the grep below then reads 0 tests and fails with a misleading message (docs/learnings.md).
 check fast "tests green (>0)"   "out=\$(FORCE_COLOR=0 node --test 'scripts/**/*.test.ts' 2>&1); s=\$?; echo \"\$out\" | grep -E '^ℹ (tests|fail) '; n=\$(echo \"\$out\" | sed -n 's/^ℹ tests //p'); [ \"\${n:-0}\" -gt 0 ] || { echo 'テストが 0 件。0 件で green は不合格。scripts/**/*.test.ts（node:test）に足す。'; exit 1; }; [ \$s -eq 0 ] || { echo \"\$out\" | grep -A8 '✖' | head -60; echo '失敗したテストを直す（pnpm test で再現）。'; exit 1; }"
 # Prettier (.prettierrc.json). Published sketches are in .prettierignore: formatting them would change their source hash.
-check fast "format clean"       "pnpm -s prettier --check . >/dev/null 2>&1 || { pnpm -s prettier --list-different .; echo '上のファイルが Prettier の書式と違う。pnpm format で直す（VS Code なら保存で直る。.vscode/settings.json）。公開済みの作品を直すと lab build in sync が落ちるので、.prettierignore に入っているか確かめる。'; exit 1; }"
+check fast related "pnpm -s prettier --check --ignore-unknown" "format clean" "pnpm -s prettier --check . >/dev/null 2>&1 || { pnpm -s prettier --list-different .; echo '上のファイルが Prettier の書式と違う。pnpm format で直す（VS Code なら保存で直る。.vscode/settings.json）。公開済みの作品を直すと lab build in sync が落ちるので、.prettierignore に入っているか確かめる。'; exit 1; }"
 check fast "lab build in sync"  "node scripts/check.ts lab-build-in-sync"
 check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"
 check fast "lab head in sync"   "node scripts/check.ts lab-head-in-sync"
 check fast "media keys resolve" "node scripts/check.ts media-keys-resolve"
 # fast にしない: astro check は 10 秒ほどかかる。src/ だけでなく scripts/ と lab/ の .ts も見る（tsconfig.json、決定 0010）。
-check      "types pass"         "pnpm -s typecheck || { echo '型エラーがある。上の file:line を直す（pnpm typecheck で再現）。TypeScript 7 は astro check が未対応なので 6 のまま（決定 0010）。'; exit 1; }"
+check on "src/ lab/ scripts/ astro.config.ts tsconfig.json package.json pnpm-lock.yaml" "types pass"         "pnpm -s typecheck || { echo '型エラーがある。上の file:line を直す（pnpm typecheck で再現）。TypeScript 7 は astro check が未対応なので 6 のまま（決定 0010）。'; exit 1; }"
 # fast にしない: Chrome を起動するので数秒かかる。だが公開前には必ず通す（これだけが成果物そのものを動かす検査）。
-check      "artifacts run"      "node scripts/check-artifacts.ts"
+check on "lab/ public/ scripts/ package.json pnpm-lock.yaml" "artifacts run"      "node scripts/check-artifacts.ts"

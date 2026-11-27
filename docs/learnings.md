@@ -383,3 +383,10 @@
 - 対処 / 再発したら: Cloudflare ダッシュボードの **Observability → Analytics → Web analytics → Manage site** で Disable にする
   （2026-11-27 に実施。直後にブラウザ相当のリクエストで消えたことを確認）。repo に無いタグが本番に出ていたら、
   まず Cloudflare 側の「配信時に差し込む」機能（Web Analytics、Zaraz など）を疑い、確かめるときは UA を付けて `curl` する。
+
+## 2026-11-27 ハーネスの配布物（`.harness/bin`、`.githooks`、スキル）が手元から消えていた
+
+- 症状: `.harness/bin/harness` が無く `harness check` が回らない。`.githooks/pre-commit` も無いので、コミット時の検査が**黙って**走らなくなっていた（コミットの出力に `harness check:` の行が出ない）。
+- 原因: 未確定。`git checkout main` → `merge --ff-only develop` → `git checkout develop` で公開した後に気付いた。どちらのブランチもこれらを追跡していない（2026-10-16 の `3ebf4a6` で追跡を外した）。
+- 対処 / 再発したら: `bash <agent-harness の場所>/bin/harness install`（場所は `.harness/source.local`）。版は manifest のまま戻る。
+  コミットの出力に `harness check:` の行が無ければ、まず `ls .harness/bin .githooks` を見る。

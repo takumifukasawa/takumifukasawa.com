@@ -1,4 +1,4 @@
-// /_shell.js — link back to the site + analytics, loaded by every sketch page (/lab/<slug>/).
+// /_shell.js — link back to the site + analytics + the AdSense tag, loaded by every sketch page (/lab/<slug>/).
 // Every sketch embeds `<script src="/_shell.js" defer></script>`; everything else lives here, so changing
 // this one file updates all sketches without rebuilding them. Contract: docs/decisions/0004-lab-shell.md.
 //
@@ -32,6 +32,29 @@
     window.gtag = gtag;
     gtag('js', new Date());
     gtag('config', GA_ID);
+  } catch {
+    // ignore
+  }
+})();
+
+// The AdSense tag, the same one every site page carries (src/components/AdSense.astro -- change both
+// together). It only loads the script: whether a sketch shows an ad is set in AdSense (auto ads with /lab/
+// excluded), not here (decided with the owner, 2026-11-27). Skipped in an iframe like the analytics above,
+// and also with ?clean so a recording never catches an ad. Production host only, so local checks
+// (`artifacts run`) and the dev server do not talk to the ad network.
+(() => {
+  try {
+    if (window.top !== window) return;
+    if (location.hostname !== 'takumifukasawa.com') return;
+    if (new URLSearchParams(location.search).has('clean')) return;
+    if (document.querySelector('script[src*="adsbygoogle.js"]')) return;
+
+    const CLIENT = 'ca-pub-8518421635310179';
+    const tag = document.createElement('script');
+    tag.async = true;
+    tag.crossOrigin = 'anonymous';
+    tag.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${CLIENT}`;
+    document.head.appendChild(tag);
   } catch {
     // ignore
   }

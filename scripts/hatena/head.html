@@ -1,0 +1,19 @@
+<!-- takumifukasawa.hatenablog.com -> takumifukasawa.com/blog/ (2026-11, docs/plans/active/blog-migration.md).
+     Pasted into Hatena Blog: 設定 → 詳細設定 → 「<head>要素にメタデータを追加」. Hatena cannot send a 301 from a
+     *.hatenablog.com subdomain, so this is the redirect: point the canonical at the new page, then replace the
+     location. /entry/<basename> maps to /blog/<basename>/ by rule (the import kept Hatena's basenames); every
+     other page (top, archive, category) goes to /blog/. Checked by scripts/hatena/check-redirects.ts. -->
+<script>
+  (function () {
+    var m = location.pathname.match(/^\/entry\/(.+?)\/?$/);
+    var to = 'https://takumifukasawa.com/blog/' + (m ? m[1] + '/' : '');
+    var canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = to;
+    location.replace(to + location.hash);
+  })();
+</script>

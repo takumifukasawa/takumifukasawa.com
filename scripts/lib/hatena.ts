@@ -1,5 +1,5 @@
 // Hatena Blog export (Movable Type format) -> Markdown for src/content/blog/. Pure functions only: the I/O
-// (downloading images and gists, writing files) is in scripts/hatena-import.ts.
+// (downloading images and gists, writing files) is in scripts/hatena/import.ts.
 // Plan: docs/plans/active/blog-migration.md.
 import TurndownService from 'turndown';
 

@@ -157,7 +157,7 @@ const blog = z.object({
 - id は `src/content/blog/` からのパス。はてなの BASENAME をそのまま使うので、日付 URL だった 7 本は
   `2021/06/19/133849` のように `/` を含む。ページは `/blog/<id>/` で、はてなの `/entry/<id>` から規則だけで移せる。
 - 本文の画像は `src/assets/blog/<id>/` に置き、Astro の画像最適化に通す（下の「ファイル形式と執筆環境」）。
-- 移行元の URL（はてな）は持たない。`/entry/<id>` から導出できる。対応表は `src/data/hatena-redirects.json`（`scripts/hatena-import.ts` が書く）。
+- 移行元の URL（はてな）は持たない。`/entry/<id>` から導出できる。対応表は `src/data/hatena-redirects.json`（`scripts/hatena/import.ts` が書く）。
 
 ## notes（保留。blog に置き換わる見込み）
 

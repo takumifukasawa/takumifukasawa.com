@@ -1,6 +1,6 @@
 // Import a Hatena Blog export into src/content/blog/ (plan: docs/plans/active/blog-migration.md).
 //
-//   node scripts/hatena-import.ts <export.txt> [--cache <dir>]
+//   node scripts/hatena/import.ts <export.txt> [--cache <dir>]
 //
 // Only published entries. Images are downloaded from Hatena Fotolife into the cache, then copied next to the
 // site's other article images (src/assets/blog/<basename>/, docs/spec/content-model.md). Gists are inlined as
@@ -12,8 +12,8 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative } from 'node:path';
 import { parseArgs } from 'node:util';
 import sharp from 'sharp';
-import { cleanHtml, formatBlogMd, gistIds, imageUrls, newPath, oldUrl, parseExport, toMarkdown, type Gist } from './lib/hatena.ts';
-import { repoRoot } from './lib/lab.ts';
+import { cleanHtml, formatBlogMd, gistIds, imageUrls, newPath, oldUrl, parseExport, toMarkdown, type Gist } from '../lib/hatena.ts';
+import { repoRoot } from '../lib/lab.ts';
 
 const MAX_BYTES = 2 * 1024 * 1024; // the `no large files` check
 
@@ -23,7 +23,7 @@ const { values, positionals } = parseArgs({
 });
 const exportPath = positionals[0];
 if (!exportPath) {
-  console.error('usage: node scripts/hatena-import.ts <export.txt> [--cache <dir>]');
+  console.error('usage: node scripts/hatena/import.ts <export.txt> [--cache <dir>]');
   process.exit(1);
 }
 const cache = values.cache!;

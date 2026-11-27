@@ -3,7 +3,7 @@
 - 状態: 合意済（2026-10-08）
 - 関連: `../decisions/0001-overall-architecture.md`
 
-sketch / Works / Notes の frontmatter はここが唯一の正。実装は `src/content.config.ts`（Astro 5 の置き場）で、この doc と 1:1 に対応させる。
+sketch / Works / Notes / blog の frontmatter はここが唯一の正。実装は `src/content.config.ts`（Astro 5 の置き場）で、この doc と 1:1 に対応させる。
 **schema を変えたら、この doc を同じ commit で直す。**
 
 ## 目的
@@ -139,7 +139,27 @@ const works = z.object({
 
 `kind: 'library'` は PaleGL のような技術資産を Works として置く枠（低レイヤーの技術力を示す資産として残す、という方針のため）。
 
-## notes
+## blog（2026-11-27。notes を置き換え中）
+
+はてなブログの移行（`../plans/active/blog-migration.md`）で入れた。**仮の schema**: 移した 42 本を並べてから、
+daily の短文や sketch との関係を決めるときに見直す（計画のタスク 4）。それまで下の notes の設計は保留。
+
+```ts
+const blog = z.object({
+  title: z.string(),
+  date: z.coerce.date(),
+  tags: z.array(z.string()).default([]),   // はてなのカテゴリをそのまま。lab の tags の正規化（tech.ts）はまだ掛けない
+  description: z.string().optional(),      // はてなの EXCERPT。無ければ title を meta description に使う
+  draft: z.boolean().default(false),
+});
+```
+
+- id は `src/content/blog/` からのパス。はてなの BASENAME をそのまま使うので、日付 URL だった 7 本は
+  `2021/06/19/133849` のように `/` を含む。ページは `/blog/<id>/` で、はてなの `/entry/<id>` から規則だけで移せる。
+- 本文の画像は `src/assets/blog/<id>/` に置き、Astro の画像最適化に通す（下の「ファイル形式と執筆環境」）。
+- 移行元の URL（はてな）は持たない。`/entry/<id>` から導出できる。対応表は `src/data/hatena-redirects.json`（`scripts/hatena-import.ts` が書く）。
+
+## notes（保留。blog に置き換わる見込み）
 
 ```ts
 const notes = z.object({
@@ -161,6 +181,7 @@ const notes = z.object({
 |---|---|---|
 | `lab` | `.md` | 本文は原則空（frontmatter 中心）。MDX のビルドコストを 500 件分払う意味がない |
 | `notes` | `.mdx` | 本文中に実行デモ・図・シェーダーのライブ編集を埋める。素の `.md` ではコンポーネントが使えない |
+| `blog` | `.md` | はてなから移した記事は HTML から変換した素の Markdown。デモを埋めたい記事が出たら `.mdx` を足す |
 | `works` | `.mdx` | concept / process / technology を作り込む。件数が少ないのでコストは無視できる |
 
 Notes / Works の執筆のために入れるもの（いずれも設定数行）。**P1 では入れない** — 記事を書き始める P1.5 で入れる（`site-v0.md`）。

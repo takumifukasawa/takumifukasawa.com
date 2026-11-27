@@ -147,6 +147,7 @@ Worker スクリプトも置かない（assets だけの Worker）。全リク�
 - [ ] Cloudflare Pages で `main` への push から自動 deploy され、PR はプレビュー URL が出る
 - [ ] sketch が 500 件ある状態を**ダミーデータで検証済み**: ビルド 60 秒以内、`/` の初期転送 1.5 MB 以内
 - [ ] サイトは **iframe を 1 つも生成しない**（実物へは原寸を開くリンク。決定 0001）
+      2026-11-27 の例外: **ブログの記事では、読む人がボタンを押してから読み込む iframe（CodePen / YouTube）だけ許す。** 開いただけでは外部に何も読み込まない（`plans/active/blog-migration.md` の決定ログ）
 - [ ] 各ページに OGP（`og:title` / `og:description` / `og:image` 絶対URL / `twitter:card: summary_large_image`）が入る
 - [ ] 全ページで `<img>` / `<video>` に `width` / `height` が入り、CLS が 0.1 未満
 - [ ] 縦向き（1080×1920）の sketch を混ぜても `/` のグリッドが崩れない（カードは正方形 + `object-fit: cover`）

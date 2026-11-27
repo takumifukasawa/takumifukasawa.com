@@ -1,0 +1,172 @@
+---
+// /blog/<id>/ — one article. <id> is the path under src/content/blog/, so it can contain slashes
+// ("2021/06/19/133849"), hence the rest parameter.
+// PROVISIONAL like the list (docs/plans/active/blog-migration.md).
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+---
+
+<Base title={post.data.title} description={post.data.description ?? post.data.title} path={`/blog/${post.id}/`}>
+  <article>
+    <header>
+      <h1>{post.data.title}</h1>
+      <p class="meta">
+        <time datetime={post.data.date.toISOString()}>{ymd(post.data.date)}</time>
+        {post.data.tags.length > 0 && <span>{post.data.tags.join(' / ')}</span>}
+      </p>
+    </header>
+    <div class="body">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<script>
+  // Click-to-load embeds (CodePen / YouTube) written by scripts/lib/hatena.ts as
+  // <div class="embed" data-embed-src="..."><button>▶</button><a>title</a></div>.
+  // Nothing is requested from the service until the button is pressed; the link works without this script.
+  document.querySelectorAll<HTMLElement>('.embed[data-embed-src]').forEach((box) => {
+    const button = box.querySelector('button');
+    const link = box.querySelector('a');
+    button?.addEventListener('click', () => {
+      const iframe = document.createElement('iframe');
+      iframe.src = box.dataset.embedSrc!;
+      iframe.title = link?.textContent ?? '';
+      if (box.dataset.embedAllow) iframe.allow = box.dataset.embedAllow;
+      iframe.allowFullscreen = true;
+      box.replaceChildren(iframe);
+      box.classList.add('loaded');
+    });
+  });
+</script>
+
+<style>
+  article {
+    max-width: 48rem;
+  }
+
+  header {
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.25rem, 3vw, 1.6rem);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1rem;
+    margin: 0.5rem 0 0;
+    color: var(--dim);
+  }
+
+  /* The Markdown body: its elements are not this component's, so the rules reach them with :global. */
+  .body :global(:is(h2, h3, h4)) {
+    margin: 2.5em 0 0.75em;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .body :global(h2) {
+    font-size: 1.2em;
+  }
+
+  .body :global(h3) {
+    font-size: 1.05em;
+  }
+
+  .body :global(a) {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--dim);
+    text-underline-offset: 0.25em;
+    overflow-wrap: anywhere;
+  }
+
+  .body :global(img) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .body :global(pre) {
+    overflow-x: auto;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .body :global(:not(pre) > code) {
+    padding: 0.1em 0.3em;
+    background: var(--line);
+  }
+
+  .body :global(blockquote) {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 2px solid var(--line);
+    color: var(--dim);
+  }
+
+  /* Click-to-load embeds. The box has its final height (or aspect ratio) inline, so loading does not shift
+     the page. */
+  .body :global(.embed) {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    margin: 1.5em 0;
+    border: 1px solid var(--line);
+  }
+
+  .body :global(.embed button) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .body :global(.embed button:hover),
+  .body :global(.embed button:focus-visible) {
+    background: var(--line);
+  }
+
+  .body :global(.embed a) {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.75rem;
+    color: var(--dim);
+    font-size: 0.85em;
+  }
+
+  .body :global(.embed iframe) {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .body :global(hr) {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 2.5em 0;
+  }
+</style>

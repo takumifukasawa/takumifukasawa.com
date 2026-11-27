@@ -20,13 +20,14 @@ const fullTitle = title ? `${title} — takumifukasawa` : 'takumifukasawa';
 const isHome = path === '/';
 
 // Where else the work lives. Labels only -- the name of the place is the whole content. External ones open
-// in a new tab; About is part of this site and does not. note is expected to join later.
+// in a new tab; Blog and About are part of this site and do not. The Hatena Blog link went when its entries
+// moved here (docs/plans/active/blog-migration.md).
 const links = [
+  { 'label': 'Blog', 'href': '/blog/', 'external': false },
   { 'label': 'About', 'href': '/about/', 'external': false },
   { 'label': 'X', 'href': 'https://x.com/takumifukasawa', 'external': true },
   { 'label': 'GitHub', 'href': 'https://github.com/takumifukasawa', 'external': true },
   { 'label': 'Shadertoy', 'href': 'https://www.shadertoy.com/user/takumifukasawa', 'external': true },
-  { 'label': 'Hatena Blog', 'href': 'https://takumifukasawa.hatenablog.com/', 'external': true },
 ];
 ---
 
@@ -79,7 +80,7 @@ const links = [
                   {link.label}
                 </a>
               ) : (
-                <a href={link.href} aria-current={link.href === path ? 'page' : undefined}>
+                <a href={link.href} aria-current={path === link.href ? 'page' : path.startsWith(link.href) ? 'true' : undefined}>
                   {link.label}
                 </a>
               )}
@@ -164,7 +165,7 @@ const links = [
 
   .links a:hover,
   .links a:focus-visible,
-  .links a[aria-current='page'] {
+  .links a[aria-current] {
     color: var(--fg);
   }
 </style>

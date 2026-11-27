@@ -1,0 +1,170 @@
+[
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/bambu-lab-printer-status-to-slack",
+    "to": "/blog/bambu-lab-printer-status-to-slack/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/learning-cvae-from-vae",
+    "to": "/blog/learning-cvae-from-vae/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/learning-vae-sample",
+    "to": "/blog/learning-vae-sample/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/wsl2_to_wsl1",
+    "to": "/blog/wsl2_to_wsl1/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/threejs-deferred-shading",
+    "to": "/blog/threejs-deferred-shading/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-ssr-custom-postprocess-forward",
+    "to": "/blog/unity-ssr-custom-postprocess-forward/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-ssao-custom-post-process",
+    "to": "/blog/unity-ssao-custom-post-process/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2022/11/21/184542",
+    "to": "/blog/2022/11/21/184542/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/webgl-cube-map-axex",
+    "to": "/blog/webgl-cube-map-axex/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2022/08/12/232532",
+    "to": "/blog/2022/08/12/232532/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/windows-ideavimrc-not-working",
+    "to": "/blog/windows-ideavimrc-not-working/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/web-worker-private-field",
+    "to": "/blog/web-worker-private-field/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/photoshop-overlay",
+    "to": "/blog/photoshop-overlay/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/ffmpeg-convert-webm-to-mp4",
+    "to": "/blog/ffmpeg-convert-webm-to-mp4/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-dissolver-vfx",
+    "to": "/blog/unity-dissolver-vfx/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2021/08/18/225510",
+    "to": "/blog/2021/08/18/225510/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2021/07/08/013148",
+    "to": "/blog/2021/07/08/013148/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2021/06/19/133849",
+    "to": "/blog/2021/06/19/133849/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2021/06/19/023110",
+    "to": "/blog/2021/06/19/023110/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-timeline-focus-shortcut",
+    "to": "/blog/unity-timeline-focus-shortcut/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/node-minify-images",
+    "to": "/blog/node-minify-images/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/jsdoit-to-github-pages",
+    "to": "/blog/jsdoit-to-github-pages/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/exec-promise-in-sequence",
+    "to": "/blog/exec-promise-in-sequence/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2021/01/22/202656",
+    "to": "/blog/2021/01/22/202656/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/webgl-threejs-soft-particle",
+    "to": "/blog/webgl-threejs-soft-particle/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/get-file-size-with-unit",
+    "to": "/blog/get-file-size-with-unit/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/react-timeout-custom-hooks",
+    "to": "/blog/react-timeout-custom-hooks/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/youtube-iframe-autoplay-notworking-when-disable-controls",
+    "to": "/blog/youtube-iframe-autoplay-notworking-when-disable-controls/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/2020/06/25/214918",
+    "to": "/blog/2020/06/25/214918/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/gatsby-ios-safari-basic-auth",
+    "to": "/blog/gatsby-ios-safari-basic-auth/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-leapmotion-vfxgraph",
+    "to": "/blog/unity-leapmotion-vfxgraph/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/threejs-billboard-shader",
+    "to": "/blog/threejs-billboard-shader/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/css-sprite-animation-gpu-rendering",
+    "to": "/blog/css-sprite-animation-gpu-rendering/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/webgl-chrome-hardware-acceleration",
+    "to": "/blog/webgl-chrome-hardware-acceleration/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/threejs-backface-culling-outline",
+    "to": "/blog/threejs-backface-culling-outline/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-azurekinect-setup",
+    "to": "/blog/unity-azurekinect-setup/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/unity-csv-class-static",
+    "to": "/blog/unity-csv-class-static/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/sparkar-rimlight",
+    "to": "/blog/sparkar-rimlight/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/context2d-cpu-raymarching",
+    "to": "/blog/context2d-cpu-raymarching/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/css-cheap-blur",
+    "to": "/blog/css-cheap-blur/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/leapmotion-niagara",
+    "to": "/blog/leapmotion-niagara/"
+  },
+  {
+    "from": "https://takumifukasawa.hatenablog.com/entry/ue4-leapmotion-crush-case",
+    "to": "/blog/ue4-leapmotion-crush-case/"
+  }
+]

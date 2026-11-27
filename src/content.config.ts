@@ -1,5 +1,6 @@
 // Content collections. 1:1 with docs/spec/content-model.md — change both in the same commit.
-// Only `lab` for now; works / notes are added when their first entry is written (P1.5 / P2).
+// `lab` and `blog` (the Hatena Blog migration, docs/plans/active/blog-migration.md). works is added with its
+// first entry (P2).
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
@@ -23,4 +24,17 @@ const lab = defineCollection({
   }),
 });
 
-export const collections = { lab };
+// Articles. The id is the path under src/content/blog/ ("threejs-billboard-shader", or "2021/06/19/133849" for
+// entries that had a date URL on Hatena), and the page is /blog/<id>/, so Hatena's /entry/<id> maps by rule.
+const blog = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+  schema: z.object({
+    title: z.string(),
+    date: z.coerce.date(),
+    tags: z.array(z.string()).default([]),
+    description: z.string().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { lab, blog };

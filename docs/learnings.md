@@ -373,3 +373,13 @@
 - 対処 / 再発したら: WebGPU の作品だけ、フラグなし（実 GPU）のブラウザでもう一度開く（`scripts/lib/chrome.ts` の `ChromeMode`、
   `check-artifacts.ts`）。adapter が取れないマシンでは `SKIPPED` と出る。WebGPU の作品が `ok` なのに中身が動いていない気がしたら、
   まず出力に `<slug> (WebGPU): ok` の行があるか（`SKIPPED` になっていないか）を見る。
+
+## 2026-11-27 GA4 に切り替えた後も、Cloudflare Web Analytics のビーコンが全ページに差し込まれていた
+
+- 症状: 作品ページにも `/` にも `static.cloudflareinsights.com/beacon.min.js` が入っていたが、repo のどこにも無い。
+  `curl` で普通に取ると出ず、ブラウザの User-Agent と `Accept: text/html` を付けたときだけ出る。
+- 原因: 2026-10-11 に計測を GA4 へ切り替えたとき、Cloudflare 側の Web Analytics（Automatic setup）を止め忘れていた。
+  Cloudflare が配信時に HTML へ差し込むので、ソースにも成果物にも現れない。
+- 対処 / 再発したら: Cloudflare ダッシュボードの **Observability → Analytics → Web analytics → Manage site** で Disable にする
+  （2026-11-27 に実施。直後にブラウザ相当のリクエストで消えたことを確認）。repo に無いタグが本番に出ていたら、
+  まず Cloudflare 側の「配信時に差し込む」機能（Web Analytics、Zaraz など）を疑い、確かめるときは UA を付けて `curl` する。

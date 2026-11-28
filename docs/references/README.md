@@ -5,6 +5,7 @@
 | ファイル | 元 | 取得日 | 何に使うか |
 |---|---|---|---|
 | [cloudflare-limits.md](cloudflare-limits.md) | developers.cloudflare.com / docs.github.com | 2026-10-07 | Cloudflare Pages・R2・GitHub Pages・Git LFS の制限と料金。配信方式と天井の判断根拠 |
+| [cloudflare-deploy-hooks.md](cloudflare-deploy-hooks.md) | developers.cloudflare.com | 2026-11-28 | Workers Builds の Deploy Hooks。日記の中継リポジトリへの push からサイトを作り直す |
 
 - 元 URL と取得日を必ず書く（腐敗の検知に使う）。
 - 全文コピーではなく、このプロジェクトが依存している部分の抜粋にする。

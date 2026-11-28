@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import sharp from 'sharp';
 import { stripMetadata, syncDiary } from './diary.ts';
-import { pickSource } from '../diary/fetch.ts';
+import { normalizeKey, pickSource } from '../diary/fetch.ts';
 import { imagesWithMetadata } from '../check-dist-images.ts';
 
 // A JPEG that carries a camera, a date and a GPS position, rotated by EXIF (orientation 6 = 90° clockwise).
@@ -130,4 +130,19 @@ describe('imagesWithMetadata (the build-time net)', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+});
+
+describe('normalizeKey (a deploy key pasted into a build variable)', () => {
+  const key = [
+    '-----BEGIN OPENSSH PRIVATE KEY-----',
+    'a'.repeat(70),
+    'b'.repeat(70),
+    'c'.repeat(12),
+    '-----END OPENSSH PRIVATE KEY-----',
+    '',
+  ].join('\n');
+  test('an intact key is unchanged', () => assert.equal(normalizeKey(key), key));
+  test('line breaks turned into spaces come back', () => assert.equal(normalizeKey(key.replace(/\n/g, ' ')), key));
+  test('line breaks turned into literal \\n come back', () => assert.equal(normalizeKey(key.replace(/\n/g, '\\n')), key));
+  test('surrounding whitespace is ignored', () => assert.equal(normalizeKey(`  ${key}  \n\n`), key));
 });

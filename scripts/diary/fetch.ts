@@ -16,6 +16,16 @@ import { repoRoot } from '../lib/lab.ts';
 
 export const CONTENT_OUT = join(repoRoot, '.content');
 
+// A private key as pasted into a build variable may have lost its line breaks: they come back as spaces, or as
+// literal "\\n". ssh then fails with "error in libcrypto". Rebuild the PEM: header, base64 in 70-column lines, footer.
+export const normalizeKey = (raw: string): string => {
+  const text = raw.replace(/\\n/g, '\n').trim();
+  const m = text.match(/-----BEGIN ([A-Z ]+)-----([\s\S]*?)-----END \1-----/);
+  if (!m) return `${text}\n`;
+  const body = m[2]!.replace(/\s+/g, '');
+  return `-----BEGIN ${m[1]}-----\n${body.match(/.{1,70}/g)!.join('\n')}\n-----END ${m[1]}-----\n`;
+};
+
 export type Source = { kind: 'vault'; vault: string } | { kind: 'repo'; repo: string; key: string } | { kind: 'none'; fatal: boolean };
 
 export const pickSource = (env: NodeJS.ProcessEnv): Source => {
@@ -29,8 +39,7 @@ const fromRepo = (repo: string, key: string) => {
   const tmp = mkdtempSync(join(tmpdir(), 'diary-'));
   try {
     const keyFile = join(tmp, 'key');
-    // Build variables keep newlines as "\n" when pasted on one line; a key needs real ones and a final newline.
-    writeFileSync(keyFile, `${key.replace(/\\n/g, '\n').trim()}\n`);
+    writeFileSync(keyFile, normalizeKey(key));
     chmodSync(keyFile, 0o600);
     const ssh = `ssh -i ${keyFile} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=${join(tmp, 'known_hosts')}`;
     execFileSync('git', ['clone', '--depth', '1', '--quiet', repo, join(tmp, 'repo')], {

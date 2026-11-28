@@ -56,8 +56,8 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 | 4 | collection とページ（最小） | 済（2026-11-28、未公開） | `/diary/`（noindex）、`_headers`・robots.txt・検査 `diary not indexed`。`pnpm build` = 取り込み → astro build → `scripts/check-dist-images.ts`（画像にメタデータが残っていたら失敗）。中継リポジトリには手で 1 回目の同期を入れ、Cloudflare と同じ条件（読み取り用の鍵）でビルドが通ることを確認 | 見せ方は `blog-migration.md` のタスク 4 で決める。ここでは出るところまで |
 | 5 | vault 側の GitHub Actions（1 時間おき + 手動。3 (a) を動かし、変更があれば Deploy Hook） | 下書き済み（2026-11-28） | 正本は `scripts/diary/vault-workflow.yml`（vault の `.github/workflows/publish-site-contents.yml` に写す）。このリポジトリの `main` の `scripts/diary/sync.ts` を使うので、`main` に入ってから動く。vault への追加は人間の確認を取ってから |
 | 6 | 中継リポジトリ、デプロイキー 2 つ、Deploy Hook を作り、secret に入れる | 途中（2026-11-28: リポジトリ `takumifukasawa/site-contents-internal`（private）とデプロイキー `vault-actions-writer`（書き込み可）・`cloudflare-build-reader`（読み取り専用）を作った。鍵の秘密の側は作った Mac の `~/.ssh/site-contents-internal/`。secret と Deploy Hook は未） | **人間がやる**（アカウント操作）。手順はこの段でまとめて渡す。Cloudflare のビルドから SSH の鍵で clone できるかは未確認（この段で試す） |
-| 7 | 新しいブログ記事を vault で書けるようにする（ブログ用のフォルダ、記事ごとのフォルダに本文と画像） | 未着手 | 3 の仕組みにフォルダを足すだけにする |
-| 8 | 移した 42 記事と画像を vault へ移し、このリポジトリから消す | 未着手 | 任意。7 の後。URL（ファイル名）は変えない。og:image の画像の探し先も直す |
+| 7 | 新しいブログ記事を vault で書けるようにする（ブログ用のフォルダ、記事ごとのフォルダに本文と画像） | 済（2026-11-28） | vault の `11_blog/<id>/<id の最後の部分>.md`。`scripts/lib/diary.ts` の `syncSite` が `daily/` と `blog/` を写す。中継リポジトリに `blog/` が無ければ CI のビルドは止まる |
+| 8 | 移した 42 記事と画像を vault へ移し、このリポジトリから消す | 済（2026-11-28） | `scripts/blog/to-vault.ts`（一度きり）。切り替えの前後で `dist/blog/` の 45 ページとサイトマップが同じ（画像のハッシュを除く）ことを比べてから消した |
 
 ## 決定ログ（日付・決めたこと・理由・落選案）
 
@@ -87,6 +87,7 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 
 - 2026-11-28: 日記 215 日を精査し、vault に反映（タスク 1）。vault に日記のテンプレートとデイリーノートの設定（`YYYYMM/YYYYMMDD`）を入れた。
 - 2026-11-28: タスク 3 の tooling を書いた（テスト 18 件）。検査 `no diary committed` を足した。次はタスク 4（collection とページ、`pnpm build` への取り込みの接続）。
+- 2026-11-28: 日記の 1 日ずつのページ（`/diary/<YYYYMMDD>/`）と、日記・ブログの一覧のページ分けを入れた。ブログを vault に移した（タスク 7・8）。
 - 2026-11-28: 中継リポジトリ・鍵・secret が揃った（タスク 6 は Cloudflare 側の値を最初のビルドで確かめれば済み）。タスク 4 を作った。はてなから移した画像 5 枚に Photoshop などの編集記録（XMP/EXIF。位置情報は無し）があったので消した。
 
 ## 未確定事項（人間の判断待ち）

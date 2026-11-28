@@ -24,10 +24,11 @@ const lab = defineCollection({
   }),
 });
 
-// Articles. The id is the path under src/content/blog/ ("threejs-billboard-shader", or "2021/06/19/133849" for
+// Articles. Written in the Obsidian vault (11_blog/) since 2026-11-28 and brought into .content/blog/ before each build
+// like the diary (docs/plans/active/diary-pipeline.md). The id is the path under .content/blog/ ("threejs-billboard-shader", or "2021/06/19/133849" for
 // entries that had a date URL on Hatena), and the page is /blog/<id>/, so Hatena's /entry/<id> maps by rule.
 const blog = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+  loader: glob({ pattern: '**/*.md', base: './.content/blog' }),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),

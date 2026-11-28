@@ -157,7 +157,10 @@ const blog = z.object({
 - 一覧は `/blog/`（20 件ずつ。2 ページ目からは `/blog/page/<n>/`。`/blog/<n>/` にしないのは記事の id と区別するため）。
 - id は `src/content/blog/` からのパス。はてなの BASENAME をそのまま使うので、日付 URL だった 7 本は
   `2021/06/19/133849` のように `/` を含む。ページは `/blog/<id>/` で、はてなの `/entry/<id>` から規則だけで移せる。
-- 本文の画像は `src/assets/blog/<id>/` に置き、Astro の画像最適化に通す（下の「ファイル形式と執筆環境」）。
+- **2026-11-28 から本文はこのリポジトリに無い**: Obsidian の vault の `11_blog/<id>/<id の最後の部分>.md`（画像は同じフォルダ）で書き、
+  日記と同じ仕組みでビルドの前に `.content/blog/` に入る（`../plans/active/diary-pipeline.md`）。vault 側は `publish: true` の記事だけが出る。
+  移した時点の 42 本は、切り替えの前後でページの HTML が同じ（画像のハッシュを除く）ことを確かめた。
+- 本文の画像は記事の隣（`.content/blog/<id>/`）。Astro の画像最適化に通す。写すときにメタデータを消す。
 - **meta description と og:image は本文から導出する**（`src/lib/blog.ts`）。description は `description` があればそれ、無ければ本文の冒頭 120 字。
   og:image は本文の最初の画像を 1200px 幅の JPEG にしたもの（画像の無い記事は付けない）。frontmatter には持たない。
 - 移行元の URL（はてな）は持たない。`/entry/<id>` から導出できる。対応表は `src/data/hatena-redirects.json`（`scripts/hatena/import.ts` が書く）。

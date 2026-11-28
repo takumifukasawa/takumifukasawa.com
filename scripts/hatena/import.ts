@@ -1,4 +1,6 @@
 // Import a Hatena Blog export into src/content/blog/ (plan: docs/plans/active/blog-migration.md).
+// HISTORICAL: the 42 posts it wrote moved into the Obsidian vault on 2026-11-28 (scripts/blog/to-vault.ts) and the site
+// now reads the blog from .content/blog/. Running it again would write into folders the site no longer reads.
 //
 //   node scripts/hatena/import.ts <export.txt> [--cache <dir>]
 //

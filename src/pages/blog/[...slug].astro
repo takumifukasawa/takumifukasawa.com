@@ -1,5 +1,5 @@
 ---
-// /blog/<id>/ — one article. <id> is the path under src/content/blog/, so it can contain slashes
+// /blog/<id>/ — one article. <id> is the path under .content/blog/ (from the vault's 11_blog/), so it can contain slashes
 // ("2021/06/19/133849"), hence the rest parameter.
 // PROVISIONAL like the list (docs/plans/active/blog-migration.md).
 import { getImage } from 'astro:assets';
@@ -19,9 +19,9 @@ const { Content } = await render(post);
 
 const description = post.data.description ?? (excerpt(post.body ?? '') || post.data.title);
 
-// og:image: the body's first image, resized for link cards. Article images live in src/assets/blog/
+// og:image: the body's first image, resized for link cards. Article images sit next to the post in .content/blog/<id>/
 // (docs/spec/content-model.md); the Markdown refers to them relative to the .md file.
-const articleImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/blog/**/*.{png,jpg,jpeg,gif,webp}', {
+const articleImages = import.meta.glob<{ default: ImageMetadata }>('/.content/blog/**/*.{png,jpg,jpeg,gif,webp}', {
   eager: true,
 });
 const ogImage = await (async () => {

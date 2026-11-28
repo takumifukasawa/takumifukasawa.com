@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import sharp from 'sharp';
-import { stripMetadata, syncDiary } from './diary.ts';
+import { stripMetadata, syncSite } from './diary.ts';
 import { normalizeKey, pickSource } from '../diary/fetch.ts';
 import { imagesWithMetadata } from '../check-dist-images.ts';
 
@@ -46,7 +46,7 @@ describe('stripMetadata', () => {
   });
 });
 
-describe('syncDiary', () => {
+describe('syncSite', () => {
   let vault: string;
   let out: string;
   before(async () => {
@@ -64,6 +64,17 @@ describe('syncDiary', () => {
     mkdirSync(join(vault, '99_attachments'));
     writeFileSync(join(vault, '99_attachments', 'old.png'), await tiny());
     writeFileSync(join(vault, '99_attachments', 'unused.png'), await tiny());
+    const post = (id: string, text: string) => {
+      mkdirSync(join(vault, '11_blog', id), { recursive: true });
+      writeFileSync(join(vault, '11_blog', id, `${id.split('/').pop()}.md`), text);
+    };
+    post(
+      'threejs-x',
+      '---\ntitle: "Three: x"\ndate: 2020-03-04T00:36:23+09:00\ntags:\n  - three.js\npublish: true\n---\n\nbody ![](shot.png)\n',
+    );
+    writeFileSync(join(vault, '11_blog', 'threejs-x', 'shot.png'), await tiny());
+    post('2021/06/19/133849', '---\ntitle: dated\ndate: 2021-06-19T13:38:49+09:00\npublish: true\n---\ntext\n');
+    post('draft-post', '---\ntitle: d\ndate: 2021-01-01\npublish: false\n---\nnot yet\n');
     // Something left over from a previous run (a day that has since been unpublished).
     mkdirSync(join(out, 'daily', '20261102'), { recursive: true });
     writeFileSync(join(out, 'daily', '20261102.md'), 'stale');
@@ -76,7 +87,7 @@ describe('syncDiary', () => {
   });
 
   test('writes only published days, removes unpublished ones, keeps .git', async () => {
-    assert.deepEqual(await syncDiary(vault, out), ['20261101', '20261104']);
+    assert.deepEqual(await syncSite(vault, out), { daily: ['20261101', '20261104'], blog: ['2021/06/19/133849', 'threejs-x'] });
     assert.deepEqual(readdirSync(join(out, 'daily')).sort(), ['20261101', '20261101.md', '20261104', '20261104.md']);
     assert.ok(existsSync(join(out, '.git', 'HEAD')));
   });
@@ -93,9 +104,19 @@ describe('syncDiary', () => {
     assert.equal(meta.exif, undefined);
   });
 
+  test('blog posts keep their fields (not publish) and their nested ids', () => {
+    assert.equal(
+      readFileSync(join(out, 'blog', 'threejs-x.md'), 'utf8'),
+      '---\ntitle: "Three: x"\ndate: 2020-03-04T00:36:23+09:00\ntags:\n  - three.js\n---\nbody ![](./threejs-x/shot.png)\n',
+    );
+    assert.ok(existsSync(join(out, 'blog', 'threejs-x', 'shot.png')));
+    assert.match(readFileSync(join(out, 'blog', '2021', '06', '19', '133849.md'), 'utf8'), /^---\ntitle: dated\n/);
+    assert.ok(!existsSync(join(out, 'blog', 'draft-post.md')));
+  });
+
   test('a missing image stops the run before anything is written', async () => {
     writeFileSync(join(vault, '01_daily', '202611', '20261105.md'), '---\npublish: true\n---\n![[nope.png]]\n');
-    await assert.rejects(syncDiary(vault, out), /nope\.png/);
+    await assert.rejects(syncSite(vault, out), /nope\.png/);
     assert.ok(existsSync(join(out, 'daily', '20261101.md')), 'previous output must be left as it was');
     rmSync(join(vault, '01_daily', '202611', '20261105.md'));
   });

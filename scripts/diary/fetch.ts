@@ -11,7 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { syncDiary } from '../lib/diary.ts';
+import { syncSite } from '../lib/diary.ts';
 import { repoRoot } from '../lib/lab.ts';
 
 export const CONTENT_OUT = join(repoRoot, '.content');
@@ -49,6 +49,11 @@ const fromRepo = (repo: string, key: string) => {
     rmSync(CONTENT_OUT, { recursive: true, force: true });
     mkdirSync(CONTENT_OUT, { recursive: true });
     cpSync(join(tmp, 'repo', 'daily'), join(CONTENT_OUT, 'daily'), { recursive: true });
+    // Both sections must be there: a relay without blog/ would publish a site with no blog at all.
+    for (const section of ['daily', 'blog'])
+      if (!existsSync(join(tmp, 'repo', section)))
+        throw new Error(`the relay repo has no ${section}/. Run the vault's "publish site contents" workflow, then build again.`);
+    cpSync(join(tmp, 'repo', 'blog'), join(CONTENT_OUT, 'blog'), { recursive: true });
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -59,8 +64,8 @@ const main = async () => {
   if (existsSync(join(repoRoot, '.env'))) process.loadEnvFile(join(repoRoot, '.env'));
   const source = pickSource(process.env);
   if (source.kind === 'vault') {
-    const ids = await syncDiary(resolve(source.vault), CONTENT_OUT);
-    console.log(`diary: ${ids.length} published days from the vault`);
+    const { daily, blog } = await syncSite(resolve(source.vault), CONTENT_OUT);
+    console.log(`site contents: ${daily.length} days, ${blog.length} blog posts from the vault`);
   } else if (source.kind === 'repo') {
     fromRepo(source.repo, source.key);
     console.log('diary: fetched from the relay repo');

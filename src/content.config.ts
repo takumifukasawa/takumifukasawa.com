@@ -1,5 +1,5 @@
 // Content collections. 1:1 with docs/spec/content-model.md — change both in the same commit.
-// `lab` and `blog` (the Hatena Blog migration, docs/plans/active/blog-migration.md). works is added with its
+// `lab`, `blog` (the Hatena Blog migration, docs/plans/active/blog-migration.md) and `diary`. works is added with its
 // first entry (P2).
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
@@ -37,4 +37,14 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { lab, blog };
+// The published days of the diary. NOT in this repo: scripts/diary/fetch.ts puts them into .content/ (gitignored)
+// before each build, from the Obsidian vault locally or the private relay repo on Workers Builds
+// (docs/plans/active/diary-pipeline.md). The id is the date, YYYYMMDD.
+const diary = defineCollection({
+  loader: glob({ pattern: '*.md', base: './.content/daily' }),
+  schema: z.object({
+    date: z.coerce.date(),
+  }),
+});
+
+export const collections = { lab, blog, diary };

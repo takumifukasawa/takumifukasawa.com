@@ -70,9 +70,10 @@ const main = async () => {
 if (import.meta.main) {
   main().catch((e: Error) => {
     console.error(`diary: ${e.message}`);
-    console.error(
-      'If the clone failed: is the deploy key still on the relay repo (Settings > Deploy keys), and is SITE_CONTENTS_REPO its SSH URL?',
-    );
+    if (pickSource(process.env).kind === 'repo')
+      console.error(
+        'If the clone failed: is the deploy key still on the relay repo (Settings > Deploy keys), and is SITE_CONTENTS_REPO its SSH URL?',
+      );
     process.exit(1);
   });
 }

@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import sharp from 'sharp';
-import { imageRefs, isPublished, parseNote, safeFileName, toSiteMarkdown } from './obsidian.ts';
+import { demoteHeadings, imageRefs, isPublished, parseNote, safeFileName, toSiteMarkdown } from './obsidian.ts';
 
 export const DAILY_DIR = '01_daily';
 const SKIP_DIRS = new Set(['.git', '.obsidian', '.trash', 'node_modules']);
@@ -82,7 +82,12 @@ export const buildDay = (vault: string, notePath: string, resolveImage: ReturnTy
   }
   const body = toSiteMarkdown(note.body, (target) => `./${id}/${images.get(resolveImage(notePath, target))!.name}`);
   const date = `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}`;
-  return { id, markdown: `---\ndate: ${date}\n---\n${body.replace(/^\n+/, '').replace(/\s*$/, '\n')}`, images: [...images.values()] };
+  // The page shows the date itself, so the note's own "# YYYYMMDD" title line is dropped (it would be a second h1).
+  // Headings inside the day sit under the page's h1 (Diary) and h2 (the date): # becomes ###.
+  const text = demoteHeadings(body.replace(/^\s*#[ \t]+\d{8}[ \t]*(\n|$)/, ''), 2)
+    .replace(/^\n+/, '')
+    .replace(/\s*$/, '\n');
+  return { id, markdown: `---\ndate: ${date}\n---\n${text}`, images: [...images.values()] };
 };
 
 // Writes every published day of <vault>/01_daily into <out>/daily, replacing what was there.

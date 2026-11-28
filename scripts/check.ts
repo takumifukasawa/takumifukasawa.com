@@ -1,5 +1,12 @@
 // node scripts/check.ts <name>   run one repo check (registered in .harness/checks.sh)
-import { checkLabBuildInSync, checkLabHeadInSync, checkLabShellEmbedded, checkMediaKeysResolve, checkNoLargeFiles } from './lib/checks.ts';
+import {
+  checkDiaryNotIndexed,
+  checkLabBuildInSync,
+  checkLabHeadInSync,
+  checkLabShellEmbedded,
+  checkMediaKeysResolve,
+  checkNoLargeFiles,
+} from './lib/checks.ts';
 
 const checks: Record<string, () => string[]> = {
   'lab-build-in-sync': checkLabBuildInSync,
@@ -7,6 +14,7 @@ const checks: Record<string, () => string[]> = {
   'lab-head-in-sync': checkLabHeadInSync,
   'media-keys-resolve': checkMediaKeysResolve,
   'no-large-files': () => checkNoLargeFiles(),
+  'diary-not-indexed': checkDiaryNotIndexed,
 };
 
 const name = process.argv[2];

@@ -17,9 +17,11 @@ type Props = {
   ogImage?: { url: string; width: number; height: number };
   // An article (a blog post) says so, with its date; every other page is a website.
   article?: { publishedTime: Date };
+  // Pages kept out of search and crawlers (the diary). Same value as X-Robots-Tag in public/_headers.
+  noindex?: boolean;
 };
 
-const { title, description, path, ogImage, article } = Astro.props;
+const { title, description, path, ogImage, article, noindex } = Astro.props;
 const url = new URL(path, Astro.site).href;
 const fullTitle = title ? `${title} — takumifukasawa` : 'takumifukasawa';
 const isHome = path === '/';
@@ -29,6 +31,7 @@ const isHome = path === '/';
 // moved here (docs/plans/active/blog-migration.md).
 const links = [
   { 'label': 'Blog', 'href': '/blog/', 'external': false },
+  { 'label': 'Diary', 'href': '/diary/', 'external': false },
   { 'label': 'About', 'href': '/about/', 'external': false },
   { 'label': 'X', 'href': 'https://x.com/takumifukasawa', 'external': true },
   { 'label': 'GitHub', 'href': 'https://github.com/takumifukasawa', 'external': true },
@@ -43,6 +46,7 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />}
     <!-- The page's own address. The Hatena entries point their canonical here too (scripts/hatena/head.html). -->
     <link rel="canonical" href={url} />
     <!-- OGP. Absolute URLs come from `site` in astro.config.ts.

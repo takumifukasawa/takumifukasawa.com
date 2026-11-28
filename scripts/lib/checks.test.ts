@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, test } from 'node:test';
-import { checkLabBuildInSync, checkLabShellEmbedded, checkNoLargeFiles } from './checks.ts';
+import { checkDiaryNotIndexed, checkLabBuildInSync, checkLabShellEmbedded, checkNoLargeFiles, DIARY_ROBOTS } from './checks.ts';
 import { sourceHash } from './lab.ts';
 
 let root: string;
@@ -131,5 +131,49 @@ describe('no large files', () => {
   test('ignores files that are not in the index', () => {
     write('captures/clip.mp4', big);
     assert.deepEqual(checkNoLargeFiles(root), []);
+  });
+});
+
+describe('diary not indexed', () => {
+  const good = () => {
+    write('src/pages/diary/index.astro', '<Base title="Diary" path="/diary/" noindex>x</Base>');
+    write('src/layouts/Base.astro', `{noindex && <meta name="robots" content="${DIARY_ROBOTS}" />}`);
+    write('public/_headers', `/diary/*\n  X-Robots-Tag: ${DIARY_ROBOTS}\n`);
+    write('src/pages/sitemap.xml.ts', "getCollection('blog')");
+    write(
+      'public/robots.txt',
+      'User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nUser-agent: ClaudeBot\nUser-agent: CCBot\nUser-agent: Google-Extended\nUser-agent: ia_archiver\nDisallow: /diary/\n',
+    );
+  };
+
+  test('passes when every layer keeps the diary out', () => {
+    good();
+    assert.deepEqual(checkDiaryNotIndexed(root), []);
+  });
+
+  test('a diary page without noindex fails', () => {
+    good();
+    write('src/pages/diary/[year].astro', '<Base title="Diary" path="/diary/">x</Base>');
+    assert.match(checkDiaryNotIndexed(root).join('\n'), /\[year\]\.astro/);
+  });
+
+  test('the sitemap must not list the diary', () => {
+    good();
+    write('src/pages/sitemap.xml.ts', "getCollection('diary')");
+    assert.match(checkDiaryNotIndexed(root).join('\n'), /sitemap/);
+  });
+
+  test('robots.txt must not block search engines from the diary, and must block AI crawlers', () => {
+    good();
+    write('public/robots.txt', 'User-agent: *\nDisallow: /diary/\n');
+    const problems = checkDiaryNotIndexed(root).join('\n');
+    assert.match(problems, /User-agent: \*/);
+    assert.match(problems, /GPTBot/);
+  });
+
+  test('a missing X-Robots-Tag fails', () => {
+    good();
+    write('public/_headers', '/_shell.js\n  Cache-Control: no-cache\n');
+    assert.match(checkDiaryNotIndexed(root).join('\n'), /_headers/);
   });
 });

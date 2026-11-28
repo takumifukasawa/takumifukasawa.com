@@ -161,6 +161,24 @@ const blog = z.object({
   og:image は本文の最初の画像を 1200px 幅の JPEG にしたもの（画像の無い記事は付けない）。frontmatter には持たない。
 - 移行元の URL（はてな）は持たない。`/entry/<id>` から導出できる。対応表は `src/data/hatena-redirects.json`（`scripts/hatena/import.ts` が書く）。
 
+## diary（2026-11-28）
+
+日記。**本文はこのリポジトリに無い**: Obsidian の vault（private）で `publish: true` を付けた日だけが、ビルドの前に
+`scripts/diary/fetch.ts` で `.content/daily/`（gitignore）に入る（`../plans/active/diary-pipeline.md`）。
+
+```ts
+const diary = z.object({
+  date: z.coerce.date(),   // ファイル名 YYYYMMDD から scripts/lib/diary.ts が書く。vault 側は持たない
+});
+```
+
+- id はファイル名の `YYYYMMDD`。ページは `/diary/`（全部の日を 1 枚に、新しい順に全文）。1 日ずつのページは作らない。
+- vault の frontmatter（`publish`）は写さない。公開するかは写す前に決まっている。
+- 本文の先頭の `# YYYYMMDD` は消し、本文中の見出しは 2 段下げる（ページの h1・h2 の下に入るように）。
+- 画像は本文の隣（`.content/daily/<id>/`）。写すときにメタデータ（GPS・カメラ・撮影日時）を消す。
+- **検索とクローラーに載せない**: noindex（`Base.astro` の `noindex`）、`public/_headers` の X-Robots-Tag、robots.txt で AI の
+  クローラーとアーカイブだけを断る、サイトマップに入れない。検査 `diary not indexed` が見る。
+
 ## notes（保留。blog に置き換わる見込み）
 
 ```ts

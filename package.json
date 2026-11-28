@@ -7,8 +7,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "node scripts/diary/fetch.ts && astro dev",
+    "build": "node scripts/diary/fetch.ts && astro build && node scripts/check-dist-images.ts",
     "typecheck": "astro check",
     "preview": "node scripts/preview.ts",
     "new": "node scripts/new.ts",

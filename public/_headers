@@ -3,3 +3,8 @@
 # The site-side shell changes over time and is loaded by every sketch, so it must not be cached as immutable (decision 0004).
 /_shell.js
   Cache-Control: public, max-age=300
+
+# The diary is kept out of search and crawlers (docs/plans/active/diary-pipeline.md). Same value as the robots meta
+# on the page (src/layouts/Base.astro, noindex), for crawlers that do not read HTML.
+/diary/*
+  X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex

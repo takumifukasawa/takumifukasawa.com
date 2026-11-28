@@ -7,6 +7,7 @@ import { after, before, describe, test } from 'node:test';
 import sharp from 'sharp';
 import { stripMetadata, syncDiary } from './diary.ts';
 import { pickSource } from '../diary/fetch.ts';
+import { imagesWithMetadata } from '../check-dist-images.ts';
 
 // A JPEG that carries a camera, a date and a GPS position, rotated by EXIF (orientation 6 = 90° clockwise).
 const photoWithMetadata = () =>
@@ -82,7 +83,7 @@ describe('syncDiary', () => {
 
   test('the Markdown is converted and points at the copied images', () => {
     const md = readFileSync(join(out, 'daily', '20261101.md'), 'utf8');
-    assert.equal(md, '---\ndate: 2026-11-01\n---\n# 20261101\n\n![](./20261101/Pasted-image-1.jpg)\n\nsecret note\n');
+    assert.equal(md, '---\ndate: 2026-11-01\n---\n![](./20261101/Pasted-image-1.jpg)\n\nsecret note\n');
     assert.match(readFileSync(join(out, 'daily', '20261104.md'), 'utf8'), /!\[\]\(\.\/20261104\/old\.png\)/);
   });
 
@@ -111,5 +112,22 @@ describe('pickSource', () => {
     assert.deepEqual(pickSource({ SITE_CONTENTS_REPO: 'git@x:y' }), { kind: 'none', fatal: false });
     assert.deepEqual(pickSource({ WORKERS_CI: '1' }), { kind: 'none', fatal: true });
     assert.deepEqual(pickSource({}), { kind: 'none', fatal: false });
+  });
+});
+
+describe('imagesWithMetadata (the build-time net)', () => {
+  test('finds an image that kept its EXIF, passes a stripped one', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'dist-'));
+    try {
+      mkdirSync(join(dir, '_astro'));
+      const photo = await photoWithMetadata();
+      writeFileSync(join(dir, '_astro', 'kept.jpg'), photo);
+      writeFileSync(join(dir, '_astro', 'clean.jpg'), await stripMetadata(photo, 'clean.jpg'));
+      const found = await imagesWithMetadata(dir);
+      assert.equal(found.length, 1);
+      assert.match(found[0]!, /kept\.jpg \(exif/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

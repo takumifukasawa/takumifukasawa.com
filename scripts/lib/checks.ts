@@ -124,3 +124,47 @@ export const checkMediaKeysResolve = (root = repoRoot): string[] => {
       );
   });
 };
+
+// The diary stays out of search and crawlers (docs/plans/active/diary-pipeline.md). Static: reads the sources that
+// decide it, so it runs without a build.
+export const DIARY_ROBOTS = 'noindex, nofollow, noarchive, nosnippet, noimageindex';
+export const checkDiaryNotIndexed = (root = repoRoot): string[] => {
+  const problems: string[] = [];
+  const read = (p: string) => (existsSync(join(root, p)) ? readFileSync(join(root, p), 'utf8') : '');
+  const pagesDir = join(root, 'src', 'pages', 'diary');
+  const pages = existsSync(pagesDir)
+    ? readdirSync(pagesDir, { recursive: true })
+        .map(String)
+        .filter((f) => f.endsWith('.astro'))
+    : [];
+  for (const page of pages) {
+    if (!/<Base\b[^>]*\bnoindex\b/.test(read(join('src', 'pages', 'diary', page))))
+      problems.push(`src/pages/diary/${page} が <Base ... noindex> で描いていない。日記のページは全部 noindex を付ける`);
+  }
+  if (!read('src/layouts/Base.astro').includes(`content="${DIARY_ROBOTS}"`))
+    problems.push(`src/layouts/Base.astro の noindex の robots meta が "${DIARY_ROBOTS}" でない。public/_headers と同じ値にする`);
+  const headers = read('public/_headers');
+  if (
+    !/^\/diary\/\*\s*\n\s+X-Robots-Tag: (.+)$/m.test(headers) ||
+    headers.match(/^\/diary\/\*\s*\n\s+X-Robots-Tag: (.+)$/m)![1]!.trim() !== DIARY_ROBOTS
+  )
+    problems.push(`public/_headers に "/diary/*" の "X-Robots-Tag: ${DIARY_ROBOTS}" が無い`);
+  if (/diary/i.test(read('src/pages/sitemap.xml.ts')))
+    problems.push('src/pages/sitemap.xml.ts が diary に触れている。日記はサイトマップに入れない');
+  // robots.txt: the * group must not disallow /diary/ (search engines would then index the bare URL without reading
+  // noindex); the AI / archive group must.
+  const groups = read('public/robots.txt')
+    .split(/\n\s*\n/)
+    .map((g) => ({
+      agents: [...g.matchAll(/^User-agent:\s*(\S+)/gim)].map((m) => m[1]!),
+      disallowsDiary: /^Disallow:\s*\/diary\/\s*$/im.test(g),
+    }));
+  if (groups.some((g) => g.agents.includes('*') && g.disallowsDiary))
+    problems.push(
+      'public/robots.txt の User-agent: * が /diary/ を Disallow している。検索エンジンは noindex で止める（robots.txt で止めると URL だけ載る）',
+    );
+  for (const bot of ['GPTBot', 'ClaudeBot', 'CCBot', 'Google-Extended', 'ia_archiver'])
+    if (!groups.some((g) => g.agents.includes(bot) && g.disallowsDiary))
+      problems.push(`public/robots.txt で ${bot} に Disallow: /diary/ が無い`);
+  return problems;
+};

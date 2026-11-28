@@ -82,5 +82,9 @@ export const toSiteMarkdown = (body: string, imageUrl: (target: string) => strin
   );
 };
 
+// Pushes every heading down `by` levels (capped at h6), so a note's headings sit under the page's own h1/h2.
+export const demoteHeadings = (body: string, by: number): string =>
+  outsideCode(body, (text) => text.replace(/^(#{1,6})(?=[ \t])/gm, (h) => '#'.repeat(Math.min(6, h.length + by))));
+
 // A file name that is safe in a URL and on every file system: Obsidian's "Pasted image 2026….png" has spaces.
 export const safeFileName = (name: string): string => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');

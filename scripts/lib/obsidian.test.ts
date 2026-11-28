@@ -1,7 +1,7 @@
 // scripts/lib/obsidian.ts: Obsidian notes -> plain Markdown for the site.
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { ConvertError, imageRefs, isPublished, parseNote, safeFileName, toSiteMarkdown } from './obsidian.ts';
+import { ConvertError, demoteHeadings, imageRefs, isPublished, parseNote, safeFileName, toSiteMarkdown } from './obsidian.ts';
 
 describe('parseNote / isPublished', () => {
   test('only an explicit publish: true publishes', () => {
@@ -79,4 +79,8 @@ describe('toSiteMarkdown', () => {
 test('safeFileName', () => {
   assert.equal(safeFileName('Pasted image 20261128123456.png'), 'Pasted-image-20261128123456.png');
   assert.equal(safeFileName('写真 1.JPG'), '1.JPG');
+});
+
+test('demoteHeadings', () => {
+  assert.equal(demoteHeadings('# a\n## b\n###### c\n#tag\n```\n# code\n```\n', 2), '### a\n#### b\n###### c\n#tag\n```\n# code\n```\n');
 });

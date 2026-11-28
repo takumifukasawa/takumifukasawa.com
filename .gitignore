@@ -84,3 +84,6 @@ lab/.build-tmp/
 /.harness/scripts/codex-deny.sh
 /.githooks/pre-commit
 # <<< agent-harness managed
+
+# --- 日記の取り込み先（scripts/diary/fetch.ts）。private の日記なので絶対にコミットしない（docs/plans/active/diary-pipeline.md） ---
+.content/

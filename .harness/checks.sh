@@ -34,6 +34,8 @@ check fast "lab shell embedded" "node scripts/check.ts lab-shell-embedded"
 check fast "no large files"     "node scripts/check.ts no-large-files"
 check fast "lab head in sync"   "node scripts/check.ts lab-head-in-sync"
 check fast "media keys resolve" "node scripts/check.ts media-keys-resolve"
+# 日記（private）が公開リポジトリに入っていないこと。取り込み先 .content/ は .gitignore にある（docs/plans/active/diary-pipeline.md）。
+check fast "no diary committed"  "f=\$(git ls-files .content; git diff --cached --name-only -- .content); [ -z \"\$f\" ] || { echo \"\$f\"; echo '日記の取り込み先 .content/ のファイルが git に入っている。git rm -r --cached .content で外し、.gitignore に .content/ があるか確かめる。push 済みなら履歴から消す必要がある（人間に相談）。'; exit 1; }"
 # fast にしない: astro check は 10 秒ほどかかる。src/ だけでなく scripts/ と lab/ の .ts も見る（tsconfig.json、決定 0010）。
 check on "src/ lab/ scripts/ astro.config.ts tsconfig.json package.json pnpm-lock.yaml" "types pass"         "pnpm -s typecheck || { echo '型エラーがある。上の file:line を直す（pnpm typecheck で再現）。TypeScript 7 は astro check が未対応なので 6 のまま（決定 0010）。'; exit 1; }"
 # fast にしない: Chrome を起動するので数秒かかる。だが公開前には必ず通す（これだけが成果物そのものを動かす検査）。

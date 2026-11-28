@@ -52,7 +52,7 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 |---|---|---|---|
 | 1 | vault の日記を精査し、出す日に `publish: true` を付ける | 済（2026-11-28） | 公開 154 日 / 出さない 61 日（`publish: false`）。原文の控えは vault の `99_archive/daily-original/` |
 | 2 | 再ビルドのきっかけを調べる（Cloudflare Workers Builds で、別リポジトリへの push からビルドを起こせるか） | 済（2026-11-28） | Deploy Hook で起こせる（`../../references/cloudflare-deploy-hooks.md`）。vault の Action が中継リポジトリへ写した後に hook の URL へ POST する。hook の作成は人間（タスク 6） |
-| 3 | tooling: (a) 選んで写す（vault → 中継リポジトリの中身。参照画像の解決、メタデータ除去）(b) 取り込み（中継リポジトリ or ローカルのディレクトリ → gitignore 先）(c) Obsidian の書き方の変換 | 未着手 | 任せる領域。テスト付き。最初に gitignore 先の Markdown から相対パスの画像を Astro が読めるか試す（未確認） |
+| 3 | tooling: (a) 選んで写す（vault → 中継リポジトリの中身。参照画像の解決、メタデータ除去）(b) 取り込み（中継リポジトリ or ローカルのディレクトリ → gitignore 先）(c) Obsidian の書き方の変換 | 済（2026-11-28） | `scripts/lib/obsidian.ts`（変換）、`scripts/lib/diary.ts`（選択・画像の解決・メタデータ除去）、`scripts/diary/sync.ts`（vault → 出力先）、`scripts/diary/fetch.ts`（ビルド前の取り込み。まだ `pnpm build` に繋いでいない: 繋ぐと中継リポジトリができるまで Workers Builds が止まる。タスク 4 で繋ぐ）。gitignore 先（`.content/diary/`）の Markdown から相対パスの画像を Astro が読めることは試して確認。本物の vault で 154 日が出て、本文は変換で変わらなかった（Obsidian 独自の書き方も画像も今は無い） |
 | 4 | collection とページ（最小） | 未着手 | 見せ方は `blog-migration.md` のタスク 4 で決める。ここでは出るところまで |
 | 5 | vault 側の GitHub Actions（1 時間おき + 手動。3 (a) を動かし、変更があれば Deploy Hook） | 未着手 | vault のリポジトリへの追加は人間の確認を取ってから |
 | 6 | 中継リポジトリ、デプロイキー 2 つ、Deploy Hook を作り、secret に入れる | 未着手 | **人間がやる**（アカウント操作）。手順はこの段でまとめて渡す。Cloudflare のビルドから SSH の鍵で clone できるかは未確認（この段で試す） |
@@ -86,6 +86,7 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 ## 進捗ログ（セッションごとに 1〜3 行）
 
 - 2026-11-28: 日記 215 日を精査し、vault に反映（タスク 1）。vault に日記のテンプレートとデイリーノートの設定（`YYYYMM/YYYYMMDD`）を入れた。
+- 2026-11-28: タスク 3 の tooling を書いた（テスト 18 件）。検査 `no diary committed` を足した。次はタスク 4（collection とページ、`pnpm build` への取り込みの接続）。
 
 ## 未確定事項（人間の判断待ち）
 

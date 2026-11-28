@@ -1,0 +1,85 @@
+# The GitHub Actions workflow that lives in the Obsidian vault repo (obsidian-personal), as
+# .github/workflows/publish-site-contents.yml. Kept here so it is reviewed and versioned with the script it runs;
+# copy it into the vault when it changes (docs/plans/active/diary-pipeline.md, task 5).
+#
+# Every hour (and on demand), it takes the published days out of the vault with scripts/diary/sync.ts from this
+# public repo's main branch, writes them into the private relay repo site-contents-internal, and asks Cloudflare to
+# rebuild the site only when something changed. The vault itself never leaves GitHub.
+#
+# Secrets in the vault repo (Settings > Secrets and variables > Actions):
+#   SITE_CONTENTS_DEPLOY_KEY  private half of the relay repo's read-write deploy key ("vault-actions-writer")
+#   SITE_DEPLOY_HOOK_URL      the Workers Builds deploy hook of takumifukasawa-com (docs/references/cloudflare-deploy-hooks.md)
+name: publish site contents
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: publish-site-contents
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the vault
+        uses: actions/checkout@v4
+        with:
+          path: vault
+
+      - name: Check out the site (public; only its scripts are used)
+        uses: actions/checkout@v4
+        with:
+          repository: takumifukasawa/takumifukasawa.com
+          ref: main
+          path: site
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: site/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+
+      - name: Install the site's dependencies
+        working-directory: site
+        run: pnpm install --frozen-lockfile
+
+      - name: Clone the relay repo
+        env:
+          DEPLOY_KEY: ${{ secrets.SITE_CONTENTS_DEPLOY_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/relay
+          chmod 600 ~/.ssh/relay
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/relay -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+          GIT_SSH_COMMAND="ssh -i $HOME/.ssh/relay -o IdentitiesOnly=yes" git clone --quiet git@github.com:takumifukasawa/site-contents-internal.git relay
+
+      - name: Write the published days into the relay
+        run: node site/scripts/diary/sync.ts vault relay
+
+      - name: Push and rebuild the site if anything changed
+        working-directory: relay
+        env:
+          DEPLOY_HOOK: ${{ secrets.SITE_DEPLOY_HOOK_URL }}
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No change in the published contents; the site is not rebuilt."
+            exit 0
+          fi
+          git -c user.name="site-contents-sync" -c user.email="site-contents-sync@users.noreply.github.com" \
+            commit --quiet -m "sync from vault ${GITHUB_SHA::7}"
+          git push --quiet origin HEAD:main
+          curl -fsS -X POST "$DEPLOY_HOOK" -o /dev/null
+          echo "Pushed and asked Cloudflare to rebuild the site."

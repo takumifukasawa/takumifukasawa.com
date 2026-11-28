@@ -35,7 +35,7 @@ obsidian-personal (private, Obsidian の自動バックアップで push され�
   └ GitHub Actions（1 時間おき + 手動）: このリポジトリを取ってきて、その選択スクリプトを vault に対して実行し、
     publish: true の日記と参照画像（メタデータを消したもの）だけを写す。変更があれば Deploy Hook を叩く
       ↓ (中継リポジトリのデプロイキー A: 書き込み可。vault の Actions の secret)
-diary-public (private, 仮の名前)
+site-contents-internal (private。後でブログ・作品の文章も入れるので日記に限らない名前)
       ↓ (中継リポジトリのデプロイキー B: 読み取り専用。Cloudflare のビルド用の secret)
 takumifukasawa.com のビルド: 取り込み → Astro の collection → ページ
 ```
@@ -54,8 +54,8 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 | 2 | 再ビルドのきっかけを調べる（Cloudflare Workers Builds で、別リポジトリへの push からビルドを起こせるか） | 済（2026-11-28） | Deploy Hook で起こせる（`../../references/cloudflare-deploy-hooks.md`）。vault の Action が中継リポジトリへ写した後に hook の URL へ POST する。hook の作成は人間（タスク 6） |
 | 3 | tooling: (a) 選んで写す（vault → 中継リポジトリの中身。参照画像の解決、メタデータ除去）(b) 取り込み（中継リポジトリ or ローカルのディレクトリ → gitignore 先）(c) Obsidian の書き方の変換 | 済（2026-11-28） | `scripts/lib/obsidian.ts`（変換）、`scripts/lib/diary.ts`（選択・画像の解決・メタデータ除去）、`scripts/diary/sync.ts`（vault → 出力先）、`scripts/diary/fetch.ts`（ビルド前の取り込み。まだ `pnpm build` に繋いでいない: 繋ぐと中継リポジトリができるまで Workers Builds が止まる。タスク 4 で繋ぐ）。gitignore 先（`.content/diary/`）の Markdown から相対パスの画像を Astro が読めることは試して確認。本物の vault で 154 日が出て、本文は変換で変わらなかった（Obsidian 独自の書き方も画像も今は無い） |
 | 4 | collection とページ（最小） | 未着手 | 見せ方は `blog-migration.md` のタスク 4 で決める。ここでは出るところまで |
-| 5 | vault 側の GitHub Actions（1 時間おき + 手動。3 (a) を動かし、変更があれば Deploy Hook） | 未着手 | vault のリポジトリへの追加は人間の確認を取ってから |
-| 6 | 中継リポジトリ、デプロイキー 2 つ、Deploy Hook を作り、secret に入れる | 未着手 | **人間がやる**（アカウント操作）。手順はこの段でまとめて渡す。Cloudflare のビルドから SSH の鍵で clone できるかは未確認（この段で試す） |
+| 5 | vault 側の GitHub Actions（1 時間おき + 手動。3 (a) を動かし、変更があれば Deploy Hook） | 下書き済み（2026-11-28） | 正本は `scripts/diary/vault-workflow.yml`（vault の `.github/workflows/publish-site-contents.yml` に写す）。このリポジトリの `main` の `scripts/diary/sync.ts` を使うので、`main` に入ってから動く。vault への追加は人間の確認を取ってから |
+| 6 | 中継リポジトリ、デプロイキー 2 つ、Deploy Hook を作り、secret に入れる | 途中（2026-11-28: リポジトリ `takumifukasawa/site-contents-internal`（private）とデプロイキー `vault-actions-writer`（書き込み可）・`cloudflare-build-reader`（読み取り専用）を作った。鍵の秘密の側は作った Mac の `~/.ssh/site-contents-internal/`。secret と Deploy Hook は未） | **人間がやる**（アカウント操作）。手順はこの段でまとめて渡す。Cloudflare のビルドから SSH の鍵で clone できるかは未確認（この段で試す） |
 | 7 | 新しいブログ記事を vault で書けるようにする（ブログ用のフォルダ、記事ごとのフォルダに本文と画像） | 未着手 | 3 の仕組みにフォルダを足すだけにする |
 | 8 | 移した 42 記事と画像を vault へ移し、このリポジトリから消す | 未着手 | 任意。7 の後。URL（ファイル名）は変えない。og:image の画像の探し先も直す |
 
@@ -90,5 +90,4 @@ takumifukasawa.com のビルド: 取り込み → Astro の collection → ペ�
 
 ## 未確定事項（人間の判断待ち）
 
-1. 中継リポジトリの名前（仮: `diary-public`）。
-2. 日記をサイトのどこに・どう並べるか（`blog-migration.md` の未確定事項 1 と同じ）。候補: 日記だけの一覧（noindex）にする / ブログと 1 列に混ぜ、一覧のページを `noindex`（`nofollow` は付けない。記事へのリンクはたどらせる）にする。
+1. 日記をサイトのどこに・どう並べるか（`blog-migration.md` の未確定事項 1 と同じ）。候補: 日記だけの一覧（noindex）にする / ブログと 1 列に混ぜ、一覧のページを `noindex`（`nofollow` は付けない。記事へのリンクはたどらせる）にする。

@@ -102,9 +102,13 @@ describe('syncDiary', () => {
 
 describe('pickSource', () => {
   test('vault, relay repo, or nothing — and nothing is fatal only on Workers Builds', () => {
-    assert.deepEqual(pickSource({ DIARY_VAULT: '/v' }), { kind: 'vault', vault: '/v' });
-    assert.deepEqual(pickSource({ DIARY_REPO: 'git@x:y', DIARY_DEPLOY_KEY: 'k' }), { kind: 'repo', repo: 'git@x:y', key: 'k' });
-    assert.deepEqual(pickSource({ DIARY_REPO: 'git@x:y' }), { kind: 'none', fatal: false });
+    assert.deepEqual(pickSource({ OBSIDIAN_VAULT: '/v' }), { kind: 'vault', vault: '/v' });
+    assert.deepEqual(pickSource({ SITE_CONTENTS_REPO: 'git@x:y', SITE_CONTENTS_READ_KEY: 'k' }), {
+      kind: 'repo',
+      repo: 'git@x:y',
+      key: 'k',
+    });
+    assert.deepEqual(pickSource({ SITE_CONTENTS_REPO: 'git@x:y' }), { kind: 'none', fatal: false });
     assert.deepEqual(pickSource({ WORKERS_CI: '1' }), { kind: 'none', fatal: true });
     assert.deepEqual(pickSource({}), { kind: 'none', fatal: false });
   });

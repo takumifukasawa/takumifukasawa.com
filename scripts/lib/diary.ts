@@ -1,6 +1,6 @@
 // The diary relay (docs/plans/active/diary-pipeline.md): picks the published days out of the Obsidian vault and
 // writes them, with the images they use, as plain Markdown. The vault's GitHub Action runs this into the private
-// relay repo; local builds run it straight into .content/diary/.
+// relay repo; local builds run it straight into .content/.
 //
 // Output (<out>/ is mirrored: what is not written this time is deleted, so unpublishing a day removes it):
 //   <out>/daily/<YYYYMMDD>.md          frontmatter { date } + the converted body

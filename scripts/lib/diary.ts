@@ -115,7 +115,8 @@ export const buildPost = (vault: string, notePath: string, resolveImage: Resolve
   if (!isPublished(note)) return undefined;
   if (typeof note.data.title !== 'string' || !note.data.date) throw new Error(`${relative(vault, notePath)}: needs title and date`);
   const { body, images } = withImages(notePath, id, note.body, resolveImage);
-  const data = Object.fromEntries(BLOG_FIELDS.filter((k) => note.data[k] !== undefined).map((k) => [k, note.data[k]]));
+  // A property left empty in Obsidian (`description:`) is null; skip it rather than fail the site's schema.
+  const data = Object.fromEntries(BLOG_FIELDS.filter((k) => note.data[k] != null && note.data[k] !== '').map((k) => [k, note.data[k]]));
   const date = note.data.date instanceof Date ? note.data.date.toISOString() : String(note.data.date);
   const front = stringify({ ...data, date }, { lineWidth: 0 });
   return { id, markdown: `---\n${front}---\n${body.replace(/^\n+/, '').replace(/\s*$/, '\n')}`, images };

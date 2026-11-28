@@ -73,7 +73,7 @@ describe('syncSite', () => {
       '---\ntitle: "Three: x"\ndate: 2020-03-04T00:36:23+09:00\ntags:\n  - three.js\npublish: true\n---\n\nbody ![](shot.png)\n',
     );
     writeFileSync(join(vault, '11_blog', 'threejs-x', 'shot.png'), await tiny());
-    post('2021/06/19/133849', '---\ntitle: dated\ndate: 2021-06-19T13:38:49+09:00\npublish: true\n---\ntext\n');
+    post('2021/06/19/133849', '---\ntitle: dated\ndate: 2021-06-19T13:38:49+09:00\ndescription:\npublish: true\n---\ntext\n');
     post('draft-post', '---\ntitle: d\ndate: 2021-01-01\npublish: false\n---\nnot yet\n');
     // Something left over from a previous run (a day that has since been unpublished).
     mkdirSync(join(out, 'daily', '20261102'), { recursive: true });
@@ -110,7 +110,10 @@ describe('syncSite', () => {
       '---\ntitle: "Three: x"\ndate: 2020-03-04T00:36:23+09:00\ntags:\n  - three.js\n---\nbody ![](./threejs-x/shot.png)\n',
     );
     assert.ok(existsSync(join(out, 'blog', 'threejs-x', 'shot.png')));
-    assert.match(readFileSync(join(out, 'blog', '2021', '06', '19', '133849.md'), 'utf8'), /^---\ntitle: dated\n/);
+    assert.equal(
+      readFileSync(join(out, 'blog', '2021', '06', '19', '133849.md'), 'utf8'),
+      '---\ntitle: dated\ndate: 2021-06-19T13:38:49+09:00\n---\ntext\n',
+    );
     assert.ok(!existsSync(join(out, 'blog', 'draft-post.md')));
   });
 

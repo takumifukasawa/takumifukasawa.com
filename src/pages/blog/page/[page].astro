@@ -1,0 +1,18 @@
+---
+// /blog/page/<n>/ — page 2 onwards of the article list (page 1 is /blog/).
+import { getCollection } from 'astro:content';
+import PostList from '../../../components/PostList.astro';
+import Base from '../../../layouts/Base.astro';
+import { BLOG_PAGE_SIZE, laterPages } from '../../../lib/pages.ts';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return laterPages(posts.length, BLOG_PAGE_SIZE).map((n) => ({ params: { page: String(n) }, props: { posts, n } }));
+}
+
+const { posts, n } = Astro.props;
+---
+
+<Base title={`Blog (${n})`} description="takumifukasawa の記事" path={`/blog/page/${n}/`}>
+  <PostList posts={posts} page={n} />
+</Base>

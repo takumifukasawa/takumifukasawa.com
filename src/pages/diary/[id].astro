@@ -1,0 +1,74 @@
+---
+// /diary/<YYYYMMDD>/ — one day, with links to the days before and after. noindex like every diary page
+// (docs/plans/active/diary-pipeline.md).
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { excerpt } from '../../lib/blog.ts';
+
+export async function getStaticPaths() {
+  const days = (await getCollection('diary')).sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
+  return days.map((day, i) => ({ params: { id: day.id }, props: { day, older: days[i - 1], newer: days[i + 1] } }));
+}
+
+const { day, older, newer } = Astro.props;
+const { Content } = await render(day);
+const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+---
+
+<Base title={ymd(day.data.date)} description={excerpt(day.body ?? '') || ymd(day.data.date)} path={`/diary/${day.id}/`} noindex>
+  <article>
+    <h1><time datetime={ymd(day.data.date)}>{ymd(day.data.date)}</time></h1>
+    <div class="body">
+      <Content />
+    </div>
+  </article>
+  <nav class="around" aria-label="前後の日">
+    {newer ? <a href={`/diary/${newer.id}/`} rel="next">← {ymd(newer.data.date)}</a> : <span />}
+    <a href="/diary/">Diary</a>
+    {older ? <a href={`/diary/${older.id}/`} rel="prev">{ymd(older.data.date)} →</a> : <span />}
+  </nav>
+</Base>
+
+<style>
+  h1 {
+    margin: 0 0 1.5rem;
+    color: var(--dim);
+    font-size: 0.85em;
+    font-weight: 400;
+  }
+
+  .body :global(h3),
+  .body :global(h4) {
+    font-size: 1em;
+  }
+
+  .body :global(img) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .body :global(pre) {
+    overflow-x: auto;
+  }
+
+  .around {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    margin: 3rem 0 0;
+  }
+
+  .around > :last-child {
+    text-align: right;
+  }
+
+  .around a {
+    color: var(--dim);
+    text-decoration: none;
+  }
+
+  .around a:hover,
+  .around a:focus-visible {
+    color: var(--fg);
+  }
+</style>

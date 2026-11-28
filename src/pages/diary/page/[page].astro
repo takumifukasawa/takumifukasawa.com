@@ -1,0 +1,18 @@
+---
+// /diary/page/<n>/ — page 2 onwards of the diary list (page 1 is /diary/). noindex like every diary page.
+import { getCollection } from 'astro:content';
+import DiaryList from '../../../components/DiaryList.astro';
+import Base from '../../../layouts/Base.astro';
+import { DIARY_PAGE_SIZE, laterPages } from '../../../lib/pages.ts';
+
+export async function getStaticPaths() {
+  const days = await getCollection('diary');
+  return laterPages(days.length, DIARY_PAGE_SIZE).map((n) => ({ params: { page: String(n) }, props: { days, n } }));
+}
+
+const { days, n } = Astro.props;
+---
+
+<Base title={`Diary (${n})`} description="takumifukasawa の日記" path={`/diary/page/${n}/`} noindex>
+  <DiaryList days={days} page={n} />
+</Base>

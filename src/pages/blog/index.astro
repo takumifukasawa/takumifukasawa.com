@@ -1,66 +1,12 @@
 ---
-// /blog/ — every article, newest first: date and title, one per line.
-// PROVISIONAL: how the list looks (and whether daily posts and sketches join it) is decided after the
-// migrated entries are on the page (docs/plans/active/blog-migration.md, task 4).
+// /blog/ — the first page of the article list (src/components/PostList.astro). Later pages: /blog/page/<n>/.
 import { getCollection } from 'astro:content';
+import PostList from '../../components/PostList.astro';
 import Base from '../../layouts/Base.astro';
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
-
-const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+const posts = await getCollection('blog', ({ data }) => !data.draft);
 ---
 
 <Base title="Blog" description="takumifukasawa の記事" path="/blog/">
-  <h1>Blog</h1>
-  <ul class="posts">
-    {
-      posts.map((post) => (
-        <li>
-          <time datetime={post.data.date.toISOString()}>{ymd(post.data.date)}</time>
-          <a href={`/blog/${post.id}/`}>{post.data.title}</a>
-        </li>
-      ))
-    }
-  </ul>
+  <PostList posts={posts} page={1} />
 </Base>
-
-<style>
-  h1 {
-    margin: 0 0 1.5rem;
-    color: var(--dim);
-    font-size: 0.85em;
-    font-weight: 400;
-    letter-spacing: 0.04em;
-  }
-
-  .posts {
-    display: grid;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .posts li {
-    display: grid;
-    grid-template-columns: 7em 1fr;
-    gap: 0 1rem;
-  }
-
-  time {
-    color: var(--dim);
-  }
-
-  a {
-    color: var(--fg);
-    text-decoration: none;
-  }
-
-  a:hover,
-  a:focus-visible {
-    text-decoration: underline;
-    text-underline-offset: 0.25em;
-  }
-</style>

@@ -1,0 +1,59 @@
+---
+// Previous / numbers / next for a paginated list (src/lib/pages.ts). Nothing when everything fits on one page.
+import { pagePath } from '../lib/pages.ts';
+
+type Props = { base: string; current: number; last: number };
+const { base, current, last } = Astro.props;
+const numbers = Array.from({ length: last }, (_, i) => i + 1);
+---
+
+{
+  last > 1 && (
+    <nav class="pager" aria-label="ページ">
+      {current > 1 ? <a href={pagePath(base, current - 1)} rel="prev">前へ</a> : <span />}
+      <ol>
+        {numbers.map((n) => (
+          <li>{n === current ? <span aria-current="page">{n}</span> : <a href={pagePath(base, n)}>{n}</a>}</li>
+        ))}
+      </ol>
+      {current < last ? <a href={pagePath(base, current + 1)} rel="next">次へ</a> : <span />}
+    </nav>
+  )
+}
+
+<style>
+  .pager {
+    display: grid;
+    grid-template-columns: 4em 1fr 4em;
+    align-items: center;
+    margin: 3rem 0 0;
+  }
+
+  .pager > :last-child {
+    text-align: right;
+  }
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    color: var(--dim);
+    text-decoration: none;
+  }
+
+  a:hover,
+  a:focus-visible {
+    color: var(--fg);
+  }
+
+  [aria-current='page'] {
+    color: var(--fg);
+  }
+</style>

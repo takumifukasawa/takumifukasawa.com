@@ -1,70 +1,15 @@
 ---
-// /diary/ — every published day, newest first, each in full. Short days do not get pages of their own.
+// /diary/ — the first page of the diary list (src/components/DiaryList.astro). Later pages: /diary/page/<n>/,
+// each day: /diary/<YYYYMMDD>/.
 // Kept out of search and crawlers: noindex here, X-Robots-Tag in public/_headers, AI crawlers in robots.txt, and
 // never in the sitemap (docs/plans/active/diary-pipeline.md).
-// PROVISIONAL: where the diary sits on the site is decided in docs/plans/active/blog-migration.md, task 4.
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
+import DiaryList from '../../components/DiaryList.astro';
 import Base from '../../layouts/Base.astro';
 
-const days = (await getCollection('diary')).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
-const rendered = await Promise.all(days.map(async (day) => ({ day, Content: (await render(day)).Content })));
-
-const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+const days = await getCollection('diary');
 ---
 
 <Base title="Diary" description="takumifukasawa の日記" path="/diary/" noindex>
-  <h1>Diary</h1>
-  {
-    rendered.map(({ day, Content }) => (
-      <article id={day.id}>
-        <h2>
-          <a href={`#${day.id}`}>
-            <time datetime={ymd(day.data.date)}>{ymd(day.data.date)}</time>
-          </a>
-        </h2>
-        <div class="body">
-          <Content />
-        </div>
-      </article>
-    ))
-  }
+  <DiaryList days={days} page={1} />
 </Base>
-
-<style>
-  h1 {
-    margin: 0 0 1.5rem;
-    color: var(--dim);
-    font-size: 0.85em;
-    font-weight: 400;
-    letter-spacing: 0.04em;
-  }
-
-  article {
-    margin: 0 0 3rem;
-  }
-
-  h2 {
-    margin: 0 0 0.75rem;
-    font-size: 0.85em;
-    font-weight: 400;
-  }
-
-  h2 a {
-    color: var(--dim);
-    text-decoration: none;
-  }
-
-  .body :global(h2),
-  .body :global(h3) {
-    font-size: 1em;
-  }
-
-  .body :global(img) {
-    max-width: 100%;
-    height: auto;
-  }
-
-  .body :global(pre) {
-    overflow-x: auto;
-  }
-</style>

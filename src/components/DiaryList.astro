@@ -1,0 +1,68 @@
+---
+// The diary list (/diary/ and /diary/page/<n>/): the date and the opening words of each day, newest first.
+// The pages that use it must render <Base noindex> (check: diary not indexed).
+// PROVISIONAL: where the diary sits on the site is decided in docs/plans/active/blog-migration.md, task 4.
+import type { CollectionEntry } from 'astro:content';
+import { excerpt } from '../lib/blog.ts';
+import { DIARY_PAGE_SIZE, paginate } from '../lib/pages.ts';
+import Pager from './Pager.astro';
+
+type Props = { days: CollectionEntry<'diary'>[]; page: number };
+const { days, page } = Astro.props;
+const sorted = [...days].sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const { items, current, last } = paginate(sorted, page, DIARY_PAGE_SIZE);
+
+const ymd = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+---
+
+<h1>Diary</h1>
+<ul class="days">
+  {
+    items.map((day) => (
+      <li>
+        <time datetime={ymd(day.data.date)}>{ymd(day.data.date)}</time>
+        <a href={`/diary/${day.id}/`}>{excerpt(day.body ?? '', 50) || ymd(day.data.date)}</a>
+      </li>
+    ))
+  }
+</ul>
+<Pager base="/diary/" current={current} last={last} />
+
+<style>
+  h1 {
+    margin: 0 0 1.5rem;
+    color: var(--dim);
+    font-size: 0.85em;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .days {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .days li {
+    display: grid;
+    grid-template-columns: 7em 1fr;
+    gap: 0 1rem;
+  }
+
+  time {
+    color: var(--dim);
+  }
+
+  a {
+    color: var(--fg);
+    text-decoration: none;
+  }
+
+  a:hover,
+  a:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+</style>
